@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Coup d'Envoi</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pitch:#0f3d2e; --pitch-2:#155c40; --chalk:#f4f6f0; --ink:#0c1a12;
+  --line:#dfe6dc; --live:#e0432b; --muted:#6b7a6f; --card:#ffffff;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --chalk:#0c1310; --card:#141c17; --ink:#f0f3ee; --line:#243228; --muted:#8a988e; }
+}
+:root[data-theme="dark"]{ --chalk:#0c1310; --card:#141c17; --ink:#f0f3ee; --line:#243228; --muted:#8a988e; }
+*{box-sizing:border-box;}
+html,body{height:100%; margin:0;}
+body{
+  background:var(--chalk); color:var(--ink); font-family:'Space Grotesk',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'JetBrains Mono',monospace;}
+header{
+  color:#fff; border-radius:0 0 22px 22px; position:relative;
+  background:var(--pitch-2); padding-top:calc(14px + env(safe-area-inset-top,0px));
+}
+.top-bar{ display:flex; align-items:center; padding:0 16px 12px; gap:10px; }
+.brand{ flex:1; text-align:center; font-size:1.15rem; font-weight:700; letter-spacing:-.01em; }
+.top-bar-spacer{ width:36px; }
+.burger{
+  background:rgba(255,255,255,.12); border:none; width:36px; height:36px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; color:#fff;
+}
+.burger svg{ width:18px; height:18px; }
+.crest{
+  width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:.6rem; color:#fff;
+}
+.comps{
+  display:flex; gap:14px; padding:14px 20px 4px; overflow-x:auto;
+  background:var(--pitch-2);
+}
+.comp{ display:flex; flex-direction:column; align-items:center; gap:5px; flex-shrink:0; width:52px;}
+.comp-badge{
+  width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-weight:700; font-size:.72rem; color:#fff;
+}
+.comp span{ font-size:.6rem; color:rgba(255,255,255,.75); text-align:center; line-height:1.15; }
+.comp-badge{ cursor:pointer; transition:box-shadow .15s ease, transform .15s ease; }
+.comp.active .comp-badge{ box-shadow:0 0 0 2px #fff; }
+.comp.active span{ color:#fff; }
+.tabs{
+  display:flex; gap:20px; margin:0; padding:0 20px 12px; overflow-x:auto;
+}
+.tab{
+  border:none; background:none; color:rgba(255,255,255,.55);
+  padding:4px 0 9px; font-size:.78rem; font-family:inherit; text-transform:uppercase; letter-spacing:.03em;
+  white-space:nowrap; cursor:pointer; position:relative;
+}
+.tab.active{ color:#fff; }
+.tab.active::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:2px; background:#fff; border-radius:2px; }
+main{ max-width:520px; margin:0 auto; padding:16px 14px 40px; }
+.day-label{ font-size:.75rem; color:var(--muted); margin:18px 6px 8px; text-transform:uppercase; letter-spacing:.06em;}
+.match{
+  background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:13px 14px; margin-bottom:9px; display:flex; align-items:center; gap:12px;
+  cursor:pointer;
+}
+.match .teams{ flex:1; min-width:0; }
+.row{ display:flex; align-items:center; gap:8px; padding:3px 0;}
+.name{ flex:1; font-size:.94rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.score{ font-weight:700; font-size:1rem; min-width:20px; text-align:right;}
+.status{ width:58px; text-align:center; flex-shrink:0; font-size:.72rem; }
+.status .fin{ color:var(--muted); }
+.status .sched{ color:var(--muted); font-size:.68rem; line-height:1.25;}
+.badge-live{ background:var(--live); color:#fff; padding:2px 7px; border-radius:5px; font-weight:700; letter-spacing:.03em;}
+.empty{ text-align:center; color:var(--muted); padding:40px 20px; font-size:.9rem;}
+.note{
+  margin:22px 6px 0; font-size:.78rem; color:var(--muted); line-height:1.5;
+  border-top:1px solid var(--line); padding-top:14px;
+}
+::-webkit-scrollbar{display:none;}
+
+/* side drawer */
+.scrim{
+  position:fixed; inset:0; background:rgba(0,0,0,.4); opacity:0; pointer-events:none;
+  transition:opacity .2s ease; z-index:20;
+}
+.scrim.open{ opacity:1; pointer-events:auto; }
+.drawer{
+  position:fixed; top:0; bottom:0; left:0; width:78%; max-width:300px;
+  background:var(--card); z-index:21; transform:translateX(-100%);
+  transition:transform .25s ease; padding:calc(18px + env(safe-area-inset-top,0px)) 6px 18px;
+  box-shadow:2px 0 24px rgba(0,0,0,.18);
+}
+.drawer.open{ transform:translateX(0); }
+.drawer h2{ font-size:1.05rem; margin:2px 14px 14px; letter-spacing:-.01em; }
+.drawer-item{
+  display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:10px;
+  font-size:.95rem; color:var(--ink); cursor:pointer;
+}
+.drawer-item:active{ background:var(--chalk); }
+.drawer-item svg{ width:19px; height:19px; flex-shrink:0; color:var(--muted); }
+
+/* bottom nav */
+.bottom-nav{
+  position:fixed; left:0; right:0; bottom:0; background:var(--card);
+  border-top:1px solid var(--line); display:flex; z-index:10;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.nav-item{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:9px 4px 8px; color:var(--muted); cursor:pointer; background:none; border:none; font-family:inherit;
+}
+.nav-item svg{ width:21px; height:21px; }
+.nav-item span{ font-size:.66rem; }
+.nav-item.active{ color:var(--pitch); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .nav-item.active{ color:#5fd39a; } }
+:root[data-theme="dark"] .nav-item.active{ color:#5fd39a; }
+main{ padding-bottom:74px; }
+.stub{ text-align:center; color:var(--muted); padding:60px 24px; font-size:.9rem; line-height:1.6; }
+</style>
+</head>
+<body>
+<header>
+  <div class="top-bar">
+    <button class="burger" id="burgerBtn" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+    </button>
+    <div class="brand">Coup d'Envoi</div>
+    <div class="top-bar-spacer"></div>
+  </div>
+  <div class="comps" id="comps"></div>
+  <div class="tabs" id="tabs"></div>
+</header>
+<main id="main"></main>
+
+<div class="scrim" id="scrim"></div>
+<nav class="drawer" id="drawer">
+  <h2>Menu</h2>
+  <div class="drawer-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V3l9 4 9-4v18l-9-4-9 4Z"/></svg>Compétitions</div>
+  <div class="drawer-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 3 6v6c0 5 4 8.5 9 10 5-1.5 9-5 9-10V6l-9-4Z"/></svg>Équipes</div>
+  <div class="drawer-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2h8v6l-4 4-4-4V2Z"/><path d="M4 22c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>Joueurs</div>
+  <div class="drawer-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Trouver un match</div>
+  <div class="drawer-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>Réglages</div>
+</nav>
+
+<nav class="bottom-nav" id="bottomNav">
+  <button class="nav-item active" data-page="matchs">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18M12 5v14"/><circle cx="12" cy="12" r="2.5"/></svg>
+    <span>Matchs</span>
+  </button>
+  <button class="nav-item" data-page="favoris">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.6 5.6 6 .7-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6-4.4-4.2 6-.7L12 3Z"/></svg>
+    <span>Favoris</span>
+  </button>
+  <button class="nav-item" data-page="explorer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m14.5 9.5-1.8 4.2-4.2 1.8 1.8-4.2 4.2-1.8Z"/></svg>
+    <span>Explorer</span>
+  </button>
+  <button class="nav-item" data-page="transferts">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h13M17 8l-3-3M17 8l-3 3"/><path d="M20 16H7M7 16l3-3M7 16l3 3"/></svg>
+    <span>Transferts</span>
+  </button>
+  <button class="nav-item" data-page="infos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h11a2 2 0 0 1 2 2v13a1 1 0 0 1-1.6.8L14 18H6a2 2 0 0 1-2-2V4Z"/><path d="M8 8h6M8 11h6"/></svg>
+    <span>Infos</span>
+  </button>
+</nav>
+
+<script>
+const BACKEND = 'https://coup-denvoi-backend.onrender.com';
+
+const MONTHS = ['jan.','fév.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+function formatDate(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  return `${d} ${MONTHS[m-1]}`;
+}
+
+let GAMES = [];
+let filter = "Tous";
+let activeComp = "PL";
+let loading = false;
+
+const CREST_COLORS = ["#3d1a78","#8a0f22","#0a3a8f","#0b6e4f","#e8792a","#0a1a4e","#6b1f5c","#1a6b6b"];
+function crestFor(name){
+  let hash = 0;
+  for(let i=0;i<name.length;i++) hash = (hash*31 + name.charCodeAt(i)) >>> 0;
+  const color = CREST_COLORS[hash % CREST_COLORS.length];
+  const initials = name.split(' ').filter(w=>w.length>2 || /^[A-Z]/.test(w)).slice(0,2).map(w=>w[0]).join('').toUpperCase().slice(0,2) || name.slice(0,2).toUpperCase();
+  return `<span class="crest" style="background:${color}">${initials}</span>`;
+}
+
+async function loadGames(){
+  loading = true;
+  document.getElementById('main').innerHTML = '<div class="empty">Chargement des matchs… (le serveur peut prendre jusqu\'à 50s à se réveiller)</div>';
+  try {
+    const res = await fetch(`${BACKEND}/api/fixtures?comp=${encodeURIComponent(activeComp)}`);
+    const data = await res.json();
+    GAMES = data.games || [];
+  } catch (e) {
+    GAMES = [];
+    document.getElementById('main').innerHTML = '<div class="empty">Impossible de charger les matchs pour le moment. Vérifie ta connexion et réessaie.</div>';
+    loading = false;
+    return;
+  }
+  loading = false;
+  renderTabs();
+  render();
+}
+
+function render(){
+  if (loading) return;
+  const main = document.getElementById('main');
+  const filtered = GAMES.filter(g => filter==="Tous" || g.date===filter);
+  if(!filtered.length){ main.innerHTML = '<div class="empty">Aucun match pour cette compétition pour l’instant.</div>'; return; }
+  let html = '';
+  let lastDate = null;
+  filtered.forEach(g=>{
+    if(g.date !== lastDate){
+      html += `<div class="day-label">${formatDate(g.date)}</div>`;
+      lastDate = g.date;
+    }
+    const statusHtml = g.status==='final'
+      ? `<span class="fin">Terminé</span>`
+      : g.status==='live'
+      ? `<span class="badge-live">LIVE</span>`
+      : `<span class="sched">${g.time||''}</span>`;
+    html += `
+    <div class="match">
+      <div class="teams">
+        <div class="row">${crestFor(g.home)}<span class="name">${g.home}</span><span class="score mono">${g.status==='scheduled'?'—':g.hs}</span></div>
+        <div class="row">${crestFor(g.away)}<span class="name">${g.away}</span><span class="score mono">${g.status==='scheduled'?'—':g.as}</span></div>
+      </div>
+      <div class="status mono">${statusHtml}</div>
+    </div>`;
+  });
+  main.innerHTML = html;
+}
+
+function renderTabs(){
+  const dates = [...new Set(GAMES.map(g=>g.date))].sort();
+  const tabs = ["Tous", ...dates];
+  if(!tabs.includes(filter)) filter = "Tous";
+  document.getElementById('tabs').innerHTML = tabs.map(v=>
+    `<button class="tab ${filter===v?'active':''}" data-v="${v}">${v==="Tous"?"Tous":formatDate(v)}</button>`
+  ).join('');
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.onclick = ()=>{ filter = t.dataset.v; renderTabs(); render(); };
+  });
+}
+
+const COMPETITIONS = [
+  {abbr:"PL", name:"Premier League", color:"#3d1a78"},
+  {abbr:"LDC", name:"Ligue des Champions", color:"#0a1a4e"},
+  {abbr:"LIGA", name:"La Liga", color:"#e8792a"},
+  {abbr:"BL", name:"Bundesliga", color:"#8a0f22"},
+  {abbr:"SA", name:"Serie A", color:"#0b6e4f"},
+  {abbr:"L1", name:"Ligue 1", color:"#0a3a8f"}
+];
+function renderComps(){
+  document.getElementById('comps').innerHTML = COMPETITIONS.map(c=>`
+    <div class="comp ${c.abbr===activeComp?'active':''}" data-abbr="${c.abbr}">
+      <div class="comp-badge" style="background:${c.color}">${c.abbr}</div>
+      <span>${c.name}</span>
+    </div>`).join('');
+  document.querySelectorAll('.comp').forEach(el=>{
+    el.onclick = ()=>{
+      activeComp = el.dataset.abbr;
+      filter = "Tous";
+      renderComps();
+      loadGames();
+    };
+  });
+}
+renderComps();
+loadGames();
+
+
+// tiroir latéral
+const drawer = document.getElementById('drawer');
+const scrim = document.getElementById('scrim');
+function openDrawer(){ drawer.classList.add('open'); scrim.classList.add('open'); }
+function closeDrawer(){ drawer.classList.remove('open'); scrim.classList.remove('open'); }
+document.getElementById('burgerBtn').onclick = openDrawer;
+scrim.onclick = closeDrawer;
+document.querySelectorAll('.drawer-item').forEach(it=>it.onclick = closeDrawer);
+
+// navigation basse
+const PAGE_LABELS = {
+  favoris:"Ajoute des équipes en favoris pour les retrouver ici.",
+  explorer:"Explore les compétitions et classements du monde entier.",
+  transferts:"Suis les derniers transferts et rumeurs du mercato.",
+  infos:"Les actus et articles sur le football, bientôt ici."
+};
+document.querySelectorAll('.nav-item').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const page = btn.dataset.page;
+    const tabsEl = document.getElementById('tabs');
+    if(page==='matchs'){
+      tabsEl.style.display = 'flex';
+      renderTabs(); render();
+    } else {
+      tabsEl.style.display = 'none';
+      document.getElementById('main').innerHTML = `<div class="stub">${PAGE_LABELS[page]}</div>`;
+    }
+  };
+});
+</script>
+</body>
+</html>
