@@ -343,8 +343,9 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 window.onerror = function(msg, url, line, col, err){ alert('Erreur JS non gérée (diagnostic) :\n' + msg + '\nligne ' + line + '\n\nEnvoie une capture à Claude.'); };
+window.addEventListener('unhandledrejection', e => { alert('Erreur asynchrone non gérée (diagnostic) :\n' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '\n\nEnvoie une capture à Claude.'); });
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v17-debug';
+const VERSION = 'v18-debug';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -1153,9 +1154,9 @@ function renderDetail(){
   $('dback').onclick = backFromDetail;
   $('dfav').onclick = () => { toggleFavMatch(g); renderDetail(); refreshList(); };
   box.querySelectorAll('.sbtap').forEach(el => el.onclick = () => {
-    alert('TOUCHÉ — ' + el.dataset.side);
     const home = el.dataset.side === 'home';
     const id = home ? g.homeId : g.awayId;
+    alert(`Diagnostic\néquipe id : ${id || '(vide)'}\nchampionnat id : ${g.leagueId || '(vide)'}\n\nEnvoie une capture à Claude.`);
     openTeam(id, g.leagueId, home ? g.home : g.away, home ? g.homeLogo : g.awayLogo);
   });
   box.querySelectorAll('.follow').forEach(b => b.onclick = () => {
