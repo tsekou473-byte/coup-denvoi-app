@@ -19,6 +19,7 @@
 }
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 [hidden]{ display:none !important; }
+html{ font-size:14px; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
 html,body{ margin:0; min-height:100%; }
 body{ background:var(--bg); color:var(--text); font-family:'Barlow Semi Condensed',system-ui,-apple-system,sans-serif; -webkit-font-smoothing:antialiased; }
 button{ font-family:inherit; color:inherit; }
@@ -54,19 +55,19 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .lg img{ width:26px; height:18px; object-fit:cover; border-radius:3px; }
 .lgn{ font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:1.1rem; letter-spacing:.05em; text-transform:uppercase; }
 .lgc{ color:var(--muted); font-size:.9rem; text-transform:none; font-weight:400; letter-spacing:0; font-family:'Barlow Semi Condensed',sans-serif; }
-.match{ display:grid; grid-template-columns:1fr auto 84px auto 1fr; align-items:center; gap:10px; padding:14px 12px; border-top:1px solid var(--line); }
+.match{ display:grid; grid-template-columns:1fr auto 78px auto 1fr; align-items:center; gap:9px; padding:12px 12px; border-top:1px solid var(--line); }
 .lg + .match{ border-top:none; }
-.tn{ font-size:1.12rem; font-weight:500; line-height:1.15; overflow-wrap:anywhere; }
+.tn{ font-size:1.08rem; font-weight:500; line-height:1.15; overflow-wrap:anywhere; }
 .tn.h{ text-align:right; }
 .tn.a{ text-align:left; }
-.crest{ width:46px; height:46px; border-radius:50%; background:var(--c,#555); position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; color:#fff; box-shadow:0 0 0 2px rgba(255,255,255,.08); }
+.crest{ width:42px; height:42px; border-radius:50%; background:var(--c,#555); position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; color:#fff; box-shadow:0 0 0 2px rgba(255,255,255,.08); }
 .crest img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#fff; border-radius:50%; padding:5px; }
 .mid{ text-align:center; }
-.score{ display:inline-block; font-family:'Barlow Condensed',sans-serif; font-size:1.75rem; font-weight:500; line-height:1; padding:5px 12px; border-radius:12px; background:rgba(255,255,255,.07); white-space:nowrap; }
+.score{ display:inline-block; font-family:'Barlow Condensed',sans-serif; font-size:1.7rem; font-weight:500; line-height:1; padding:5px 12px; border-radius:12px; background:rgba(255,255,255,.07); white-space:nowrap; }
 .score.muted{ background:none; color:#cfd6e8; font-weight:400; padding:5px 0; }
 .score.live{ color:var(--live); background:rgba(255,90,95,.12); }
 .score.strike{ text-decoration:line-through; color:var(--muted); }
-.sub{ font-size:.78rem; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-top:4px; font-weight:500; }
+.sub{ font-size:.8rem; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-top:4px; font-weight:500; }
 .sub.live{ color:var(--live); font-weight:600; }
 .empty{ text-align:center; color:var(--muted); padding:60px 24px; font-size:1.05rem; line-height:1.5; }
 .empty small{ display:block; margin-top:8px; font-size:.85rem; opacity:.85; word-break:break-word; }
@@ -104,10 +105,10 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .dh .ttl small{ color:var(--muted); font-size:.9rem; }
 .sb{ display:grid; grid-template-columns:1fr auto 1fr; gap:6px; align-items:start; padding:22px 12px 8px; max-width:640px; margin:0 auto; }
 .sbteam{ display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; font-size:1.15rem; font-weight:500; line-height:1.15; }
-.crest.big{ width:68px; height:68px; font-size:1.1rem; }
+.crest.big{ width:60px; height:60px; font-size:1rem; }
 .sbmid{ text-align:center; padding-top:8px; min-width:108px; }
-.sbmid .score{ font-size:2.7rem; padding:6px 16px; }
-.sbmid .score.muted{ font-size:2.4rem; }
+.sbmid .score{ font-size:2.5rem; padding:5px 14px; }
+.sbmid .score.muted{ font-size:2.2rem; }
 .sbmid .sub{ margin-top:9px; }
 .meta{ text-align:center; color:var(--muted); font-size:.92rem; padding:6px 18px 14px; line-height:1.5; }
 .dtabs{ display:flex; gap:8px; padding:4px 12px 14px; max-width:640px; margin:0 auto; }
@@ -148,6 +149,43 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .bar i{ display:block; border-radius:4px; }
 .bh{ background:var(--accent); }
 .ba{ background:#6ea8ff; }
+
+/* panneaux : réglages et compte */
+.panel{ z-index:45; }
+.set{ margin-top:14px; }
+.set .row{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 16px; border-top:1px solid var(--line); }
+.set .row:first-child{ border-top:none; }
+.set .row.tap{ cursor:pointer; }
+.set .row.col{ flex-direction:column; align-items:stretch; }
+.rl b{ display:block; font-size:1.05rem; font-weight:600; }
+.rl small{ display:block; color:var(--muted); font-size:.85rem; margin-top:2px; line-height:1.3; }
+.seg{ display:flex; background:rgba(255,255,255,.07); border-radius:999px; padding:3px; flex-shrink:0; }
+.seg button{ border:none; background:none; padding:6px 12px; border-radius:999px; font-family:'Barlow Condensed',sans-serif; font-size:1.02rem; letter-spacing:.03em; color:#b8c1d9; cursor:pointer; }
+.seg button.on{ background:var(--accent); color:#1b1305; font-weight:600; }
+.sw{ position:relative; width:46px; height:28px; flex-shrink:0; }
+.sw input{ position:absolute; inset:0; width:100%; height:100%; margin:0; opacity:0; z-index:1; cursor:pointer; }
+.sw i{ position:absolute; inset:0; background:#3a4463; border-radius:999px; transition:.2s; pointer-events:none; }
+.sw i::after{ content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; transition:.2s; }
+.sw input:checked + i{ background:var(--accent); }
+.sw input:checked + i::after{ transform:translateX(18px); background:#1b1305; }
+.acc{ text-align:center; padding:26px 22px 6px; max-width:420px; margin:0 auto; }
+.acc h3{ margin:14px 0 6px; font-family:'Barlow Condensed',sans-serif; font-size:1.7rem; font-weight:600; }
+.acc p{ color:var(--muted); line-height:1.45; margin:0 0 18px; font-size:1rem; }
+.avatar{ width:34px; height:34px; border-radius:50%; background:var(--accent); color:#1b1305; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.15rem; }
+.avatar.big{ width:84px; height:84px; margin:0 auto; font-size:2.4rem; background:var(--card-head); color:var(--muted); border:1px solid var(--line); }
+.avatar.big.has{ background:var(--accent); color:#1b1305; }
+.btn{ display:flex; align-items:center; justify-content:center; gap:10px; width:100%; border:1px solid var(--line); background:var(--card-head); color:var(--text); padding:13px 16px; border-radius:14px; font-size:1.05rem; font-weight:600; cursor:pointer; margin-bottom:10px; }
+.btn.primary{ background:var(--accent); color:#1b1305; border-color:var(--accent); }
+.btn.small{ width:auto; margin:0; padding:9px 16px; font-size:1rem; flex-shrink:0; }
+.soon-tag{ font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; background:rgba(0,0,0,.18); padding:2px 8px; border-radius:999px; font-weight:600; }
+.btn:not(.primary) .soon-tag{ background:rgba(255,255,255,.1); color:var(--muted); }
+.note{ background:var(--card-head); border:1px solid var(--line); border-radius:12px; padding:11px 14px; color:#cfd6e8; font-size:.95rem; line-height:1.4; margin-bottom:10px; text-align:left; }
+.nm{ display:flex; gap:10px; margin-top:12px; }
+.nm input{ flex:1; min-width:0; border:1px solid var(--line); border-radius:12px; background:var(--bg); color:var(--text); padding:10px 12px; font-size:1.05rem; font-family:inherit; outline:none; }
+.pill{ font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); padding:2px 8px; border-radius:999px; align-self:center; }
+.dtab.dim{ opacity:.5; }
+.avail{ text-align:center; color:#66708f; font-size:.82rem; padding:0 22px 6px; line-height:1.4; max-width:620px; margin:0 auto; }
+.chev{ color:var(--muted); font-size:1.4rem; line-height:1; }
 </style>
 </head>
 <body>
@@ -165,6 +203,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
       <button class="icon-btn" id="searchBtn" aria-label="Rechercher">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
       </button>
+      <button class="icon-btn" id="accBtn" aria-label="Mon compte"></button>
       <button class="icon-btn" id="burger" aria-label="Menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
       </button>
@@ -177,15 +216,18 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 <main id="main"></main>
 
 <div class="detail" id="detail" hidden></div>
+<div class="detail panel" id="panel" hidden></div>
 <div class="scrim" id="scrim"></div>
 <nav class="drawer" id="drawer">
   <h2>Menu</h2>
   <h3>Compétitions</h3>
   <div id="leagueList"></div>
+  <h3>Application</h3>
+  <div class="d-item" id="dSettings">Réglages</div>
+  <div class="d-item" id="dAccount">Mon compte <span class="pill">Facultatif</span></div>
   <h3>Bientôt</h3>
   <div class="d-item soon">Équipes</div>
   <div class="d-item soon">Joueurs</div>
-  <div class="d-item soon">Réglages</div>
 </nav>
 
 <nav class="bottom-nav" id="bottomNav">
@@ -208,13 +250,61 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v5';
+const VERSION = 'v6';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- réglages et profil (enregistrés sur l'appareil) ---------- */
+const SETTINGS = { size:'normal', fr:true, auto:true };
+const PROFILE = { name:'' };
+try { Object.assign(SETTINGS, JSON.parse(localStorage.getItem('ce_settings') || '{}')); } catch(e) {}
+try { Object.assign(PROFILE, JSON.parse(localStorage.getItem('ce_profile') || '{}')); } catch(e) {}
+const saveSettings = () => { try { localStorage.setItem('ce_settings', JSON.stringify(SETTINGS)); } catch(e) {} };
+const saveProfile = () => { try { localStorage.setItem('ce_profile', JSON.stringify(PROFILE)); } catch(e) {} };
+const SIZES = { small:'12.5px', normal:'14px', large:'16px' };
+function applySize(){ document.documentElement.style.fontSize = SIZES[SETTINGS.size] || SIZES.normal; }
+applySize();
+
+/* ---------- noms en français (sélections, pays, compétitions) ---------- */
+const FR_COUNTRIES = {
+  'Albania':'Albanie','Andorra':'Andorre','Armenia':'Arménie','Austria':'Autriche','Azerbaijan':'Azerbaïdjan','Belarus':'Biélorussie',
+  'Belgium':'Belgique','Bosnia & Herzegovina':'Bosnie-Herzégovine','Bosnia and Herzegovina':'Bosnie-Herzégovine','Bosnia-Herzegovina':'Bosnie-Herzégovine',
+  'Bulgaria':'Bulgarie','Croatia':'Croatie','Cyprus':'Chypre','Czech Republic':'Tchéquie','Czechia':'Tchéquie','Denmark':'Danemark','England':'Angleterre',
+  'Estonia':'Estonie','Faroe Islands':'Îles Féroé','Finland':'Finlande','Georgia':'Géorgie','Germany':'Allemagne','Greece':'Grèce','Hungary':'Hongrie',
+  'Iceland':'Islande','Ireland':'Irlande','Republic of Ireland':'Irlande','Israel':'Israël','Italy':'Italie','Latvia':'Lettonie','Lithuania':'Lituanie',
+  'Malta':'Malte','Moldova':'Moldavie','Montenegro':'Monténégro','Netherlands':'Pays-Bas','North Macedonia':'Macédoine du Nord','Northern Ireland':'Irlande du Nord',
+  'Norway':'Norvège','Poland':'Pologne','Romania':'Roumanie','Russia':'Russie','San Marino':'Saint-Marin','Scotland':'Écosse','Serbia':'Serbie',
+  'Slovakia':'Slovaquie','Slovenia':'Slovénie','Spain':'Espagne','Sweden':'Suède','Switzerland':'Suisse','Turkey':'Turquie','Türkiye':'Turquie','Wales':'Pays de Galles',
+  'Argentina':'Argentine','Brazil':'Brésil','Chile':'Chili','Colombia':'Colombie','Ecuador':'Équateur','Peru':'Pérou','Bolivia':'Bolivie','Mexico':'Mexique',
+  'USA':'États-Unis','United States':'États-Unis','Jamaica':'Jamaïque','Haiti':'Haïti','Morocco':'Maroc','Algeria':'Algérie','Tunisia':'Tunisie','Egypt':'Égypte',
+  'Senegal':'Sénégal','Cameroon':'Cameroun','Ivory Coast':"Côte d'Ivoire",'South Africa':'Afrique du Sud','DR Congo':'RD Congo','Cape Verde':'Cap-Vert','Guinea':'Guinée',
+  'Zambia':'Zambie','Japan':'Japon','South Korea':'Corée du Sud','China':'Chine','Australia':'Australie','Iraq':'Irak','Saudi Arabia':'Arabie saoudite',
+  'United Arab Emirates':'Émirats arabes unis','Uzbekistan':'Ouzbékistan','India':'Inde','New Zealand':'Nouvelle-Zélande','Netherlands Antilles':'Antilles néerlandaises',
+  'Europe':'Europe','eurocups':'Europe','World':'Monde'
+};
+function trCountry(n){ return SETTINGS.fr ? (FR_COUNTRIES[n] || n || '') : (n === 'eurocups' ? 'Europe' : (n || '')); }
+function trTeam(n){
+  if (!SETTINGS.fr || !n) return n || '';
+  const m = String(n).match(/^(.+?)(\s+(?:U\d{2}|W))?$/);
+  const fr = m && FR_COUNTRIES[m[1]];
+  return fr ? fr + (m[2] || '') : n;
+}
+function trComp(c){
+  if (!SETTINGS.fr) return c || '';
+  return String(c || '')
+    .replace(/UEFA Champions League/i, 'Ligue des champions UEFA')
+    .replace(/UEFA (Europa )?Conference League/i, 'Ligue Europa Conférence UEFA')
+    .replace(/UEFA Europa League/i, 'Ligue Europa UEFA')
+    .replace(/UEFA Nations League/i, 'Ligue des nations UEFA')
+    .replace(/World Cup/i, 'Coupe du monde')
+    .replace(/Qualification|Qualifiers?/i, 'Éliminatoires')
+    .replace(/\bLeague ([A-D])\b/, 'Ligue $1')
+    .replace(/ - /g, ' · ');
+}
 
 function isoOf(d){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -331,7 +421,7 @@ function renderGames(list){
   let games = list;
   if (state.sel === 'live') games = games.filter(g => g.status === 'live');
   if (lg && lg.test) games = games.filter(lg.test);
-  if (q) games = games.filter(g => `${g.home} ${g.away} ${g.comp} ${g.country}`.toLowerCase().includes(q));
+  if (q) games = games.filter(g => `${g.home} ${g.away} ${trTeam(g.home)} ${trTeam(g.away)} ${g.comp} ${trComp(g.comp)} ${g.country} ${trCountry(g.country)}`.toLowerCase().includes(q));
 
   if (!games.length){
     const why = state.sel === 'live' ? 'Aucun match en direct pour le moment.'
@@ -351,12 +441,12 @@ function renderGames(list){
   main.innerHTML = ordered.map(gr => {
     const rows = gr.items.sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(g => `
       <div class="match" data-id="${esc(g.id)}">
-        <div class="tn h">${esc(g.home)}</div>${crest(g.home || '', g.homeLogo)}
+        <div class="tn h">${esc(trTeam(g.home))}</div>${crest(trTeam(g.home) || '', g.homeLogo)}
         ${middle(g)}
-        ${crest(g.away || '', g.awayLogo)}<div class="tn a">${esc(g.away)}</div>
+        ${crest(trTeam(g.away) || '', g.awayLogo)}<div class="tn a">${esc(trTeam(g.away))}</div>
       </div>`).join('');
     const flag = gr.flag ? `<img src="${esc(gr.flag)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
-    return `<section class="group"><div class="lg">${flag}<span class="lgn">${esc(gr.comp)} <span class="lgc">· ${esc(gr.country === 'eurocups' ? 'Europe' : gr.country)}</span></span></div>${rows}</section>`;
+    return `<section class="group"><div class="lg">${flag}<span class="lgn">${esc(trComp(gr.comp))} <span class="lgc">· ${esc(trCountry(gr.country))}</span></span></div>${rows}</section>`;
   }).join('') + `<div class="ver">Coup d'Envoi · ${VERSION}</div>`;
 }
 
@@ -444,7 +534,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
 
 /* rafraîchissement automatique quand des matchs sont en direct */
 setInterval(async () => {
-  if (document.hidden || state.page !== 'matchs') return;
+  if (!SETTINGS.auto || document.hidden || state.page !== 'matchs') return;
   const iso = state.sel === 'live' ? TODAY : state.sel;
   if (iso !== TODAY || liveCount() === 0) return;
   try { await getDay(TODAY, true); renderDates(); refreshList(); } catch(e) {}
@@ -477,17 +567,17 @@ function openMatch(id){
   clearInterval(DETAIL.timer);
   DETAIL.timer = setInterval(() => {
     const cur = DETAIL.data || GAME_INDEX[DETAIL.id];
-    if (!document.hidden && cur && cur.status === 'live') loadDetail(true);
+    if (SETTINGS.auto && !document.hidden && cur && cur.status === 'live') loadDetail(true);
   }, 60000);
 }
 function hideDetail(){
   $('detail').hidden = true;
-  document.body.style.overflow = '';
+  document.body.style.overflow = ($('panel').hidden ? '' : 'hidden');
   clearInterval(DETAIL.timer);
   DETAIL.id = null;
 }
 function backFromDetail(){ if (history.state && history.state.d) history.back(); else hideDetail(); }
-window.addEventListener('popstate', () => { if (!$('detail').hidden) hideDetail(); });
+window.addEventListener('popstate', () => { if (!$('panel').hidden) hidePanel(); else if (!$('detail').hidden) hideDetail(); });
 $('main').addEventListener('click', e => {
   const m = e.target.closest('.match');
   if (m) openMatch(m.dataset.id);
@@ -560,13 +650,16 @@ function tabResume(d){
   if (showHT && !htDone) html += htRow;
   if (!ev.length) html = `<div class="noev">${d.status === 'scheduled' ? "Le match n'a pas encore commencé." : 'Aucun événement enregistré.'}</div>` + html;
   if (d.status === 'final') html += `<div class="sep">Fin du match · ${esc(d.hs ?? 0)} - ${esc(d.as ?? 0)}</div>`;
-  return `<div class="card2">${html}</div>`;
+  const nb = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
+  const hasLu = d.lineups.home.starters.length || d.lineups.away.starters.length;
+  const avail = `Données reçues : ${nb(d.goals.length, 'but')} · ${nb(d.cards.length, 'carton')} · ${nb(d.subs.length, 'remplacement')} · compositions ${hasLu ? 'oui' : 'non'} · statistiques ${d.stats.length ? 'oui' : 'non'}`;
+  return `<div class="card2">${html}</div><div class="avail">${avail}</div>`;
 }
 
 function tabCompos(d){
   const L = d.lineups;
   if (!L.home.starters.length && !L.away.starters.length)
-    return `<div class="card2"><div class="noev">Les compositions ne sont pas encore disponibles.</div></div>`;
+    return `<div class="card2"><div class="noev">Pas de compositions pour ce match.<br><small style="opacity:.8">Le fournisseur de données ne les envoie pas pour toutes les compétitions, ni avant le coup d'envoi.</small></div></div>`;
   const pl = p => `<div class="pl"><b>${esc(p.n)}</b><span>${esc(p.name)}</span></div>`;
   const col = (k, name, system) => {
     const l = L[k];
@@ -575,11 +668,11 @@ function tabCompos(d){
       ${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(pl).join('')}` : ''}
       ${l.coach ? `<h5>Entraîneur</h5><div class="pl"><span>${esc(l.coach)}</span></div>` : ''}</div>`;
   };
-  return `<div class="card2"><div class="lu">${col('home', d.home, d.homeSystem)}${col('away', d.away, d.awaySystem)}</div></div>`;
+  return `<div class="card2"><div class="lu">${col('home', trTeam(d.home), d.homeSystem)}${col('away', trTeam(d.away), d.awaySystem)}</div></div>`;
 }
 
 function tabStats(d){
-  if (!d.stats.length) return `<div class="card2"><div class="noev">Statistiques non disponibles pour ce match.</div></div>`;
+  if (!d.stats.length) return `<div class="card2"><div class="noev">Pas de statistiques pour ce match.<br><small style="opacity:.8">Le fournisseur de données ne les envoie pas pour toutes les compétitions.</small></div></div>`;
   const num = v => parseFloat(String(v).replace(',', '.')) || 0;
   const rows = d.stats.map(s => {
     const h = num(s.home), a = num(s.away), t = h + a;
@@ -588,6 +681,14 @@ function tabStats(d){
       <div class="str"><div class="stv">${esc(s.home)}</div><div class="bar"><i class="bh" style="flex:${hp}"></i><i class="ba" style="flex:${100 - hp}"></i></div><div class="stv r">${esc(s.away)}</div></div></div>`;
   }).join('');
   return `<div class="card2">${rows}</div>`;
+}
+
+function dimTab(k){
+  const d = DETAIL.data;
+  if (!d) return false;
+  if (k === 'compos') return !(d.lineups.home.starters.length || d.lineups.away.starters.length);
+  if (k === 'stats') return !d.stats.length;
+  return false;
 }
 
 function renderDetail(){
@@ -604,15 +705,15 @@ function renderDetail(){
   box.innerHTML = `
     <div class="dh">
       <button class="icon-btn" id="dback" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <div class="ttl"><b>${esc(g.comp)}</b><small>${esc(dayLabel(g.date))}${g.time ? ' · ' + esc(g.time) : ''}</small></div>
+      <div class="ttl"><b>${esc(trComp(g.comp))}</b><small>${esc(dayLabel(g.date))}${g.time ? ' · ' + esc(g.time) : ''}</small></div>
     </div>
     <div class="sb">
-      <div class="sbteam">${crest(g.home || '', g.homeLogo, 'big')}<span>${esc(g.home)}</span></div>
+      <div class="sbteam">${crest(trTeam(g.home) || '', g.homeLogo, 'big')}<span>${esc(trTeam(g.home))}</span></div>
       <div class="sbmid">${sbMid(g)}</div>
-      <div class="sbteam">${crest(g.away || '', g.awayLogo, 'big')}<span>${esc(g.away)}</span></div>
+      <div class="sbteam">${crest(trTeam(g.away) || '', g.awayLogo, 'big')}<span>${esc(trTeam(g.away))}</span></div>
     </div>
     ${meta ? `<div class="meta">${meta}</div>` : ''}
-    <div class="dtabs">${[['resume','Résumé'],['compos','Compos'],['stats','Stats']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''}" data-t="${k}">${l}</button>`).join('')}</div>
+    <div class="dtabs">${[['resume','Résumé'],['compos','Compos'],['stats','Stats']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}`;
 
   $('dback').onclick = backFromDetail;
@@ -621,6 +722,96 @@ function renderDetail(){
   if (r) r.onclick = () => { DETAIL.err = null; renderDetail(); loadDetail(); };
   box.scrollTop = top;
 }
+
+
+/* ---------- panneaux : réglages et compte ---------- */
+const PANEL = { kind:null, msg:false };
+function openPanel(kind){
+  closeDrawer();
+  PANEL.kind = kind; PANEL.msg = false;
+  const box = $('panel');
+  box.hidden = false; box.scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+  history.pushState({ p:1 }, '');
+  renderPanel();
+}
+function hidePanel(){
+  $('panel').hidden = true;
+  PANEL.kind = null;
+  document.body.style.overflow = ($('detail').hidden ? '' : 'hidden');
+}
+function backFromPanel(){ if (history.state && history.state.p) history.back(); else hidePanel(); }
+
+function updateAccIcon(){
+  $('accBtn').innerHTML = PROFILE.name
+    ? `<span class="avatar">${esc(PROFILE.name.trim().charAt(0).toUpperCase())}</span>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c.7-3.6 3.5-5.6 7.2-5.6s6.5 2 7.2 5.6"/></svg>`;
+}
+
+function refreshAfterSetting(){
+  refreshList();
+  if (!$('detail').hidden) renderDetail();
+  renderLeagueList(); renderFilterBar();
+}
+
+function renderPanel(){
+  const box = $('panel');
+  if (box.hidden || !PANEL.kind) return;
+  const top = box.scrollTop;
+  const head = t => `<div class="dh"><button class="icon-btn" id="pback" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>${t}</b></div></div>`;
+  let html;
+  if (PANEL.kind === 'settings'){
+    const seg = [['small','Petit'],['normal','Normal'],['large','Grand']].map(([v,l]) => `<button data-v="${v}" class="${SETTINGS.size===v?'on':''}">${l}</button>`).join('');
+    html = head('Réglages') + `
+      <div class="card2 set" style="margin-top:16px">
+        <div class="row"><div class="rl"><b>Taille du texte</b><small>« Normal » est le réglage recommandé</small></div><div class="seg" id="segSize">${seg}</div></div>
+        <div class="row"><div class="rl"><b>Noms en français</b><small>Pays, sélections et compétitions</small></div><label class="sw"><input type="checkbox" id="setFr" ${SETTINGS.fr ? 'checked' : ''}><i></i></label></div>
+        <div class="row"><div class="rl"><b>Actualisation automatique</b><small>Met à jour les matchs en direct toutes les 90 secondes</small></div><label class="sw"><input type="checkbox" id="setAuto" ${SETTINGS.auto ? 'checked' : ''}><i></i></label></div>
+      </div>
+      <div class="card2 set">
+        <div class="row tap" id="goAccount"><div class="rl"><b>Mon compte</b><small>Facultatif · pour retrouver tes favoris sur tous tes appareils</small></div><span class="chev">›</span></div>
+      </div>
+      <div class="card2 set">
+        <div class="row"><div class="rl"><b>À propos</b><small>Coup d'Envoi · ${VERSION}</small></div></div>
+      </div>`;
+  } else {
+    const n = PROFILE.name.trim();
+    html = head('Mon compte') + `
+      <div class="acc">
+        <div class="avatar big ${n ? 'has' : ''}">${n ? esc(n.charAt(0).toUpperCase()) : '👤'}</div>
+        <h3>${n ? 'Salut ' + esc(n) + ' 👋' : "Tu utilises l'app sans compte"}</h3>
+        <p>Un compte est <b>facultatif</b> : il servira à retrouver tes favoris et tes réglages sur tous tes appareils. Tout le reste fonctionne très bien sans compte.</p>
+        <button class="btn primary" id="accLogin">Se connecter <span class="soon-tag">Bientôt</span></button>
+        <button class="btn" id="accSignup">Créer un compte <span class="soon-tag">Bientôt</span></button>
+        ${PANEL.msg ? `<div class="note">La connexion arrive bientôt. En attendant, tu peux choisir un pseudo ci-dessous : il reste enregistré sur cet appareil.</div>` : ''}
+      </div>
+      <div class="card2 set">
+        <div class="row col"><div class="rl"><b>Ton pseudo</b><small>Enregistré uniquement sur cet appareil</small></div>
+          <div class="nm"><input id="accName" value="${esc(PROFILE.name)}" maxlength="20" placeholder="Ex : Moussa"><button class="btn small" id="accSave">Enregistrer</button></div></div>
+      </div>
+      <div class="card2 set"><div class="row tap" id="goSettings"><div class="rl"><b>Réglages</b><small>Taille du texte, langue, actualisation</small></div><span class="chev">›</span></div></div>`;
+  }
+  box.innerHTML = html;
+  $('pback').onclick = backFromPanel;
+  const on = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
+
+  if (PANEL.kind === 'settings'){
+    box.querySelectorAll('#segSize button').forEach(b => b.onclick = () => { SETTINGS.size = b.dataset.v; saveSettings(); applySize(); renderPanel(); });
+    $('setFr').onchange = e => { SETTINGS.fr = e.target.checked; saveSettings(); refreshAfterSetting(); };
+    $('setAuto').onchange = e => { SETTINGS.auto = e.target.checked; saveSettings(); };
+    on('goAccount', () => { PANEL.kind = 'account'; PANEL.msg = false; renderPanel(); });
+  } else {
+    on('accLogin', () => { PANEL.msg = true; renderPanel(); });
+    on('accSignup', () => { PANEL.msg = true; renderPanel(); });
+    on('accSave', () => { PROFILE.name = $('accName').value.trim(); saveProfile(); updateAccIcon(); renderPanel(); });
+    on('goSettings', () => { PANEL.kind = 'settings'; renderPanel(); });
+  }
+  box.scrollTop = top;
+}
+$('accBtn').onclick = () => openPanel('account');
+$('dSettings').onclick = () => openPanel('settings');
+$('dAccount').onclick = () => openPanel('account');
+updateAccIcon();
 
 renderLeagueList();
 renderDates();
