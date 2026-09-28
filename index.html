@@ -44,7 +44,9 @@ header{
 .crest{
   width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
   font-family:'JetBrains Mono',monospace; font-weight:700; font-size:.6rem; color:#fff;
+  position:relative; overflow:hidden;
 }
+.crest img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#fff; border-radius:50%; padding:2px; }
 .comps{
   display:flex; gap:14px; padding:14px 20px 4px; overflow-x:auto;
   background:var(--pitch-2);
@@ -192,12 +194,13 @@ let activeComp = "PL";
 let loading = false;
 
 const CREST_COLORS = ["#3d1a78","#8a0f22","#0a3a8f","#0b6e4f","#e8792a","#0a1a4e","#6b1f5c","#1a6b6b"];
-function crestFor(name){
+function crestFor(name, logo){
   let hash = 0;
   for(let i=0;i<name.length;i++) hash = (hash*31 + name.charCodeAt(i)) >>> 0;
   const color = CREST_COLORS[hash % CREST_COLORS.length];
   const initials = name.split(' ').filter(w=>w.length>2 || /^[A-Z]/.test(w)).slice(0,2).map(w=>w[0]).join('').toUpperCase().slice(0,2) || name.slice(0,2).toUpperCase();
-  return `<span class="crest" style="background:${color}">${initials}</span>`;
+  const img = logo ? `<img src="${logo}" alt="" loading="lazy" onerror="this.remove()">` : '';
+  return `<span class="crest" style="background:${color}">${initials}${img}</span>`;
 }
 
 async function loadGames(){
@@ -238,8 +241,8 @@ function render(){
     html += `
     <div class="match">
       <div class="teams">
-        <div class="row">${crestFor(g.home)}<span class="name">${g.home}</span><span class="score mono">${g.status==='scheduled'?'—':g.hs}</span></div>
-        <div class="row">${crestFor(g.away)}<span class="name">${g.away}</span><span class="score mono">${g.status==='scheduled'?'—':g.as}</span></div>
+        <div class="row">${crestFor(g.home, g.homeLogo)}<span class="name">${g.home}</span><span class="score mono">${g.status==='scheduled'?'—':g.hs}</span></div>
+        <div class="row">${crestFor(g.away, g.awayLogo)}<span class="name">${g.away}</span><span class="score mono">${g.status==='scheduled'?'—':g.as}</span></div>
       </div>
       <div class="status mono">${statusHtml}</div>
     </div>`;
