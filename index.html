@@ -341,8 +341,9 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 </nav>
 
 <script>
+window.onerror = function(msg, url, line, col, err){ alert('Erreur JS non gérée (diagnostic) :\n' + msg + '\nligne ' + line + '\n\nEnvoie une capture à Claude.'); };
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v15-debug';
+const VERSION = 'v16-debug';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
