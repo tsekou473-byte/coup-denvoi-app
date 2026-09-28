@@ -345,7 +345,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 window.onerror = function(msg, url, line, col, err){ alert('Erreur JS non gérée (diagnostic) :\n' + msg + '\nligne ' + line + '\n\nEnvoie une capture à Claude.'); };
 window.addEventListener('unhandledrejection', e => { alert('Erreur asynchrone non gérée (diagnostic) :\n' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '\n\nEnvoie une capture à Claude.'); });
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v18-debug';
+const VERSION = 'v19-debug';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -1045,8 +1045,11 @@ function openTeam(teamId, leagueId, name, logo){
     }
     PANEL.team = { id: String(teamId), leagueId: String(leagueId), name: name || '', logo: logo || null };
     PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = null; PANEL.player = null;
+    alert('Étape 1 : sur le point d\'appeler openPanel. panel.hidden = ' + $('panel').hidden);
     openPanel('team');
+    alert('Étape 2 : openPanel a fini. panel.hidden = ' + $('panel').hidden + ' | PANEL.kind = ' + PANEL.kind);
     loadSquad();
+    alert('Étape 3 : loadSquad lancé.');
   } catch (e) {
     alert('Diagnostic — erreur en ouvrant l\'équipe :\n' + (e && e.message ? e.message : e) + '\n\nEnvoie une capture de ce message à Claude.');
   }
