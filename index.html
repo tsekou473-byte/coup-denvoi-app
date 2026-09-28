@@ -222,6 +222,38 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .cplist{ padding:14px 10px 30px; max-width:640px; margin:0 auto; }
 .lg{ scroll-margin-top:80px; }
 .dh .ttl small{ display:block; }
+
+/* favoris */
+.match.fav{ box-shadow:inset 3px 0 0 var(--accent); }
+.follow{ margin-top:2px; border:1px solid var(--line); background:rgba(255,255,255,.06); color:#c8cfe0; border-radius:999px; padding:5px 14px; font-size:.9rem; cursor:pointer; font-family:inherit; }
+.follow.on{ background:var(--accent); color:#1b1305; border-color:var(--accent); font-weight:600; }
+.ftitle{ margin:18px 4px 8px; font-family:'Barlow Condensed',sans-serif; font-size:1.25rem; letter-spacing:.05em; text-transform:uppercase; color:var(--accent); font-weight:600; }
+.ftitle:first-child{ margin-top:4px; }
+.chips{ display:flex; flex-wrap:wrap; gap:8px; padding:0 2px 6px; }
+.fchip{ display:inline-flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:5px 6px 5px 6px; }
+.fchip b{ font-weight:500; font-size:1rem; }
+.crest.sm{ width:26px; height:26px; font-size:.65rem; box-shadow:none; }
+.crest.sm img{ padding:3px; }
+.fx{ font-style:normal; color:var(--muted); padding:2px 8px; cursor:pointer; font-size:.95rem; }
+
+/* classements */
+.tbl{ font-size:.95rem; }
+.tr{ display:grid; grid-template-columns:30px 1fr 26px 26px 26px 26px 34px 34px; align-items:center; gap:2px; padding:8px 8px 8px 0; border-top:1px solid var(--line); text-align:center; }
+.tbl > .tr:first-child{ border-top:none; }
+.tr.th{ color:var(--muted); font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; padding-top:11px; padding-bottom:6px; }
+.tr .ps{ font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:1.05rem; padding:7px 0; }
+.tr .tm{ text-align:left; display:flex; align-items:center; gap:8px; min-width:0; }
+.tr .tm b{ font-weight:500; line-height:1.1; overflow-wrap:anywhere; }
+.tr .pt{ font-weight:700; }
+.tr.hl{ background:rgba(255,181,71,.13); }
+.tr.hl .tm b{ font-weight:700; }
+.tr.fv .tm b{ color:var(--accent); }
+.stg{ padding:11px 14px 4px; font-family:'Barlow Condensed',sans-serif; color:var(--accent); letter-spacing:.06em; text-transform:uppercase; font-size:1.05rem; }
+.zleg{ display:flex; flex-wrap:wrap; gap:6px 14px; justify-content:center; padding:0 16px 14px; color:var(--muted); font-size:.82rem; }
+.zleg i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+
+/* connexion */
+.netbar{ background:#3b2a10; color:#ffd9a3; font-size:.86rem; padding:6px 14px; text-align:center; border-top:1px solid #5a4018; }
 </style>
 </head>
 <body>
@@ -247,6 +279,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
   </div>
   <div class="search" id="searchRow" hidden><input id="q" type="search" placeholder="Rechercher une équipe ou une compétition"></div>
   <div class="dates" id="dates"></div>
+  <div class="netbar" id="netbar" hidden></div>
 </header>
 <div class="filterbar" id="filterBar" hidden></div>
 <main id="main"></main>
@@ -287,7 +320,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v8';
+const VERSION = 'v11';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -305,6 +338,36 @@ const saveProfile = () => { try { localStorage.setItem('ce_profile', JSON.string
 const SIZES = { small:'12.5px', normal:'14px', large:'16px' };
 function applySize(){ document.documentElement.style.fontSize = SIZES[SETTINGS.size] || SIZES.normal; }
 applySize();
+
+/* ---------- favoris (enregistrés sur l'appareil) ---------- */
+const FAV = { teams:[], matches:[] };
+try { Object.assign(FAV, JSON.parse(localStorage.getItem('ce_favs') || '{}')); } catch(e) {}
+if (!Array.isArray(FAV.teams)) FAV.teams = [];
+if (!Array.isArray(FAV.matches)) FAV.matches = [];
+const FAVSTATE = { games:null, loading:false, err:null, dirty:true, ts:0, failed:0 };
+const saveFav = () => { FAVSTATE.dirty = true; try { localStorage.setItem('ce_favs', JSON.stringify(FAV)); } catch(e) {} };
+const isFavTeam = id => !!id && FAV.teams.some(t => t.id === String(id));
+const isFavMatch = id => !!id && FAV.matches.some(m => m.id === String(id));
+const isFavGame = g => isFavMatch(g.id) || isFavTeam(g.homeId) || isFavTeam(g.awayId);
+function snap(g){
+  return { id:String(g.id), date:g.date, time:g.time || '', home:g.home, away:g.away, homeLogo:g.homeLogo || null, awayLogo:g.awayLogo || null,
+    hs:g.hs ?? null, as:g.as ?? null, status:g.status, minute:g.minute || null, comp:g.comp || '', country:g.country || '', homeId:g.homeId || '', awayId:g.awayId || '' };
+}
+function toggleFavMatch(g){
+  const id = String(g.id), i = FAV.matches.findIndex(m => m.id === id);
+  if (i >= 0) FAV.matches.splice(i, 1);
+  else { FAV.matches.unshift(snap(g)); if (FAV.matches.length > 60) FAV.matches.length = 60; }
+  saveFav();
+}
+function toggleFavTeam(id, name, logo){
+  id = String(id);
+  const i = FAV.teams.findIndex(t => t.id === id);
+  if (i >= 0) FAV.teams.splice(i, 1);
+  else { if (FAV.teams.length >= 15) return false; FAV.teams.push({ id, name, logo: logo || null }); }
+  saveFav();
+  return true;
+}
+const starSvg = on => `<svg viewBox="0 0 24 24" fill="${on ? '#ffb547' : 'none'}" stroke="${on ? '#ffb547' : 'currentColor'}" stroke-width="1.9" stroke-linejoin="round"><path d="m12 3 2.6 5.6 6 .7-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6-4.4-4.2 6-.7L12 3Z"/></svg>`;
 
 /* ---------- noms en français (sélections, pays, compétitions) ---------- */
 const FR_COUNTRIES = {
@@ -381,18 +444,76 @@ const LEAGUES = [
 ];
 
 /* ---------- données ---------- */
+/* ---------- connexion : copie locale pour le mode hors connexion ---------- */
+const NET = { stale:false, ts:0 };
+const CK = 'ce_c:';
+const CACHE_MAX = 40;
+function ago(ts){
+  const m = Math.round((Date.now() - ts) / 60000);
+  if (m < 1) return "à l'instant";
+  if (m < 60) return `il y a ${m} min`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `il y a ${h} h`;
+  return `il y a ${Math.round(h / 24)} j`;
+}
+function netbar(){
+  const b = $('netbar');
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  if (!offline && !NET.stale){ b.hidden = true; return; }
+  b.textContent = (offline ? 'Hors connexion' : 'Connexion impossible') + ' · données enregistrées' + (NET.ts ? ' ' + ago(NET.ts) : '');
+  b.hidden = false;
+}
+function cacheIndex(){ try { return JSON.parse(localStorage.getItem('ce_cidx') || '{}'); } catch(e) { return {}; } }
+function cacheEvict(n){
+  const idx = cacheIndex();
+  Object.keys(idx).sort((a,b) => idx[a] - idx[b]).slice(0, n).forEach(k => { try { localStorage.removeItem(k); } catch(e) {} delete idx[k]; });
+  try { localStorage.setItem('ce_cidx', JSON.stringify(idx)); } catch(e) {}
+}
+function memLoad(url){
+  try { const v = JSON.parse(localStorage.getItem(CK + url)); return v && v.data ? v : null; } catch(e) { return null; }
+}
+function memSave(url, data){
+  const key = CK + url, ts = Date.now();
+  const put = () => localStorage.setItem(key, JSON.stringify({ ts, data }));
+  try { put(); } catch(e) { cacheEvict(15); try { put(); } catch(e2) { return; } }
+  const idx = cacheIndex();
+  idx[key] = ts;
+  try { localStorage.setItem('ce_cidx', JSON.stringify(idx)); } catch(e) {}
+  const count = Object.keys(idx).length;
+  if (count > CACHE_MAX) cacheEvict(count - CACHE_MAX);
+}
+const cacheCount = () => Object.keys(cacheIndex()).length;
+function clearCache(){
+  Object.keys(cacheIndex()).forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+  try { localStorage.removeItem('ce_cidx'); } catch(e) {}
+}
+// Demande au serveur ; si ça échoue (hors ligne, serveur endormi, quota), on affiche la dernière copie enregistrée.
+async function apiGet(url){
+  let data = {};
+  try {
+    const res = await fetch(url);
+    try { data = await res.json(); } catch(e) {}
+    if (!res.ok || data.error) throw new Error((data.detail || data.error || ('Erreur ' + res.status)).toString());
+  } catch (e) {
+    const c = memLoad(url);
+    if (c){ NET.stale = true; NET.ts = c.ts; netbar(); return { data: c.data, stale: true, ts: c.ts }; }
+    throw e;
+  }
+  memSave(url, data);
+  NET.stale = false; netbar();
+  return { data, stale: false, ts: Date.now() };
+}
+
 async function getDay(iso, force){
   const c = cache[iso];
   if (c && !force && Date.now() - c.ts < 60000) return c.games;
-  const res = await fetch(`${BACKEND}/api/fixtures?from=${iso}&to=${iso}`);
-  let data = {};
-  try { data = await res.json(); } catch(e) {}
-  if (!res.ok || data.error) throw new Error((data.detail || data.error || ('Erreur ' + res.status)).toString());
-  cache[iso] = { games: data.games || [], ts: Date.now() };
+  const { data, stale } = await apiGet(`${BACKEND}/api/fixtures?from=${iso}&to=${iso}`);
+  cache[iso] = { games: data.games || [], ts: stale ? 0 : Date.now() };
   cache[iso].games.forEach(g => { GAME_INDEX[g.id] = g; });
   return cache[iso].games;
 }
 function liveCount(){
+  if (NET.stale) return 0;   // données anciennes : on ne compte pas de faux « en direct »
   const c = cache[TODAY];
   return c ? c.games.filter(g => g.status === 'live').length : 0;
 }
@@ -458,7 +579,7 @@ function priority(g){
 
 function matchRow(g){
   return `
-      <div class="match" data-id="${esc(g.id)}">
+      <div class="match${isFavGame(g) ? ' fav' : ''}" data-id="${esc(g.id)}">
         <div class="tn h">${esc(trTeam(g.home))}</div>${crest(trTeam(g.home) || '', g.homeLogo)}
         ${middle(g)}
         ${crest(trTeam(g.away) || '', g.awayLogo)}<div class="tn a">${esc(trTeam(g.away))}</div>
@@ -502,7 +623,8 @@ async function show(){
   const iso = state.sel === 'live' ? TODAY : state.sel;
   const main = $('main');
   if (!cache[iso] || Date.now() - cache[iso].ts >= 60000){
-    main.innerHTML = `<div class="empty">Chargement des matchs…<small>Le serveur gratuit peut mettre jusqu'à 50 secondes à se réveiller.</small></div>`;
+    main.innerHTML = `<div class="empty">Chargement des matchs…<small id="loadnote"></small></div>`;
+    setTimeout(() => { const n = $('loadnote'); if (n && reqId === my) n.textContent = "Le serveur se réveille, cela peut prendre jusqu'à une minute. Les prochaines fois seront rapides."; }, 4000);
   }
   let games;
   try {
@@ -576,7 +698,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
   const isMatchs = state.page === 'matchs';
   $('dates').hidden = !isMatchs;
   if (isMatchs){ renderDates(); renderFilterBar(); show(); }
-  else { $('filterBar').hidden = true; reqId++; if (state.page === 'explorer') renderExplorer(); else $('main').innerHTML = `<div class="empty">${STUBS[state.page]}</div>`; }
+  else { $('filterBar').hidden = true; reqId++; if (state.page === 'explorer') renderExplorer(); else if (state.page === 'favoris') showFavoris(); else $('main').innerHTML = `<div class="empty">${STUBS[state.page]}</div>`; }
 });
 
 /* rafraîchissement automatique quand des matchs sont en direct */
@@ -604,7 +726,7 @@ const minOf = t => { const m = String(t||'').match(/(\d+)(?:\s*\+\s*(\d+))?/); r
 function openMatch(id){
   const g = GAME_INDEX[id];
   if (!g) return;
-  DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.data = null; DETAIL.err = null;
+  DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.data = null; DETAIL.err = null; DETAIL.standErr = null; DETAIL.standLoading = false;
   const box = $('detail');
   box.hidden = false; box.scrollTop = 0;
   document.body.style.overflow = 'hidden';
@@ -622,6 +744,7 @@ function hideDetail(){
   document.body.style.overflow = ($('panel').hidden ? '' : 'hidden');
   clearInterval(DETAIL.timer);
   DETAIL.id = null;
+  if (state.page === 'favoris') showFavoris();
 }
 function backFromDetail(){ if (history.state && history.state.d) history.back(); else hideDetail(); }
 window.addEventListener('popstate', () => { if (!$('detail').hidden) hideDetail(); else if (!$('panel').hidden) hidePanel(); });
@@ -635,11 +758,8 @@ async function loadDetail(silent){
   if (!id) return;
   const g = GAME_INDEX[id];
   try {
-    const res = await fetch(`${BACKEND}/api/match?id=${encodeURIComponent(id)}&date=${encodeURIComponent(g.date)}`);
-    let data = {};
-    try { data = await res.json(); } catch(e) {}
-    if (!res.ok || data.error) throw new Error((data.detail || data.error || ('Erreur ' + res.status)).toString());
-    if (DETAIL.id !== id) return;
+    const { data, stale } = await apiGet(`${BACKEND}/api/match?id=${encodeURIComponent(id)}&date=${encodeURIComponent(g.date)}`);
+    if (DETAIL.id !== id || (stale && silent)) return;
     DETAIL.data = data; DETAIL.err = null;
     Object.assign(GAME_INDEX[id], { status:data.status, minute:data.minute, hs:data.hs, as:data.as });
   } catch (e) {
@@ -791,12 +911,106 @@ function tabStats(d){
   return `<div class="card2">${rows}</div>`;
 }
 
+
+/* ---------- classements ---------- */
+const STAND = {};   // league_id -> { rows, note, ts }
+async function getStandings(id, force){
+  const c = STAND[id];
+  if (c && !force && Date.now() - c.ts < 5 * 60 * 1000) return c;
+  const { data, stale } = await apiGet(`${BACKEND}/api/standings?league_id=${encodeURIComponent(id)}`);
+  STAND[id] = { rows: data.rows || [], note: data.note || '', ts: stale ? 0 : Date.now() };
+  return STAND[id];
+}
+const ZONES = {
+  cl:{ c:'#4da3ff', l:'Ligue des champions' }, el:{ c:'#ff9f43', l:'Ligue Europa' }, ecl:{ c:'#2ec4b6', l:'Ligue Europa Conférence' },
+  rel:{ c:'#ff5a5f', l:'Relégation' }, up:{ c:'#b28dff', l:'Promotion / barrages' }, other:{ c:'#8f9ab3', l:'Autre' }
+};
+function zoneKey(z){
+  z = String(z || '');
+  if (!z) return '';
+  if (/champions league/i.test(z)) return 'cl';
+  if (/europa league/i.test(z)) return 'el';
+  if (/conference/i.test(z)) return 'ecl';
+  if (/relegation/i.test(z)) return 'rel';
+  if (/promotion|play-?off/i.test(z)) return 'up';
+  return 'other';
+}
+function zoneLegend(rows){
+  const keys = [...new Set(rows.map(r => zoneKey(r.zone)).filter(Boolean))];
+  return keys.length ? `<div class="zleg">${keys.map(k => `<span><i style="background:${ZONES[k].c}"></i>${ZONES[k].l}</span>`).join('')}</div>` : '';
+}
+function standingsHtml(rows, opt = {}){
+  const ids = (opt.ids || []).filter(Boolean).map(String);
+  const names = (opt.names || []).filter(Boolean).map(norm);
+  const groups = {};
+  rows.forEach(r => { (groups[r.stage || ''] = groups[r.stage || ''] || []).push(r); });
+  const keys = Object.keys(groups).sort();
+  const multi = keys.length > 1;
+  const th = `<div class="tr th"><span>#</span><span class="tm">Équipe</span><span>J</span><span>V</span><span>N</span><span>D</span><span>+/-</span><span>Pts</span></div>`;
+  return keys.map(k => {
+    const list = groups[k].slice().sort((a,b) => (a.pos ?? 999) - (b.pos ?? 999));
+    const body = list.map(r => {
+      const hl = (r.teamId && ids.includes(String(r.teamId))) || names.includes(norm(r.team));
+      const fav = opt.favs && isFavTeam(r.teamId);
+      const zk = zoneKey(r.zone);
+      const diff = (r.gf != null && r.ga != null) ? r.gf - r.ga : null;
+      return `<div class="tr${hl ? ' hl' : ''}${fav ? ' fv' : ''}"><span class="ps" style="box-shadow:inset 3px 0 0 ${zk ? ZONES[zk].c : 'transparent'}">${r.pos ?? ''}</span><span class="tm">${crest(trTeam(r.team) || '', r.badge, 'sm')}<b>${esc(trTeam(r.team))}</b></span><span>${r.played ?? ''}</span><span>${r.w ?? ''}</span><span>${r.d ?? ''}</span><span>${r.l ?? ''}</span><span>${diff == null ? '' : (diff > 0 ? '+' + diff : diff)}</span><span class="pt">${r.pts ?? ''}</span></div>`;
+    }).join('');
+    const title = multi ? `<div class="stg">${esc(String(k).replace(/^Group /, 'Groupe '))}</div>` : '';
+    return title + `<div class="tbl">${th}${body}</div>`;
+  }).join('');
+}
+const NO_TABLE = `<div class="noev">Pas de classement pour cette compétition.<br><small style="opacity:.8">Les coupes et les phases à élimination directe n'en ont pas, ou le fournisseur de données ne l'envoie pas.</small></div>`;
+
+// --- dans la page d'un match
+function tabTable(d){
+  if (!d.leagueId) return `<div class="card2">${NO_TABLE}</div>`;
+  if (DETAIL.standErr) return `<div class="card2"><div class="noev">Impossible de charger le classement.<br><small style="opacity:.8">${esc(DETAIL.standErr).slice(0,200)}</small><br><button class="retry" id="sretry">Réessayer</button></div></div>`;
+  const S = STAND[d.leagueId];
+  if (!S){ loadDetailStand(d.leagueId); return `<div class="card2"><div class="noev">Chargement du classement…</div></div>`; }
+  if (!S.rows.length) return `<div class="card2">${NO_TABLE}</div>`;
+  return `<div class="card2">${standingsHtml(S.rows, { ids:[d.homeId, d.awayId], names:[d.home, d.away], favs:true })}</div>${zoneLegend(S.rows)}`;
+}
+function loadDetailStand(id){
+  if (DETAIL.standLoading) return;
+  DETAIL.standLoading = true;
+  getStandings(id).catch(e => { DETAIL.standErr = e.message; }).finally(() => {
+    DETAIL.standLoading = false;
+    if (DETAIL.id && DETAIL.tab === 'table') renderDetail();
+  });
+}
+
+// --- dans la page d'une compétition
+function panelTable(c){
+  if (PANEL.standErr) return `<div class="empty">Impossible de charger le classement.<small>${esc(PANEL.standErr).slice(0,200)}</small><button class="retry" id="sretry">Réessayer</button></div>`;
+  const S = STAND[c.id];
+  if (!S){ loadPanelStand(c.id); return `<div class="empty">Chargement du classement…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`; }
+  if (!S.rows.length) return `<div class="card2" style="margin:0 0 14px">${NO_TABLE}</div>`;
+  return `<div class="card2" style="margin:0 0 14px">${standingsHtml(S.rows, { favs:true })}</div>${zoneLegend(S.rows)}`;
+}
+function loadPanelStand(id){
+  if (PANEL.standLoading) return;
+  PANEL.standLoading = true;
+  getStandings(id).catch(e => { PANEL.standErr = e.message; }).finally(() => {
+    PANEL.standLoading = false;
+    if (PANEL.kind === 'competition' && PANEL.comp && PANEL.comp.id === id) renderPanel();
+  });
+}
+
 function dimTab(k){
   const d = DETAIL.data;
   if (!d) return false;
   if (k === 'compos') return !(d.lineups.home.starters.length || d.lineups.away.starters.length);
   if (k === 'stats') return !d.stats.length;
+  if (k === 'table') { const S = d.leagueId && STAND[d.leagueId]; return !d.leagueId || !!(S && !S.rows.length); }
   return false;
+}
+
+function followBtn(g, side){
+  const id = side === 'home' ? g.homeId : g.awayId;
+  if (!id) return '';
+  const on = isFavTeam(id);
+  return `<button class="follow ${on ? 'on' : ''}" data-side="${side}">${on ? '★ Suivie' : '☆ Suivre'}</button>`;
 }
 
 function renderDetail(){
@@ -808,26 +1022,36 @@ function renderDetail(){
   let body;
   if (DETAIL.err && !d) body = `<div class="empty">Impossible de charger le détail.<small>${esc(DETAIL.err).slice(0,200)}</small><button class="retry" id="dretry">Réessayer</button></div>`;
   else if (!d) body = `<div class="empty">Chargement du match…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
-  else body = DETAIL.tab === 'resume' ? tabResume(d) : DETAIL.tab === 'compos' ? tabCompos(d) : tabStats(d);
+  else body = DETAIL.tab === 'resume' ? tabResume(d) : DETAIL.tab === 'compos' ? tabCompos(d) : DETAIL.tab === 'stats' ? tabStats(d) : tabTable(d);
 
   box.innerHTML = `
     <div class="dh">
       <button class="icon-btn" id="dback" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="ttl"><b>${esc(trComp(g.comp))}</b><small>${esc(dayLabel(g.date))}${g.time ? ' · ' + esc(g.time) : ''}</small></div>
+      <button class="icon-btn" id="dfav" aria-label="Suivre ce match">${starSvg(isFavMatch(g.id))}</button>
     </div>
     <div class="sb">
-      <div class="sbteam">${crest(trTeam(g.home) || '', g.homeLogo, 'big')}<span>${esc(trTeam(g.home))}</span></div>
+      <div class="sbteam">${crest(trTeam(g.home) || '', g.homeLogo, 'big')}<span>${esc(trTeam(g.home))}</span>${followBtn(g, 'home')}</div>
       <div class="sbmid">${sbMid(g)}</div>
-      <div class="sbteam">${crest(trTeam(g.away) || '', g.awayLogo, 'big')}<span>${esc(trTeam(g.away))}</span></div>
+      <div class="sbteam">${crest(trTeam(g.away) || '', g.awayLogo, 'big')}<span>${esc(trTeam(g.away))}</span>${followBtn(g, 'away')}</div>
     </div>
     ${meta ? `<div class="meta">${meta}</div>` : ''}
-    <div class="dtabs">${[['resume','Résumé'],['compos','Compos'],['stats','Stats']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
+    <div class="dtabs">${[['resume','Résumé'],['compos','Compos'],['stats','Stats'],['table','Classement']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}`;
 
   $('dback').onclick = backFromDetail;
+  $('dfav').onclick = () => { toggleFavMatch(g); renderDetail(); refreshList(); };
+  box.querySelectorAll('.follow').forEach(b => b.onclick = () => {
+    const home = b.dataset.side === 'home';
+    const ok = toggleFavTeam(home ? g.homeId : g.awayId, home ? g.home : g.away, home ? g.homeLogo : g.awayLogo);
+    if (!ok) alert('Tu peux suivre 15 équipes au maximum.');
+    renderDetail(); refreshList();
+  });
   box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { DETAIL.tab = b.dataset.t; renderDetail(); });
   const r = $('dretry');
   if (r) r.onclick = () => { DETAIL.err = null; renderDetail(); loadDetail(); };
+  const sr = $('sretry');
+  if (sr) sr.onclick = () => { DETAIL.standErr = null; renderDetail(); };
   box.scrollTop = top;
 }
 
@@ -858,6 +1082,7 @@ function updateAccIcon(){
 
 function refreshAfterSetting(){
   refreshList();
+  if (state.page === 'favoris') renderFavoris();
   if (state.page === 'explorer' && typeof renderExplorerList === 'function' && COMP.list) renderExplorerList();
   if (!$('panel').hidden) renderPanel();
   if (!$('detail').hidden) renderDetail();
@@ -879,6 +1104,9 @@ function renderPanel(){
         <div class="row"><div class="rl"><b>Actualisation automatique</b><small>Met à jour les matchs en direct toutes les 90 secondes</small></div><label class="sw"><input type="checkbox" id="setAuto" ${SETTINGS.auto ? 'checked' : ''}><i></i></label></div>
       </div>
       <div class="card2 set">
+        <div class="row"><div class="rl"><b>Données enregistrées</b><small>Copie pour le mode hors connexion · ${cacheCount()} élément${cacheCount() > 1 ? 's' : ''}</small></div><button class="btn small" id="clearCache">Vider</button></div>
+      </div>
+      <div class="card2 set">
         <div class="row tap" id="goAccount"><div class="rl"><b>Mon compte</b><small>Facultatif · pour retrouver tes favoris sur tous tes appareils</small></div><span class="chev">›</span></div>
       </div>
       <div class="card2 set">
@@ -886,16 +1114,18 @@ function renderPanel(){
       </div>`;
   } else if (PANEL.kind === 'competition') {
     const c = PANEL.comp;
-    let body;
-    if (PANEL.err) body = `<div class="empty">Impossible de charger les matchs.<small>${esc(PANEL.err).slice(0,200)}</small><button class="retry" id="cretry2">Réessayer</button></div>`;
-    else if (!PANEL.games) body = `<div class="empty">Chargement des matchs…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
-    else if (!PANEL.games.length) body = `<div class="empty">Aucun match récent ou à venir pour cette compétition.<small>Recherche du ${esc(dayLabel(addDays(TODAY, -14)))} au ${esc(dayLabel(addDays(TODAY, 30)))}. Elle est peut-être en pause ou hors saison.</small></div>`;
+    let mbody;
+    if (PANEL.err) mbody = `<div class="empty">Impossible de charger les matchs.<small>${esc(PANEL.err).slice(0,200)}</small><button class="retry" id="cretry2">Réessayer</button></div>`;
+    else if (!PANEL.games) mbody = `<div class="empty">Chargement des matchs…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
+    else if (!PANEL.games.length) mbody = `<div class="empty">Aucun match récent ou à venir pour cette compétition.<small>Recherche du ${esc(dayLabel(addDays(TODAY, -14)))} au ${esc(dayLabel(addDays(TODAY, 30)))}. Elle est peut-être en pause ou hors saison.</small></div>`;
     else {
       const byDate = {};
       PANEL.games.forEach(g => { (byDate[g.date] = byDate[g.date] || []).push(g); });
-      body = Object.keys(byDate).sort().map(d => `<section class="group" data-d="${d}"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${byDate[d].sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('')}</section>`).join('');
+      mbody = Object.keys(byDate).sort().map(d => `<section class="group" data-d="${d}"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${byDate[d].sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('')}</section>`).join('');
     }
-    html = head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + `<div class="cplist">${body}</div>`;
+    const ctabs = `<div class="dtabs">${[['matches','Matchs'],['table','Classement']].map(([k,l]) => `<button class="dtab ${PANEL.ctab===k?'active':''}" data-ct="${k}">${l}</button>`).join('')}</div>`;
+    const body = PANEL.ctab === 'table' ? panelTable(c) : mbody;
+    html = head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + ctabs + `<div class="cplist">${body}</div>`;
   } else {
     const n = PROFILE.name.trim();
     html = head('Mon compte') + `
@@ -922,8 +1152,11 @@ function renderPanel(){
     $('setFr').onchange = e => { SETTINGS.fr = e.target.checked; saveSettings(); refreshAfterSetting(); };
     $('setAuto').onchange = e => { SETTINGS.auto = e.target.checked; saveSettings(); };
     on('goAccount', () => { PANEL.kind = 'account'; PANEL.msg = false; renderPanel(); });
+    on('clearCache', () => { clearCache(); renderPanel(); });
   } else if (PANEL.kind === 'competition') {
     on('cretry2', () => { PANEL.err = null; PANEL.games = null; renderPanel(); loadCompetitionGames(PANEL.comp.id); });
+    on('sretry', () => { PANEL.standErr = null; renderPanel(); });
+    box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { PANEL.ctab = b.dataset.ct; box.scrollTop = 0; renderPanel(); });
   } else {
     on('accLogin', () => { PANEL.msg = true; renderPanel(); });
     on('accSignup', () => { PANEL.msg = true; renderPanel(); });
@@ -932,7 +1165,7 @@ function renderPanel(){
   }
   box.scrollTop = top;
   // page d'une compétition : se placer sur le prochain jour de match, une seule fois
-  if (PANEL.kind === 'competition' && PANEL.games && PANEL.games.length && !PANEL.scrolled){
+  if (PANEL.kind === 'competition' && PANEL.ctab === 'matches' && PANEL.games && PANEL.games.length && !PANEL.scrolled){
     PANEL.scrolled = true;
     const secs = [...box.querySelectorAll('section.group')];
     const target = secs.find(sec => sec.dataset.d >= TODAY) || secs[secs.length - 1];
@@ -953,10 +1186,7 @@ async function loadCompetitions(){
   if (COMP.loading) return;
   COMP.loading = true; COMP.err = null;
   try {
-    const res = await fetch(`${BACKEND}/api/competitions`);
-    let data = {};
-    try { data = await res.json(); } catch(e) {}
-    if (!res.ok || data.error) throw new Error((data.detail || data.error || ('Erreur ' + res.status)).toString());
+    const { data, stale } = await apiGet(`${BACKEND}/api/competitions`);
     COMP.list = data.competitions || [];
   } catch (e) { COMP.err = e.message; }
   COMP.loading = false;
@@ -1006,16 +1236,13 @@ function renderExplorerList(){
 function openCompetition(id){
   const c = (COMP.list || []).find(x => x.id === id);
   if (!c) return;
-  PANEL.comp = c; PANEL.games = null; PANEL.err = null; PANEL.scrolled = false;
+  PANEL.comp = c; PANEL.games = null; PANEL.err = null; PANEL.scrolled = false; PANEL.ctab = 'matches'; PANEL.standErr = null; PANEL.standLoading = false;
   openPanel('competition');
   loadCompetitionGames(id);
 }
 async function loadCompetitionGames(id){
   try {
-    const res = await fetch(`${BACKEND}/api/fixtures?league_id=${encodeURIComponent(id)}&from=${addDays(TODAY, -14)}&to=${addDays(TODAY, 30)}`);
-    let data = {};
-    try { data = await res.json(); } catch(e) {}
-    if (!res.ok || data.error) throw new Error((data.detail || data.error || ('Erreur ' + res.status)).toString());
+    const { data, stale } = await apiGet(`${BACKEND}/api/fixtures?league_id=${encodeURIComponent(id)}&from=${addDays(TODAY, -14)}&to=${addDays(TODAY, 30)}`);
     if (PANEL.kind !== 'competition' || !PANEL.comp || PANEL.comp.id !== id) return;
     PANEL.games = data.games || [];
     PANEL.games.forEach(g => { GAME_INDEX[g.id] = g; });
@@ -1033,6 +1260,111 @@ $('dExplore').onclick = () => {
   if (btn) btn.click();
 };
 
+
+/* ---------- page Favoris ---------- */
+async function loadFavGames(){
+  if (FAVSTATE.loading) return;
+  FAVSTATE.loading = true; FAVSTATE.err = null; FAVSTATE.dirty = false; FAVSTATE.failed = 0;
+  renderFavoris();
+  const from = addDays(TODAY, -7), to = addDays(TODAY, 14);
+  const map = {};
+  FAV.matches.forEach(m => { map[m.id] = { ...m }; if (!GAME_INDEX[m.id]) GAME_INDEX[m.id] = map[m.id]; });
+
+  const teams = FAV.teams.slice(0, 15);
+  const results = await Promise.allSettled(teams.map(async t => {
+    const { data, stale } = await apiGet(`${BACKEND}/api/fixtures?team_id=${encodeURIComponent(t.id)}&from=${from}&to=${to}`);
+    return data.games || [];
+  }));
+  let firstErr = '';
+  results.forEach(r => {
+    if (r.status === 'fulfilled') r.value.forEach(g => { map[g.id] = g; GAME_INDEX[g.id] = g; });
+    else { FAVSTATE.failed++; firstErr = firstErr || (r.reason && r.reason.message) || 'Erreur'; }
+  });
+
+  // mettre à jour le score et le statut des matchs suivis
+  const days = [...new Set(FAV.matches.map(m => m.date))].filter(d => d >= from && d <= to).slice(0, 4);
+  await Promise.allSettled(days.map(async d => {
+    const list = await getDay(d);
+    list.forEach(g => {
+      if (!isFavMatch(g.id)) return;
+      map[g.id] = g; GAME_INDEX[g.id] = g;
+      const i = FAV.matches.findIndex(m => m.id === String(g.id));
+      if (i >= 0) FAV.matches[i] = snap(g);
+    });
+  }));
+  try { localStorage.setItem('ce_favs', JSON.stringify(FAV)); } catch(e) {}
+
+  FAVSTATE.games = Object.values(map);
+  FAVSTATE.err = (teams.length && FAVSTATE.failed === teams.length && !FAV.matches.length) ? firstErr : null;
+  FAVSTATE.ts = Date.now(); FAVSTATE.loading = false;
+  renderFavoris();
+}
+
+function showFavoris(){
+  if (state.page !== 'favoris') return;
+  if (!FAV.teams.length && !FAV.matches.length){ FAVSTATE.games = []; FAVSTATE.dirty = false; renderFavoris(); return; }
+  if (FAVSTATE.dirty || !FAVSTATE.games || Date.now() - FAVSTATE.ts > 60000) loadFavGames(); else renderFavoris();
+}
+
+function renderFavoris(){
+  if (state.page !== 'favoris') return;
+  const main = $('main');
+  if (!FAV.teams.length && !FAV.matches.length){
+    main.innerHTML = `<div class="empty">Tu n'as pas encore de favoris.<small>Ouvre un match, puis touche ☆ pour le suivre, ou « ☆ Suivre » sous une équipe pour voir ici ses prochains matchs et ses résultats.</small></div>`;
+    return;
+  }
+  let html = '';
+  if (FAV.teams.length){
+    html += `<h3 class="ftitle">Mes équipes</h3><div class="chips">` + FAV.teams.map(t =>
+      `<span class="fchip">${crest(trTeam(t.name) || '', t.logo, 'sm')}<b>${esc(trTeam(t.name))}</b><i class="fx" data-rm="${esc(t.id)}" aria-label="Retirer">✕</i></span>`).join('') + `</div>`;
+  }
+  if (FAVSTATE.loading || !FAVSTATE.games){
+    html += `<div class="empty">Chargement de tes favoris…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
+  } else if (FAVSTATE.err){
+    html += `<div class="empty">Impossible de charger tes favoris.<small>${esc(FAVSTATE.err).slice(0,200)}</small><button class="retry" id="fretry">Réessayer</button></div>`;
+  } else {
+    const key = g => (g.date || '') + ' ' + (g.time || '');
+    const up = FAVSTATE.games.filter(g => g.status !== 'final').sort((a,b) => key(a).localeCompare(key(b)));
+    const past = FAVSTATE.games.filter(g => g.status === 'final').sort((a,b) => key(b).localeCompare(key(a)));
+    const block = (title, list, desc) => {
+      if (!list.length) return '';
+      const by = {};
+      list.forEach(g => (by[g.date] = by[g.date] || []).push(g));
+      const dates = Object.keys(by).sort();
+      if (desc) dates.reverse();
+      return `<h3 class="ftitle">${title}</h3>` + dates.map(d => `<section class="group"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${
+        by[d].sort((a,b) => desc ? (b.time || '').localeCompare(a.time || '') : (a.time || '').localeCompare(b.time || '')).map(matchRow).join('')}</section>`).join('');
+    };
+    html += block('À venir et en direct', up, false) + block('Résultats récents', past, true);
+    if (!up.length && !past.length) html += `<div class="empty">Aucun match trouvé pour tes favoris entre le ${esc(dayLabel(addDays(TODAY, -7)))} et le ${esc(dayLabel(addDays(TODAY, 14)))}.</div>`;
+    if (FAVSTATE.failed) html += `<div class="avail">${FAVSTATE.failed} équipe${FAVSTATE.failed > 1 ? 's' : ''} n'${FAVSTATE.failed > 1 ? 'ont' : 'a'} pas pu être chargée${FAVSTATE.failed > 1 ? 's' : ''}. Rouvre la page pour réessayer.</div>`;
+  }
+  main.innerHTML = html + `<div class="ver">Coup d'Envoi · ${VERSION}</div>`;
+  const r = $('fretry');
+  if (r) r.onclick = () => { FAVSTATE.dirty = true; showFavoris(); };
+}
+$('main').addEventListener('click', e => {
+  const x = e.target.closest('[data-rm]');
+  if (!x) return;
+  toggleFavTeam(x.dataset.rm);
+  FAVSTATE.dirty = false;
+  if (FAVSTATE.games) FAVSTATE.games = FAVSTATE.games.filter(isFavGame);
+  renderFavoris();
+});
+
+
+/* ---------- démarrage : réveiller le serveur, suivre la connexion, hors-ligne ---------- */
+try { fetch(BACKEND + '/health').catch(() => {}); } catch(e) {}   // réveille le serveur pendant que tu regardes l'écran
+window.addEventListener('offline', () => netbar());
+window.addEventListener('online', () => {
+  NET.stale = false; netbar();
+  if (state.page === 'matchs'){ delete cache[state.sel === 'live' ? TODAY : state.sel]; show(); }
+  else if (state.page === 'favoris'){ FAVSTATE.dirty = true; showFavoris(); }
+});
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator){
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+netbar();
 renderLeagueList();
 renderDates();
 show();
