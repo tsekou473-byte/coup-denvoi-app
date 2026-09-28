@@ -92,6 +92,62 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .nav-item span{ font-size:.8rem; }
 .nav-item.active{ color:var(--accent); }
 .nav-item.active::before{ content:''; position:absolute; top:0; width:30px; height:3px; background:var(--accent); border-radius:0 0 4px 4px; }
+
+/* détail d'un match */
+.match{ cursor:pointer; }
+.match:active{ background:rgba(255,255,255,.04); }
+.detail{ position:fixed; inset:0; z-index:40; background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:50px; animation:slideIn .22s ease; }
+@keyframes slideIn{ from{ transform:translateX(28px); opacity:0 } to{ transform:none; opacity:1 } }
+.dh{ position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:4px; padding:calc(8px + env(safe-area-inset-top,0px)) 10px 8px 6px; background:linear-gradient(180deg,#1b2340,#131a2e); border-bottom:1px solid var(--line); }
+.dh .ttl{ flex:1; min-width:0; }
+.dh .ttl b{ display:block; font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dh .ttl small{ color:var(--muted); font-size:.9rem; }
+.sb{ display:grid; grid-template-columns:1fr auto 1fr; gap:6px; align-items:start; padding:22px 12px 8px; max-width:640px; margin:0 auto; }
+.sbteam{ display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; font-size:1.15rem; font-weight:500; line-height:1.15; }
+.crest.big{ width:68px; height:68px; font-size:1.1rem; }
+.sbmid{ text-align:center; padding-top:8px; min-width:108px; }
+.sbmid .score{ font-size:2.7rem; padding:6px 16px; }
+.sbmid .score.muted{ font-size:2.4rem; }
+.sbmid .sub{ margin-top:9px; }
+.meta{ text-align:center; color:var(--muted); font-size:.92rem; padding:6px 18px 14px; line-height:1.5; }
+.dtabs{ display:flex; gap:8px; padding:4px 12px 14px; max-width:640px; margin:0 auto; }
+.dtab{ flex:1; border:none; background:rgba(255,255,255,.06); padding:9px 0; border-radius:999px; font-family:'Barlow Condensed',sans-serif; font-size:1.08rem; letter-spacing:.05em; text-transform:uppercase; color:#b8c1d9; cursor:pointer; }
+.dtab.active{ background:var(--accent); color:#1b1305; font-weight:600; }
+.card2{ background:var(--card); border:1px solid var(--line); border-radius:18px; margin:0 10px 14px; overflow:hidden; max-width:620px; }
+@media (min-width:660px){ .card2{ margin-left:auto; margin-right:auto; } }
+.noev{ text-align:center; color:var(--muted); padding:34px 18px; font-size:1.05rem; }
+.ev{ display:grid; grid-template-columns:1fr 60px 1fr; align-items:center; gap:6px; padding:11px 12px; border-top:1px solid var(--line); }
+.ev:first-child{ border-top:none; }
+.ev .min{ text-align:center; font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; color:#c8cfe0; background:rgba(255,255,255,.07); border-radius:999px; padding:2px 0; }
+.ev .l{ display:flex; justify-content:flex-end; align-items:center; gap:8px; text-align:right; }
+.ev .r{ display:flex; justify-content:flex-start; align-items:center; gap:8px; text-align:left; }
+.ev .ic{ font-size:1.15rem; flex-shrink:0; }
+.ev .tx{ line-height:1.15; min-width:0; }
+.ev .tx b{ font-weight:600; font-size:1.05rem; display:block; overflow-wrap:anywhere; }
+.ev .tx small{ display:block; color:var(--muted); font-size:.85rem; margin-top:1px; }
+.tx b.in{ color:#5ad19a; font-weight:500; }
+.tx small.out{ color:#ff7b7f; font-size:.95rem; }
+.sep{ text-align:center; color:var(--accent); font-family:'Barlow Condensed',sans-serif; letter-spacing:.08em; text-transform:uppercase; padding:9px; background:var(--card-head); border-top:1px solid var(--line); border-bottom:1px solid var(--line); font-size:.98rem; }
+.ev + .sep:last-child{ border-bottom:none; }
+.lu{ display:grid; grid-template-columns:1fr 1fr; }
+.lucol{ padding:14px 12px; min-width:0; }
+.lucol + .lucol{ border-left:1px solid var(--line); }
+.lucol h4{ margin:0 0 10px; font-size:1.15rem; font-weight:600; }
+.lucol h4 small{ color:var(--accent); font-weight:500; margin-left:4px; }
+.lucol h5{ margin:14px 0 6px; font-size:.8rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:500; }
+.pl{ display:flex; gap:8px; padding:4px 0; align-items:baseline; line-height:1.15; }
+.pl b{ width:24px; flex-shrink:0; color:var(--accent); font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:1.05rem; text-align:right; }
+.pl span{ overflow-wrap:anywhere; }
+.st{ padding:11px 14px; border-top:1px solid var(--line); }
+.st:first-child{ border-top:none; }
+.stl{ text-align:center; color:var(--muted); font-size:.9rem; margin-bottom:6px; }
+.str{ display:grid; grid-template-columns:54px 1fr 54px; gap:8px; align-items:center; }
+.stv{ font-weight:600; font-size:1.08rem; }
+.stv.r{ text-align:right; }
+.bar{ display:flex; gap:3px; height:7px; }
+.bar i{ display:block; border-radius:4px; }
+.bh{ background:var(--accent); }
+.ba{ background:#6ea8ff; }
 </style>
 </head>
 <body>
@@ -120,6 +176,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 <div class="filterbar" id="filterBar" hidden></div>
 <main id="main"></main>
 
+<div class="detail" id="detail" hidden></div>
 <div class="scrim" id="scrim"></div>
 <nav class="drawer" id="drawer">
   <h2>Menu</h2>
@@ -151,7 +208,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v4';
+const VERSION = 'v5';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -178,6 +235,7 @@ function dayLabel(iso){
 /* ---------- état ---------- */
 const state = { sel: TODAY, extra: null, q: '', league: 'ALL', page: 'matchs' };
 const cache = {};          // iso -> { games, ts }
+const GAME_INDEX = {};     // id -> match (pour ouvrir le détail)
 let reqId = 0;
 
 const LEAGUES = [
@@ -199,6 +257,7 @@ async function getDay(iso, force){
   try { data = await res.json(); } catch(e) {}
   if (!res.ok || data.error) throw new Error((data.detail || data.error || ('Erreur ' + res.status)).toString());
   cache[iso] = { games: data.games || [], ts: Date.now() };
+  cache[iso].games.forEach(g => { GAME_INDEX[g.id] = g; });
   return cache[iso].games;
 }
 function liveCount(){
@@ -232,12 +291,12 @@ function renderDates(){
 
 /* ---------- rendu des matchs ---------- */
 const CREST_COLORS = ['#5b3a9a','#9a2a3a','#2a5aa8','#2f7d5b','#c8742a','#2a3a7a','#8a3a7a','#2a7a7a'];
-function crest(name, logo){
+function crest(name, logo, cls=''){
   let h = 0;
   for (let i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) >>> 0;
   const initials = name.split(' ').filter(w => w.length>2 || /^[A-Z]/.test(w)).slice(0,2).map(w => w[0]).join('').toUpperCase().slice(0,2) || name.slice(0,2).toUpperCase();
   const img = logo ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
-  return `<span class="crest" style="--c:${CREST_COLORS[h % CREST_COLORS.length]}">${esc(initials)}${img}</span>`;
+  return `<span class="crest ${cls}" style="--c:${CREST_COLORS[h % CREST_COLORS.length]}">${esc(initials)}${img}</span>`;
 }
 
 function middle(g){
@@ -291,7 +350,7 @@ function renderGames(list){
 
   main.innerHTML = ordered.map(gr => {
     const rows = gr.items.sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(g => `
-      <div class="match">
+      <div class="match" data-id="${esc(g.id)}">
         <div class="tn h">${esc(g.home)}</div>${crest(g.home || '', g.homeLogo)}
         ${middle(g)}
         ${crest(g.away || '', g.awayLogo)}<div class="tn a">${esc(g.away)}</div>
@@ -390,6 +449,178 @@ setInterval(async () => {
   if (iso !== TODAY || liveCount() === 0) return;
   try { await getDay(TODAY, true); renderDates(); refreshList(); } catch(e) {}
 }, 90000);
+
+
+/* ---------- détail d'un match ---------- */
+const DETAIL = { id:null, tab:'resume', data:null, err:null, timer:null };
+const STAT_FR = {
+  'shots total':'Tirs','shots on goal':'Tirs cadrés','shots off goal':'Tirs non cadrés','shots blocked':'Tirs bloqués',
+  'shots inside box':'Tirs dans la surface','shots outside box':'Tirs hors de la surface','fouls':'Fautes','corners':'Corners',
+  'offsides':'Hors-jeu','ball possession':'Possession','yellow cards':'Cartons jaunes','red cards':'Cartons rouges',
+  'saves':'Arrêts','passes total':'Passes','passes accurate':'Passes réussies','attacks':'Attaques',
+  'dangerous attacks':'Attaques dangereuses','substitution':'Remplacements','throw in':'Touches','goals kicks':'Six mètres',
+  'penalty':'Penaltys','injuries':'Blessures','free kick':'Coups francs','tackles':'Tacles'
+};
+const statName = t => STAT_FR[String(t||'').trim().toLowerCase()] || String(t||'');
+const minOf = t => { const m = String(t||'').match(/(\d+)(?:\s*\+\s*(\d+))?/); return m ? Number(m[1]) + (m[2] ? Number(m[2])/100 : 0) : 0; };
+
+function openMatch(id){
+  const g = GAME_INDEX[id];
+  if (!g) return;
+  DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.data = null; DETAIL.err = null;
+  const box = $('detail');
+  box.hidden = false; box.scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+  history.pushState({ d:1 }, '');
+  renderDetail();
+  loadDetail();
+  clearInterval(DETAIL.timer);
+  DETAIL.timer = setInterval(() => {
+    const cur = DETAIL.data || GAME_INDEX[DETAIL.id];
+    if (!document.hidden && cur && cur.status === 'live') loadDetail(true);
+  }, 60000);
+}
+function hideDetail(){
+  $('detail').hidden = true;
+  document.body.style.overflow = '';
+  clearInterval(DETAIL.timer);
+  DETAIL.id = null;
+}
+function backFromDetail(){ if (history.state && history.state.d) history.back(); else hideDetail(); }
+window.addEventListener('popstate', () => { if (!$('detail').hidden) hideDetail(); });
+$('main').addEventListener('click', e => {
+  const m = e.target.closest('.match');
+  if (m) openMatch(m.dataset.id);
+});
+
+async function loadDetail(silent){
+  const id = DETAIL.id;
+  if (!id) return;
+  const g = GAME_INDEX[id];
+  try {
+    const res = await fetch(`${BACKEND}/api/match?id=${encodeURIComponent(id)}&date=${encodeURIComponent(g.date)}`);
+    let data = {};
+    try { data = await res.json(); } catch(e) {}
+    if (!res.ok || data.error) throw new Error((data.detail || data.error || ('Erreur ' + res.status)).toString());
+    if (DETAIL.id !== id) return;
+    DETAIL.data = data; DETAIL.err = null;
+    Object.assign(GAME_INDEX[id], { status:data.status, minute:data.minute, hs:data.hs, as:data.as });
+  } catch (e) {
+    if (DETAIL.id !== id || silent) return;
+    DETAIL.err = e.message;
+  }
+  renderDetail();
+}
+
+function sbMid(g){
+  const score = `${g.hs ?? 0} - ${g.as ?? 0}`;
+  if (g.status === 'final') return `<div class="score">${score}</div><div class="sub">Terminé</div>`;
+  if (g.status === 'live'){
+    let m = g.minute ? String(g.minute) : 'LIVE';
+    if (/^\d+$/.test(m)) m += "'";
+    return `<div class="score live">${score}</div><div class="sub live">${esc(m)}</div>`;
+  }
+  if (g.status === 'postponed') return `<div class="score muted strike">${esc(g.time||'')}</div><div class="sub">Reporté</div>`;
+  return `<div class="score muted">${esc(g.time||'--:--')}</div><div class="sub">${esc(dayLabel(g.date))}</div>`;
+}
+
+function evRow(e){
+  const home = e.team === 'home';
+  let ic, tx;
+  if (e.k === 'goal'){
+    ic = '⚽';
+    const extra = [e.assist ? 'Passe : ' + e.assist : '', /pen/i.test(e.info) ? 'Penalty' : (/own/i.test(e.info) ? 'Contre son camp' : '')].filter(Boolean).join(' · ');
+    const line = [e.score, extra].filter(Boolean).join(' · ');
+    tx = `<b>${esc(e.player)}</b>${line ? `<small>${esc(line)}</small>` : ''}`;
+  } else if (e.k === 'card'){
+    ic = e.card === 'red' ? '🟥' : '🟨';
+    tx = `<b>${esc(e.player)}</b>`;
+  } else {
+    ic = '🔁';
+    tx = `<b class="in">▲ ${esc(e.in)}</b><small class="out">▼ ${esc(e.out)}</small>`;
+  }
+  const cell = `<div class="${home?'l':'r'}">${home ? `<div class="tx">${tx}</div><span class="ic">${ic}</span>` : `<span class="ic">${ic}</span><div class="tx">${tx}</div>`}</div>`;
+  return `<div class="ev">${home ? cell : '<div></div>'}<div class="min">${esc(e.time)}'</div>${home ? '<div></div>' : cell}</div>`;
+}
+
+function tabResume(d){
+  const ev = [];
+  d.goals.forEach(x => ev.push({ k:'goal', ...x }));
+  d.cards.forEach(x => ev.push({ k:'card', ...x }));
+  d.subs.forEach(x => ev.push({ k:'sub', ...x }));
+  ev.sort((a,b) => minOf(a.time) - minOf(b.time));
+  const showHT = d.status !== 'scheduled' && d.htHome !== '' && d.htHome != null &&
+    (d.status === 'final' || minOf(d.minute) > 45 || /ht|half/i.test(d.minute || ''));
+  const htRow = `<div class="sep">Mi-temps · ${esc(d.htHome)} - ${esc(d.htAway)}</div>`;
+  let html = '', htDone = false;
+  ev.forEach(e => {
+    if (showHT && !htDone && minOf(e.time) >= 46){ html += htRow; htDone = true; }
+    html += evRow(e);
+  });
+  if (showHT && !htDone) html += htRow;
+  if (!ev.length) html = `<div class="noev">${d.status === 'scheduled' ? "Le match n'a pas encore commencé." : 'Aucun événement enregistré.'}</div>` + html;
+  if (d.status === 'final') html += `<div class="sep">Fin du match · ${esc(d.hs ?? 0)} - ${esc(d.as ?? 0)}</div>`;
+  return `<div class="card2">${html}</div>`;
+}
+
+function tabCompos(d){
+  const L = d.lineups;
+  if (!L.home.starters.length && !L.away.starters.length)
+    return `<div class="card2"><div class="noev">Les compositions ne sont pas encore disponibles.</div></div>`;
+  const pl = p => `<div class="pl"><b>${esc(p.n)}</b><span>${esc(p.name)}</span></div>`;
+  const col = (k, name, system) => {
+    const l = L[k];
+    return `<div class="lucol"><h4>${esc(name)}${system ? ` <small>${esc(system)}</small>` : ''}</h4>
+      ${l.starters.map(pl).join('')}
+      ${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(pl).join('')}` : ''}
+      ${l.coach ? `<h5>Entraîneur</h5><div class="pl"><span>${esc(l.coach)}</span></div>` : ''}</div>`;
+  };
+  return `<div class="card2"><div class="lu">${col('home', d.home, d.homeSystem)}${col('away', d.away, d.awaySystem)}</div></div>`;
+}
+
+function tabStats(d){
+  if (!d.stats.length) return `<div class="card2"><div class="noev">Statistiques non disponibles pour ce match.</div></div>`;
+  const num = v => parseFloat(String(v).replace(',', '.')) || 0;
+  const rows = d.stats.map(s => {
+    const h = num(s.home), a = num(s.away), t = h + a;
+    const hp = t ? (h / t) * 100 : 50;
+    return `<div class="st"><div class="stl">${esc(statName(s.type))}</div>
+      <div class="str"><div class="stv">${esc(s.home)}</div><div class="bar"><i class="bh" style="flex:${hp}"></i><i class="ba" style="flex:${100 - hp}"></i></div><div class="stv r">${esc(s.away)}</div></div></div>`;
+  }).join('');
+  return `<div class="card2">${rows}</div>`;
+}
+
+function renderDetail(){
+  const box = $('detail');
+  if (box.hidden || !DETAIL.id) return;
+  const top = box.scrollTop;
+  const d = DETAIL.data, g = d || GAME_INDEX[DETAIL.id];
+  const meta = [d && d.stadium, d && d.referee ? 'Arbitre : ' + d.referee : '', d && d.round ? 'Journée ' + d.round : ''].filter(Boolean).map(esc).join(' · ');
+  let body;
+  if (DETAIL.err && !d) body = `<div class="empty">Impossible de charger le détail.<small>${esc(DETAIL.err).slice(0,200)}</small><button class="retry" id="dretry">Réessayer</button></div>`;
+  else if (!d) body = `<div class="empty">Chargement du match…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
+  else body = DETAIL.tab === 'resume' ? tabResume(d) : DETAIL.tab === 'compos' ? tabCompos(d) : tabStats(d);
+
+  box.innerHTML = `
+    <div class="dh">
+      <button class="icon-btn" id="dback" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="ttl"><b>${esc(g.comp)}</b><small>${esc(dayLabel(g.date))}${g.time ? ' · ' + esc(g.time) : ''}</small></div>
+    </div>
+    <div class="sb">
+      <div class="sbteam">${crest(g.home || '', g.homeLogo, 'big')}<span>${esc(g.home)}</span></div>
+      <div class="sbmid">${sbMid(g)}</div>
+      <div class="sbteam">${crest(g.away || '', g.awayLogo, 'big')}<span>${esc(g.away)}</span></div>
+    </div>
+    ${meta ? `<div class="meta">${meta}</div>` : ''}
+    <div class="dtabs">${[['resume','Résumé'],['compos','Compos'],['stats','Stats']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''}" data-t="${k}">${l}</button>`).join('')}</div>
+    ${body}`;
+
+  $('dback').onclick = backFromDetail;
+  box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { DETAIL.tab = b.dataset.t; renderDetail(); });
+  const r = $('dretry');
+  if (r) r.onclick = () => { DETAIL.err = null; renderDetail(); loadDetail(); };
+  box.scrollTop = top;
+}
 
 renderLeagueList();
 renderDates();
