@@ -206,6 +206,22 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .cd.r{ background:#ff4d4f; }
 .so{ position:absolute; bottom:-5px; right:-7px; font-size:.8rem; font-style:normal; color:#ff7b7f; font-weight:700; text-shadow:0 0 3px #000; }
 .legend{ text-align:center; color:#7f8aa6; font-size:.82rem; padding:0 16px 10px; }
+
+/* explorer : toutes les compétitions */
+#detail{ z-index:50; }
+.exsearch{ padding:2px 0 12px; }
+.exsearch input{ width:100%; border:1px solid var(--line); border-radius:12px; background:var(--card-head); color:var(--text); padding:11px 14px; font-size:1.05rem; font-family:inherit; outline:none; }
+.excount{ color:var(--muted); font-size:.9rem; padding:0 4px 10px; }
+.crow{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-top:1px solid var(--line); cursor:pointer; }
+.crow:active{ background:rgba(255,255,255,.04); }
+.lg + .crow{ border-top:none; }
+.clogo{ width:30px; height:30px; object-fit:contain; background:#fff; border-radius:8px; padding:3px; flex-shrink:0; display:block; }
+.clogo.ph{ background:var(--card-head); padding:0; }
+.cname{ flex:1; font-size:1.08rem; font-weight:500; min-width:0; overflow-wrap:anywhere; line-height:1.15; }
+.cname small{ display:block; color:var(--muted); font-size:.82rem; font-weight:400; margin-top:2px; }
+.cplist{ padding:14px 10px 30px; max-width:640px; margin:0 auto; }
+.lg{ scroll-margin-top:80px; }
+.dh .ttl small{ display:block; }
 </style>
 </head>
 <body>
@@ -242,6 +258,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
   <h2>Menu</h2>
   <h3>Compétitions</h3>
   <div id="leagueList"></div>
+  <div class="d-item" id="dExplore">Toutes les compétitions <span class="chev">›</span></div>
   <h3>Application</h3>
   <div class="d-item" id="dSettings">Réglages</div>
   <div class="d-item" id="dAccount">Mon compte <span class="pill">Facultatif</span></div>
@@ -270,7 +287,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v7';
+const VERSION = 'v8';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -304,7 +321,7 @@ const FR_COUNTRIES = {
   'Senegal':'Sénégal','Cameroon':'Cameroun','Ivory Coast':"Côte d'Ivoire",'South Africa':'Afrique du Sud','DR Congo':'RD Congo','Cape Verde':'Cap-Vert','Guinea':'Guinée',
   'Zambia':'Zambie','Japan':'Japon','South Korea':'Corée du Sud','China':'Chine','Australia':'Australie','Iraq':'Irak','Saudi Arabia':'Arabie saoudite',
   'United Arab Emirates':'Émirats arabes unis','Uzbekistan':'Ouzbékistan','India':'Inde','New Zealand':'Nouvelle-Zélande','Netherlands Antilles':'Antilles néerlandaises',
-  'Europe':'Europe','eurocups':'Europe','World':'Monde'
+  'Europe':'Europe','eurocups':'Europe','World':'Monde','Africa':'Afrique','Asia':'Asie','South America':'Amérique du Sud','North America':'Amérique du Nord','Oceania':'Océanie','Intl':'International'
 };
 function trCountry(n){ return SETTINGS.fr ? (FR_COUNTRIES[n] || n || '') : (n === 'eurocups' ? 'Europe' : (n || '')); }
 function trTeam(n){
@@ -320,6 +337,11 @@ function trComp(c){
     .replace(/UEFA (Europa )?Conference League/i, 'Ligue Europa Conférence UEFA')
     .replace(/UEFA Europa League/i, 'Ligue Europa UEFA')
     .replace(/UEFA Nations League/i, 'Ligue des nations UEFA')
+    .replace(/Africa(n)? Cup of Nations|AFCON/i, "Coupe d'Afrique des nations")
+    .replace(/CAF Champions League/i, 'Ligue des champions CAF')
+    .replace(/AFC Champions League/i, 'Ligue des champions AFC')
+    .replace(/Copa America/i, 'Copa América')
+    .replace(/Asian Cup/i, "Coupe d'Asie")
     .replace(/World Cup/i, 'Coupe du monde')
     .replace(/Qualification|Qualifiers?/i, 'Éliminatoires')
     .replace(/\bLeague ([A-D])\b/, 'Ligue $1')
@@ -434,6 +456,15 @@ function priority(g){
   return 100;
 }
 
+function matchRow(g){
+  return `
+      <div class="match" data-id="${esc(g.id)}">
+        <div class="tn h">${esc(trTeam(g.home))}</div>${crest(trTeam(g.home) || '', g.homeLogo)}
+        ${middle(g)}
+        ${crest(trTeam(g.away) || '', g.awayLogo)}<div class="tn a">${esc(trTeam(g.away))}</div>
+      </div>`;
+}
+
 function renderGames(list){
   const main = $('main');
   const q = state.q.trim().toLowerCase();
@@ -459,12 +490,7 @@ function renderGames(list){
   const ordered = Object.values(groups).sort((a,b) => a.p - b.p || (a.country||'').localeCompare(b.country||'') || (a.comp||'').localeCompare(b.comp||''));
 
   main.innerHTML = ordered.map(gr => {
-    const rows = gr.items.sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(g => `
-      <div class="match" data-id="${esc(g.id)}">
-        <div class="tn h">${esc(trTeam(g.home))}</div>${crest(trTeam(g.home) || '', g.homeLogo)}
-        ${middle(g)}
-        ${crest(trTeam(g.away) || '', g.awayLogo)}<div class="tn a">${esc(trTeam(g.away))}</div>
-      </div>`).join('');
+    const rows = gr.items.sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('');
     const flag = gr.flag ? `<img src="${esc(gr.flag)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
     return `<section class="group"><div class="lg">${flag}<span class="lgn">${esc(trComp(gr.comp))} <span class="lgc">· ${esc(trCountry(gr.country))}</span></span></div>${rows}</section>`;
   }).join('') + `<div class="ver">Coup d'Envoi · ${VERSION}</div>`;
@@ -525,6 +551,7 @@ $('searchBtn').onclick = () => {
 };
 $('q').oninput = e => { state.q = e.target.value; refreshList(); };
 function refreshList(){
+  if (state.page !== 'matchs') return;
   const iso = state.sel === 'live' ? TODAY : state.sel;
   if (cache[iso]) renderGames(cache[iso].games);
 }
@@ -549,7 +576,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
   const isMatchs = state.page === 'matchs';
   $('dates').hidden = !isMatchs;
   if (isMatchs){ renderDates(); renderFilterBar(); show(); }
-  else { $('filterBar').hidden = true; reqId++; $('main').innerHTML = `<div class="empty">${STUBS[state.page]}</div>`; }
+  else { $('filterBar').hidden = true; reqId++; if (state.page === 'explorer') renderExplorer(); else $('main').innerHTML = `<div class="empty">${STUBS[state.page]}</div>`; }
 });
 
 /* rafraîchissement automatique quand des matchs sont en direct */
@@ -597,7 +624,7 @@ function hideDetail(){
   DETAIL.id = null;
 }
 function backFromDetail(){ if (history.state && history.state.d) history.back(); else hideDetail(); }
-window.addEventListener('popstate', () => { if (!$('panel').hidden) hidePanel(); else if (!$('detail').hidden) hideDetail(); });
+window.addEventListener('popstate', () => { if (!$('detail').hidden) hideDetail(); else if (!$('panel').hidden) hidePanel(); });
 $('main').addEventListener('click', e => {
   const m = e.target.closest('.match');
   if (m) openMatch(m.dataset.id);
@@ -831,6 +858,8 @@ function updateAccIcon(){
 
 function refreshAfterSetting(){
   refreshList();
+  if (state.page === 'explorer' && typeof renderExplorerList === 'function' && COMP.list) renderExplorerList();
+  if (!$('panel').hidden) renderPanel();
   if (!$('detail').hidden) renderDetail();
   renderLeagueList(); renderFilterBar();
 }
@@ -839,7 +868,7 @@ function renderPanel(){
   const box = $('panel');
   if (box.hidden || !PANEL.kind) return;
   const top = box.scrollTop;
-  const head = t => `<div class="dh"><button class="icon-btn" id="pback" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>${t}</b></div></div>`;
+  const head = (t, sub) => `<div class="dh"><button class="icon-btn" id="pback" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div class="ttl"><b>${t}</b>${sub ? `<small>${sub}</small>` : ''}</div></div>`;
   let html;
   if (PANEL.kind === 'settings'){
     const seg = [['small','Petit'],['normal','Normal'],['large','Grand']].map(([v,l]) => `<button data-v="${v}" class="${SETTINGS.size===v?'on':''}">${l}</button>`).join('');
@@ -855,6 +884,18 @@ function renderPanel(){
       <div class="card2 set">
         <div class="row"><div class="rl"><b>À propos</b><small>Coup d'Envoi · ${VERSION}</small></div></div>
       </div>`;
+  } else if (PANEL.kind === 'competition') {
+    const c = PANEL.comp;
+    let body;
+    if (PANEL.err) body = `<div class="empty">Impossible de charger les matchs.<small>${esc(PANEL.err).slice(0,200)}</small><button class="retry" id="cretry2">Réessayer</button></div>`;
+    else if (!PANEL.games) body = `<div class="empty">Chargement des matchs…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
+    else if (!PANEL.games.length) body = `<div class="empty">Aucun match récent ou à venir pour cette compétition.<small>Recherche du ${esc(dayLabel(addDays(TODAY, -14)))} au ${esc(dayLabel(addDays(TODAY, 30)))}. Elle est peut-être en pause ou hors saison.</small></div>`;
+    else {
+      const byDate = {};
+      PANEL.games.forEach(g => { (byDate[g.date] = byDate[g.date] || []).push(g); });
+      body = Object.keys(byDate).sort().map(d => `<section class="group" data-d="${d}"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${byDate[d].sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('')}</section>`).join('');
+    }
+    html = head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + `<div class="cplist">${body}</div>`;
   } else {
     const n = PROFILE.name.trim();
     html = head('Mon compte') + `
@@ -881,6 +922,8 @@ function renderPanel(){
     $('setFr').onchange = e => { SETTINGS.fr = e.target.checked; saveSettings(); refreshAfterSetting(); };
     $('setAuto').onchange = e => { SETTINGS.auto = e.target.checked; saveSettings(); };
     on('goAccount', () => { PANEL.kind = 'account'; PANEL.msg = false; renderPanel(); });
+  } else if (PANEL.kind === 'competition') {
+    on('cretry2', () => { PANEL.err = null; PANEL.games = null; renderPanel(); loadCompetitionGames(PANEL.comp.id); });
   } else {
     on('accLogin', () => { PANEL.msg = true; renderPanel(); });
     on('accSignup', () => { PANEL.msg = true; renderPanel(); });
@@ -888,11 +931,107 @@ function renderPanel(){
     on('goSettings', () => { PANEL.kind = 'settings'; renderPanel(); });
   }
   box.scrollTop = top;
+  // page d'une compétition : se placer sur le prochain jour de match, une seule fois
+  if (PANEL.kind === 'competition' && PANEL.games && PANEL.games.length && !PANEL.scrolled){
+    PANEL.scrolled = true;
+    const secs = [...box.querySelectorAll('section.group')];
+    const target = secs.find(sec => sec.dataset.d >= TODAY) || secs[secs.length - 1];
+    if (target) box.scrollTop = Math.max(0, target.offsetTop - 70);
+  }
 }
 $('accBtn').onclick = () => openPanel('account');
 $('dSettings').onclick = () => openPanel('settings');
 $('dAccount').onclick = () => openPanel('account');
 updateAccIcon();
+
+
+/* ---------- Explorer : toutes les compétitions ---------- */
+const COMP = { list:null, err:null, loading:false, q:'' };
+const EX_PRIORITY = ['eurocups','Europe','World','Africa','England','Spain','Italy','Germany','France','Portugal','Netherlands','Belgium'];
+
+async function loadCompetitions(){
+  if (COMP.loading) return;
+  COMP.loading = true; COMP.err = null;
+  try {
+    const res = await fetch(`${BACKEND}/api/competitions`);
+    let data = {};
+    try { data = await res.json(); } catch(e) {}
+    if (!res.ok || data.error) throw new Error((data.detail || data.error || ('Erreur ' + res.status)).toString());
+    COMP.list = data.competitions || [];
+  } catch (e) { COMP.err = e.message; }
+  COMP.loading = false;
+  if (state.page === 'explorer') renderExplorer();
+}
+
+function renderExplorer(){
+  const main = $('main');
+  if (COMP.err && !COMP.list){
+    main.innerHTML = `<div class="empty">Impossible de charger les compétitions.<small>${esc(COMP.err).slice(0,200)}</small><button class="retry" id="cretry">Réessayer</button></div>`;
+    $('cretry').onclick = () => { COMP.err = null; renderExplorer(); };
+    return;
+  }
+  if (!COMP.list){
+    main.innerHTML = `<div class="empty">Chargement des compétitions…<small>Le serveur gratuit peut mettre un moment à se réveiller.</small></div>`;
+    loadCompetitions();
+    return;
+  }
+  main.innerHTML = `<div class="exsearch"><input id="cq" type="search" placeholder="Rechercher une compétition ou un pays (ex : Afrique)" value="${esc(COMP.q)}"></div><div id="exlist"></div>`;
+  $('cq').oninput = e => { COMP.q = e.target.value; renderExplorerList(); };
+  renderExplorerList();
+}
+
+function renderExplorerList(){
+  const box = $('exlist');
+  if (!box || !COMP.list) return;
+  const q = norm(COMP.q);
+  const items = COMP.list.filter(c => !q || norm(`${c.name} ${trComp(c.name)} ${c.country} ${trCountry(c.country)}`).includes(q));
+  if (!items.length){
+    box.innerHTML = `<div class="empty">Aucune compétition ne correspond à « ${esc(COMP.q)} ».<small>La liste contient toutes les compétitions incluses dans ton abonnement de données (${COMP.list.length} au total).</small></div>`;
+    return;
+  }
+  const groups = {};
+  items.forEach(c => { (groups[c.country] = groups[c.country] || { country:c.country, flag:c.flag, items:[] }).items.push(c); });
+  const rank = k => { const i = EX_PRIORITY.indexOf(k); return i < 0 ? 999 : i; };
+  const ordered = Object.values(groups).sort((a,b) => rank(a.country) - rank(b.country) || trCountry(a.country).localeCompare(trCountry(b.country), 'fr'));
+  box.innerHTML = `<div class="excount">${items.length} compétition${items.length > 1 ? 's' : ''}${q ? '' : (items.length > 1 ? ' disponibles' : ' disponible')}</div>` + ordered.map(g => {
+    const flag = g.flag ? `<img src="${esc(g.flag)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
+    const rows = g.items.sort((a,b) => String(a.name).localeCompare(String(b.name))).map(c => {
+      const logo = c.logo ? `<img class="clogo" src="${esc(c.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.classList.add('ph');this.removeAttribute('src')">` : '<span class="clogo ph"></span>';
+      return `<div class="crow" data-id="${esc(c.id)}">${logo}<div class="cname">${esc(trComp(c.name))}${c.season ? `<small>Saison ${esc(c.season)}</small>` : ''}</div><span class="chev">›</span></div>`;
+    }).join('');
+    return `<section class="group"><div class="lg">${flag}<span class="lgn">${esc(trCountry(g.country))}</span></div>${rows}</section>`;
+  }).join('');
+}
+
+function openCompetition(id){
+  const c = (COMP.list || []).find(x => x.id === id);
+  if (!c) return;
+  PANEL.comp = c; PANEL.games = null; PANEL.err = null; PANEL.scrolled = false;
+  openPanel('competition');
+  loadCompetitionGames(id);
+}
+async function loadCompetitionGames(id){
+  try {
+    const res = await fetch(`${BACKEND}/api/fixtures?league_id=${encodeURIComponent(id)}&from=${addDays(TODAY, -14)}&to=${addDays(TODAY, 30)}`);
+    let data = {};
+    try { data = await res.json(); } catch(e) {}
+    if (!res.ok || data.error) throw new Error((data.detail || data.error || ('Erreur ' + res.status)).toString());
+    if (PANEL.kind !== 'competition' || !PANEL.comp || PANEL.comp.id !== id) return;
+    PANEL.games = data.games || [];
+    PANEL.games.forEach(g => { GAME_INDEX[g.id] = g; });
+  } catch (e) {
+    if (PANEL.kind !== 'competition' || !PANEL.comp || PANEL.comp.id !== id) return;
+    PANEL.err = e.message;
+  }
+  renderPanel();
+}
+$('main').addEventListener('click', e => { const c = e.target.closest('.crow'); if (c) openCompetition(c.dataset.id); });
+$('panel').addEventListener('click', e => { const m = e.target.closest('.match'); if (m) openMatch(m.dataset.id); });
+$('dExplore').onclick = () => {
+  closeDrawer();
+  const btn = [...document.querySelectorAll('.nav-item')].find(b => b.dataset.page === 'explorer');
+  if (btn) btn.click();
+};
 
 renderLeagueList();
 renderDates();
