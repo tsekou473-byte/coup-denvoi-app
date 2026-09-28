@@ -1153,7 +1153,7 @@ function renderDetail(){
   box.querySelectorAll('.sbtap').forEach(el => el.onclick = () => {
     const home = el.dataset.side === 'home';
     const id = home ? g.homeId : g.awayId;
-    if (id && g.leagueId) openTeam(id, g.leagueId, home ? g.home : g.away, home ? g.homeLogo : g.awayLogo);
+    openTeam(id, g.leagueId, home ? g.home : g.away, home ? g.homeLogo : g.awayLogo);
   });
   box.querySelectorAll('.follow').forEach(b => b.onclick = () => {
     const home = b.dataset.side === 'home';
@@ -1392,8 +1392,8 @@ async function loadCompetitionGames(id){
 }
 $('main').addEventListener('click', e => { const c = e.target.closest('.crow'); if (c) openCompetition(c.dataset.id); });
 $('panel').addEventListener('click', e => { const m = e.target.closest('.match'); if (m) openMatch(m.dataset.id); });
-$('panel').addEventListener('click', e => { const el = e.target.closest('.tr[data-tid]'); if (el && el.dataset.tid && el.dataset.lid) openTeam(el.dataset.tid, el.dataset.lid, el.dataset.name, el.dataset.logo || null); });
-$('detail').addEventListener('click', e => { const el = e.target.closest('.tr[data-tid]'); if (el && el.dataset.tid && el.dataset.lid) openTeam(el.dataset.tid, el.dataset.lid, el.dataset.name, el.dataset.logo || null); });
+$('panel').addEventListener('click', e => { const el = e.target.closest('.tr[data-tid]'); if (el) openTeam(el.dataset.tid, el.dataset.lid, el.dataset.name, el.dataset.logo || null); });
+$('detail').addEventListener('click', e => { const el = e.target.closest('.tr[data-tid]'); if (el) openTeam(el.dataset.tid, el.dataset.lid, el.dataset.name, el.dataset.logo || null); });
 $('dExplore').onclick = () => {
   closeDrawer();
   const btn = [...document.querySelectorAll('.nav-item')].find(b => b.dataset.page === 'explorer');
@@ -1485,7 +1485,7 @@ function renderFavoris(){
 }
 $('main').addEventListener('click', e => {
   const tap = e.target.closest('.fchip-tap');
-  if (tap && tap.dataset.lid) { openTeam(tap.dataset.id, tap.dataset.lid, tap.dataset.name, tap.dataset.logo || null); return; }
+  if (tap) { openTeam(tap.dataset.id, tap.dataset.lid, tap.dataset.name, tap.dataset.logo || null); return; }
   const x = e.target.closest('[data-rm]');
   if (!x) return;
   toggleFavTeam(x.dataset.rm);
