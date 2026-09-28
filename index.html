@@ -186,6 +186,26 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .dtab.dim{ opacity:.5; }
 .avail{ text-align:center; color:#66708f; font-size:.82rem; padding:0 22px 6px; line-height:1.4; max-width:620px; margin:0 auto; }
 .chev{ color:var(--muted); font-size:1.4rem; line-height:1; }
+
+/* compositions sur le terrain */
+.pitchwrap{ overflow:hidden; }
+.pl-top{ display:flex; justify-content:space-between; align-items:baseline; padding:11px 14px; background:var(--card-head); font-size:1.05rem; }
+.pl-top b{ font-weight:600; }
+.pl-top span{ color:var(--accent); font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; letter-spacing:.06em; }
+.pitch{ position:relative; display:flex; flex-direction:column; gap:16px; padding:18px 6px 18px; background:linear-gradient(180deg,#14335e,#0f2a4d 50%,#14335e); }
+.prow{ display:flex; justify-content:space-around; align-items:flex-start; position:relative; z-index:1; }
+.half{ position:relative; height:2px; background:rgba(255,255,255,.22); margin:4px 8px; }
+.half::after{ content:''; position:absolute; left:50%; top:50%; width:64px; height:64px; margin:-32px 0 0 -32px; border:2px solid rgba(255,255,255,.22); border-radius:50%; }
+.pp{ width:58px; display:flex; flex-direction:column; align-items:center; }
+.pn{ position:relative; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.1rem; box-shadow:0 2px 6px rgba(0,0,0,.35); }
+.pp.h .pn{ background:var(--accent); color:#1b1305; }
+.pp.a .pn{ background:#6ea8ff; color:#0b1530; }
+.pnm{ margin-top:4px; font-size:.78rem; text-align:center; line-height:1.1; overflow-wrap:anywhere; text-shadow:0 1px 2px rgba(0,0,0,.7); font-weight:500; }
+.cd{ position:absolute; top:-4px; right:-6px; width:9px; height:12px; border-radius:2px; box-shadow:0 0 0 1px rgba(0,0,0,.35); }
+.cd.y{ background:#ffd43b; }
+.cd.r{ background:#ff4d4f; }
+.so{ position:absolute; bottom:-5px; right:-7px; font-size:.8rem; font-style:normal; color:#ff7b7f; font-weight:700; text-shadow:0 0 3px #000; }
+.legend{ text-align:center; color:#7f8aa6; font-size:.82rem; padding:0 16px 10px; }
 </style>
 </head>
 <body>
@@ -250,7 +270,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v6';
+const VERSION = 'v7';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -656,11 +676,72 @@ function tabResume(d){
   return `<div class="card2">${html}</div><div class="avail">${avail}</div>`;
 }
 
+const PARTICLES = new Set(['de','da','do','dos','das','van','von','der','den','di','del','le','la','el','al','bin','ter','ten']);
+function lastName(full){
+  const w = String(full || '').trim().split(/\s+/);
+  if (w.length <= 1) return w[0] || '';
+  const prev = w[w.length - 2].toLowerCase();
+  return (w.length >= 3 && PARTICLES.has(prev)) ? w[w.length - 2] + ' ' + w[w.length - 1] : w[w.length - 1];
+}
+const norm = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+// "Jayden Bogle" et "J. Bogle" donnent la même clé : j|bogle
+const pkey = full => { const w = String(full || '').trim().split(/\s+/); return norm((w[0] || '').charAt(0)) + '|' + norm(w[w.length - 1]); };
+
+// Répartit les 11 titulaires en lignes selon la formation (ex. 3-5-2). Renvoie null si impossible.
+function formationRows(system, players){
+  const parts = String(system || '').split('-').map(Number);
+  if (players.length !== 11 || parts.length < 2 || parts.some(n => !n) || parts.reduce((a,b) => a + b, 0) !== 10) return null;
+  const sorted = [...players].sort((a,b) => Number(a.pos) - Number(b.pos));
+  if (!sorted.every((p,i) => Number(p.pos) === i + 1)) return null;
+  const rows = [[sorted[0]]];
+  let i = 1;
+  parts.forEach(n => { rows.push(sorted.slice(i, i + n)); i += n; });
+  return rows;
+}
+
 function tabCompos(d){
   const L = d.lineups;
   if (!L.home.starters.length && !L.away.starters.length)
     return `<div class="card2"><div class="noev">Pas de compositions pour ce match.<br><small style="opacity:.8">Le fournisseur de données ne les envoie pas pour toutes les compétitions, ni avant le coup d'envoi.</small></div></div>`;
+
+  const cards = {}, out = {};
+  d.cards.forEach(c => { const k = c.team + ':' + pkey(c.player); if (cards[k] !== 'red') cards[k] = c.card; });
+  d.subs.forEach(x => { out[x.team + ':' + pkey(x.out)] = true; });
+
+  const tok = (p, side) => {
+    const k = side + ':' + pkey(p.name);
+    const cd = cards[k] ? `<i class="cd ${cards[k] === 'red' ? 'r' : 'y'}"></i>` : '';
+    const so = out[k] ? '<i class="so">↓</i>' : '';
+    return `<div class="pp ${side === 'home' ? 'h' : 'a'}"><span class="pn">${esc(p.n)}${cd}${so}</span><span class="pnm">${esc(lastName(p.name))}</span></div>`;
+  };
+  const rowHtml = (row, side) => `<div class="prow">${row.map(p => tok(p, side)).join('')}</div>`;
+
+  const H = formationRows(d.homeSystem, L.home.starters);
+  const A = formationRows(d.awaySystem, L.away.starters);
   const pl = p => `<div class="pl"><b>${esc(p.n)}</b><span>${esc(p.name)}</span></div>`;
+
+  // Terrain : équipe à domicile en haut, extérieur en bas
+  if (H && A){
+    const homeRows = H.map(r => rowHtml(r, 'home')).join('');
+    const awayRows = [...A].reverse().map(r => rowHtml(r, 'away')).join('');
+    const bench = (k) => {
+      const l = L[k];
+      return `<div class="lucol">${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(pl).join('')}` : ''}${l.coach ? `<h5>Entraîneur</h5><div class="pl"><span>${esc(l.coach)}</span></div>` : ''}</div>`;
+    };
+    return `
+      <div class="card2 pitchwrap">
+        <div class="pl-top"><b>${esc(trTeam(d.home))}</b><span>${esc(d.homeSystem)}</span></div>
+        <div class="pitch">${homeRows}<div class="half"></div>${awayRows}</div>
+        <div class="pl-top"><b>${esc(trTeam(d.away))}</b><span>${esc(d.awaySystem)}</span></div>
+      </div>
+      <div class="legend">🟨 carton · ↓ remplacé</div>
+      <div class="card2"><div class="lu">
+        <div class="lucol" style="padding-bottom:0"><h4>${esc(trTeam(d.home))}</h4></div><div class="lucol" style="padding-bottom:0"><h4>${esc(trTeam(d.away))}</h4></div>
+        ${bench('home')}${bench('away')}
+      </div></div>`;
+  }
+
+  // Sinon : simple liste
   const col = (k, name, system) => {
     const l = L[k];
     return `<div class="lucol"><h4>${esc(name)}${system ? ` <small>${esc(system)}</small>` : ''}</h4>
