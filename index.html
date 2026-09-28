@@ -203,12 +203,27 @@ function crestFor(name, logo){
   return `<span class="crest" style="background:${color}">${initials}${img}</span>`;
 }
 
+function isoDay(offset){
+  const d = new Date(); d.setDate(d.getDate()+offset);
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
 async function loadGames(){
   loading = true;
   document.getElementById('main').innerHTML = '<div class="empty">Chargement des matchs… (le serveur peut prendre jusqu\'à 50s à se réveiller)</div>';
   try {
-    const res = await fetch(`${BACKEND}/api/fixtures?comp=${encodeURIComponent(activeComp)}`);
+    const url = `${BACKEND}/api/fixtures?comp=${encodeURIComponent(activeComp)}&from=${isoDay(-14)}&to=${isoDay(14)}`;
+    const res = await fetch(url);
     const data = await res.json();
+    if (!res.ok || data.error) {
+      GAMES = [];
+      const detail = (data.detail || data.error || 'Erreur inconnue').toString().slice(0, 160);
+      document.getElementById('main').innerHTML = `<div class="empty">Le serveur a renvoyé une erreur :<br><small>${detail}</small></div>`;
+      loading = false;
+      renderTabs();
+      return;
+    }
     GAMES = data.games || [];
   } catch (e) {
     GAMES = [];
@@ -217,6 +232,10 @@ async function loadGames(){
     return;
   }
   loading = false;
+  // ouvrir sur le prochain jour de match (ou le plus récent si rien à venir)
+  const days = [...new Set(GAMES.map(g=>g.date))].sort();
+  const today = isoDay(0);
+  filter = days.find(d => d >= today) || days[days.length-1] || "Tous";
   renderTabs();
   render();
 }
