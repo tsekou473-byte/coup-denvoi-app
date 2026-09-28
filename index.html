@@ -342,7 +342,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v14';
+const VERSION = 'v15-debug';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -1035,11 +1035,18 @@ async function getTeam(leagueId, teamId, force){
   return data;
 }
 function openTeam(teamId, leagueId, name, logo){
-  if (!teamId || !leagueId) return;
-  PANEL.team = { id: String(teamId), leagueId: String(leagueId), name: name || '', logo: logo || null };
-  PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = null; PANEL.player = null;
-  openPanel('team');
-  loadSquad();
+  try {
+    if (!teamId || !leagueId) {
+      alert(`Diagnostic — info manquante pour ouvrir l'équipe.\n\néquipe : ${teamId || '(aucune)'}\nchampionnat : ${leagueId || '(aucun)'}\n\nEnvoie une capture de ce message à Claude.`);
+      return;
+    }
+    PANEL.team = { id: String(teamId), leagueId: String(leagueId), name: name || '', logo: logo || null };
+    PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = null; PANEL.player = null;
+    openPanel('team');
+    loadSquad();
+  } catch (e) {
+    alert('Diagnostic — erreur en ouvrant l\'équipe :\n' + (e && e.message ? e.message : e) + '\n\nEnvoie une capture de ce message à Claude.');
+  }
 }
 function loadSquad(){
   const t = PANEL.team;
