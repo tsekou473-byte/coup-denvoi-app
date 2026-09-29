@@ -345,7 +345,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v23';
+const VERSION = 'v24';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -916,9 +916,7 @@ function openPitchPlayer(side, name, number, d){
 }
 
 function tabCompos(d){
-  preloadSquadPhotos(d);
-  const homePhotos = squadPhotoMap(d.leagueId, d.homeId);
-  const awayPhotos = squadPhotoMap(d.leagueId, d.awayId);
+  preloadSquadPhotos(d); // charge l'effectif en arrière-plan pour que les fiches joueurs s'ouvrent complètes
   const L = d.lineups;
   if (!L.home.starters.length && !L.away.starters.length)
     return `<div class="card2"><div class="noev">Pas de compositions pour ce match.<br><small style="opacity:.8">Le fournisseur de données ne les envoie pas pour toutes les compétitions, ni avant le coup d'envoi.</small></div></div>`;
@@ -931,10 +929,7 @@ function tabCompos(d){
     const k = side + ':' + pkey(p.name);
     const cd = cards[k] ? `<i class="cd ${cards[k] === 'red' ? 'r' : 'y'}"></i>` : '';
     const so = out[k] ? '<i class="so">↓</i>' : '';
-    const photo = (side === 'home' ? homePhotos : awayPhotos)[pkey(p.name)];
-    const pn = photo
-      ? `<span class="pn has-photo" style="background-image:url('${esc(photo)}')"><i class="pnbadge">${esc(p.n)}</i>${cd}${so}</span>`
-      : `<span class="pn">${esc(p.n)}${cd}${so}</span>`;
+    const pn = `<span class="pn">${esc(p.n)}${cd}${so}</span>`;
     return `<div class="pp ${side === 'home' ? 'h' : 'a'}" data-side="${side}" data-name="${esc(p.name)}" data-n="${esc(p.n)}">${pn}<span class="pnm">${esc(lastName(p.name))}</span></div>`;
   };
   const rowHtml = (row, side) => `<div class="prow">${row.map(p => tok(p, side)).join('')}</div>`;
