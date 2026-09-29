@@ -5,7 +5,7 @@
 // - Les données de matchs (serveur Render) sont gérées par l'app elle-même.
 // Change VERSION à chaque mise à jour pour renouveler la copie.
 
-const VERSION = 'v25';
+const VERSION = 'v28';
 const SHELL = 'ce-shell-' + VERSION;
 const RUNTIME = 'ce-runtime';
 const PRECACHE = ['./', 'index.html', 'manifest.json', 'privacy.html', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
