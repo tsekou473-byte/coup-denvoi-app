@@ -138,6 +138,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .lucol h4 small{ color:var(--accent-ink); font-weight:500; margin-left:4px; }
 .lucol h5{ margin:14px 0 6px; font-size:.8rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:500; }
 .pl{ display:flex; gap:8px; padding:4px 0; align-items:baseline; line-height:1.15; }
+.subtap{ cursor:pointer; margin:0 -4px; padding:4px; border-radius:8px; }
 .pl b{ width:24px; flex-shrink:0; color:var(--accent-ink); font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:1.05rem; text-align:right; }
 .pl span{ overflow-wrap:anywhere; }
 .st{ padding:11px 14px; border-top:1px solid var(--line); }
@@ -197,8 +198,11 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .prow{ display:flex; justify-content:space-around; align-items:flex-start; position:relative; z-index:1; }
 .half{ position:relative; height:2px; background:rgba(255,255,255,.22); margin:4px 8px; }
 .half::after{ content:''; position:absolute; left:50%; top:50%; width:64px; height:64px; margin:-32px 0 0 -32px; border:2px solid rgba(255,255,255,.22); border-radius:50%; }
-.pp{ width:58px; display:flex; flex-direction:column; align-items:center; }
-.pn{ position:relative; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.1rem; box-shadow:0 2px 6px rgba(0,0,0,.35); }
+.pp{ width:58px; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
+.pp:active .pn, .subtap:active{ opacity:.7; }
+.pn{ position:relative; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.1rem; box-shadow:0 2px 6px rgba(0,0,0,.35); overflow:hidden; }
+.pn.has-photo{ background-size:cover; background-position:center top; }
+.pnbadge{ position:absolute; bottom:-3px; right:-4px; width:15px; height:15px; border-radius:50%; background:#1b1305; color:#fff; font-size:.62rem; line-height:1; display:flex; align-items:center; justify-content:center; font-weight:700; box-shadow:0 0 0 1.5px #fff; font-family:'Barlow Condensed',sans-serif; }
 .pp.h .pn{ background:var(--accent); color:#1b1305; }
 .pp.a .pn{ background:#6ea8ff; color:#0b1530; }
 .pnm{ margin-top:4px; font-size:.78rem; text-align:center; line-height:1.1; overflow-wrap:anywhere; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.7); font-weight:500; }
@@ -341,7 +345,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v21';
+const VERSION = 'v23';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -869,7 +873,52 @@ function formationRows(system, players){
   return rows;
 }
 
+// Réutilise les photos de la page Effectif (si déjà chargée) pour les joueurs sur le terrain
+function squadPhotoMap(leagueId, teamId){
+  if (!leagueId || !teamId) return {};
+  const c = TEAM[teamKey(leagueId, teamId)];
+  if (!c) return {};
+  const map = {};
+  (c.data.players || []).forEach(p => { if (p.photo) map[pkey(p.name)] = p.photo; });
+  return map;
+}
+// Charge l'effectif en arrière-plan pour avoir les photos la prochaine fois, sans changer d'écran
+function preloadSquadPhotos(d){
+  [['homeId', d.homeId], ['awayId', d.awayId]].forEach(([, teamId]) => {
+    if (!teamId || !d.leagueId) return;
+    const key = teamKey(d.leagueId, teamId);
+    if (TEAM[key] || TEAM[key + ':loading']) return;
+    TEAM[key + ':loading'] = true;
+    getTeam(d.leagueId, teamId)
+      .catch(() => {})
+      .finally(() => { delete TEAM[key + ':loading']; if (DETAIL.id === d.id && DETAIL.tab === 'compos') renderDetail(); });
+  });
+}
+
+// Retrouve un joueur (avec ses stats) dans l'effectif déjà en mémoire, s'il y est
+function findSquadPlayer(leagueId, teamId, name){
+  const c = TEAM[teamKey(leagueId, teamId)];
+  if (!c) return null;
+  return (c.data.players || []).find(p => pkey(p.name) === pkey(name)) || null;
+}
+// Ouvre la fiche d'un joueur touché sur le terrain ou dans les remplaçants,
+// même si l'effectif complet n'a pas encore été consulté (fiche minimale en attendant).
+function openPitchPlayer(side, name, number, d){
+  const teamId = side === 'home' ? d.homeId : d.awayId;
+  const teamName = side === 'home' ? d.home : d.away;
+  const teamLogo = side === 'home' ? d.homeLogo : d.awayLogo;
+  const found = findSquadPlayer(d.leagueId, teamId, name);
+  const player = found || { id: pkey(name), name, fullName: name, number: number ?? null, age: null, birthdate: null, country: null, position: null, photo: null, captain: false, injured: false, stats: {} };
+  PANEL.team = { id: String(teamId || ''), leagueId: String(d.leagueId || ''), name: teamName || '', logo: teamLogo || null };
+  PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = 'player'; PANEL.player = player;
+  openPanel('team');
+  if (teamId && d.leagueId) loadSquad();
+}
+
 function tabCompos(d){
+  preloadSquadPhotos(d);
+  const homePhotos = squadPhotoMap(d.leagueId, d.homeId);
+  const awayPhotos = squadPhotoMap(d.leagueId, d.awayId);
   const L = d.lineups;
   if (!L.home.starters.length && !L.away.starters.length)
     return `<div class="card2"><div class="noev">Pas de compositions pour ce match.<br><small style="opacity:.8">Le fournisseur de données ne les envoie pas pour toutes les compétitions, ni avant le coup d'envoi.</small></div></div>`;
@@ -882,13 +931,18 @@ function tabCompos(d){
     const k = side + ':' + pkey(p.name);
     const cd = cards[k] ? `<i class="cd ${cards[k] === 'red' ? 'r' : 'y'}"></i>` : '';
     const so = out[k] ? '<i class="so">↓</i>' : '';
-    return `<div class="pp ${side === 'home' ? 'h' : 'a'}"><span class="pn">${esc(p.n)}${cd}${so}</span><span class="pnm">${esc(lastName(p.name))}</span></div>`;
+    const photo = (side === 'home' ? homePhotos : awayPhotos)[pkey(p.name)];
+    const pn = photo
+      ? `<span class="pn has-photo" style="background-image:url('${esc(photo)}')"><i class="pnbadge">${esc(p.n)}</i>${cd}${so}</span>`
+      : `<span class="pn">${esc(p.n)}${cd}${so}</span>`;
+    return `<div class="pp ${side === 'home' ? 'h' : 'a'}" data-side="${side}" data-name="${esc(p.name)}" data-n="${esc(p.n)}">${pn}<span class="pnm">${esc(lastName(p.name))}</span></div>`;
   };
   const rowHtml = (row, side) => `<div class="prow">${row.map(p => tok(p, side)).join('')}</div>`;
 
   const H = formationRows(d.homeSystem, L.home.starters);
   const A = formationRows(d.awaySystem, L.away.starters);
   const pl = p => `<div class="pl"><b>${esc(p.n)}</b><span>${esc(p.name)}</span></div>`;
+  const plTap = (p, side) => `<div class="pl subtap" data-side="${side}" data-name="${esc(p.name)}" data-n="${esc(p.n)}"><b>${esc(p.n)}</b><span>${esc(p.name)}</span></div>`;
 
   // Terrain : équipe à domicile en haut, extérieur en bas
   if (H && A){
@@ -896,7 +950,7 @@ function tabCompos(d){
     const awayRows = [...A].reverse().map(r => rowHtml(r, 'away')).join('');
     const bench = (k) => {
       const l = L[k];
-      return `<div class="lucol">${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(pl).join('')}` : ''}${l.coach ? `<h5>Entraîneur</h5><div class="pl"><span>${esc(l.coach)}</span></div>` : ''}</div>`;
+      return `<div class="lucol">${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(p => plTap(p, k)).join('')}` : ''}${l.coach ? `<h5>Entraîneur</h5><div class="pl"><span>${esc(l.coach)}</span></div>` : ''}</div>`;
     };
     return `
       <div class="card2 pitchwrap">
@@ -1151,6 +1205,9 @@ function renderDetail(){
 
   $('dback').onclick = backFromDetail;
   $('dfav').onclick = () => { toggleFavMatch(g); renderDetail(); refreshList(); };
+  box.querySelectorAll('.pp[data-name], .subtap[data-name]').forEach(el => el.onclick = () => {
+    openPitchPlayer(el.dataset.side, el.dataset.name, el.dataset.n, g);
+  });
   box.querySelectorAll('.sbtap').forEach(el => el.onclick = () => {
     const home = el.dataset.side === 'home';
     const id = home ? g.homeId : g.awayId;
