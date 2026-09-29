@@ -345,7 +345,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v25';
+const VERSION = 'v28';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -411,7 +411,8 @@ const FR_COUNTRIES = {
   'Senegal':'Sénégal','Cameroon':'Cameroun','Ivory Coast':"Côte d'Ivoire",'South Africa':'Afrique du Sud','DR Congo':'RD Congo','Cape Verde':'Cap-Vert','Guinea':'Guinée',
   'Zambia':'Zambie','Japan':'Japon','South Korea':'Corée du Sud','China':'Chine','Australia':'Australie','Iraq':'Irak','Saudi Arabia':'Arabie saoudite',
   'United Arab Emirates':'Émirats arabes unis','Uzbekistan':'Ouzbékistan','India':'Inde','New Zealand':'Nouvelle-Zélande','Netherlands Antilles':'Antilles néerlandaises',
-  'Europe':'Europe','eurocups':'Europe','World':'Monde','Africa':'Afrique','South-Africa':'Afrique du Sud','Asia':'Asie','South America':'Amérique du Sud','North America':'Amérique du Nord','Oceania':'Océanie','Intl':'International'
+  'Europe':'Europe','eurocups':'Europe','World':'Monde','Africa':'Afrique','South-Africa':'Afrique du Sud','Asia':'Asie','South America':'Amérique du Sud','North America':'Amérique du Nord','Oceania':'Océanie','Intl':'International',
+  'Angola':'Angola', 'Benin':'Bénin', 'Botswana':'Botswana', 'Burkina Faso':'Burkina Faso', 'Burundi':'Burundi', 'Cape Verde Islands':'Cap-Vert', 'Central African Republic':'Centrafrique', 'Chad':'Tchad', 'Comoros':'Comores', 'Congo':'Congo', 'Congo DR':'RD Congo', 'Djibouti':'Djibouti', 'Equatorial Guinea':'Guinée équatoriale', 'Eritrea':'Érythrée', 'Eswatini':'Eswatini', 'Swaziland':'Eswatini', 'Ethiopia':'Éthiopie', 'Gabon':'Gabon', 'Gambia':'Gambie', 'Ghana':'Ghana', 'Guinea-Bissau':'Guinée-Bissau', 'Kenya':'Kenya', 'Lesotho':'Lesotho', 'Liberia':'Liberia', 'Libya':'Libye', 'Madagascar':'Madagascar', 'Malawi':'Malawi', 'Mali':'Mali', 'Mauritania':'Mauritanie', 'Mauritius':'Maurice', 'Mozambique':'Mozambique', 'Namibia':'Namibie', 'Niger':'Niger', 'Nigeria':'Nigeria', 'Rwanda':'Rwanda', 'Sao Tome and Principe':'Sao Tomé-et-Principe', 'Seychelles':'Seychelles', 'Sierra Leone':'Sierra Leone', 'Somalia':'Somalie', 'South Sudan':'Soudan du Sud', 'Sudan':'Soudan', 'Tanzania':'Tanzanie', 'Togo':'Togo', 'Uganda':'Ouganda', 'Zimbabwe':'Zimbabwe', 'Reunion':'La Réunion'
 };
 function trCountry(n){ return SETTINGS.fr ? (FR_COUNTRIES[n] || n || '') : (n === 'eurocups' ? 'Europe' : (n || '')); }
 function trTeam(n){
@@ -908,6 +909,7 @@ function squadPhotoMap(leagueId, teamId){
 }
 // Charge l'effectif en arrière-plan pour avoir les photos la prochaine fois, sans changer d'écran
 function preloadSquadPhotos(d){
+  if (String(d.leagueId || '').startsWith('afr:')) return;   // compétitions africaines : quota limité, l'effectif n'est chargé que si on touche un joueur ou une équipe
   [['homeId', d.homeId], ['awayId', d.awayId]].forEach(([, teamId]) => {
     if (!teamId || !d.leagueId) return;
     const key = teamKey(d.leagueId, teamId);
@@ -1059,12 +1061,13 @@ function standingsHtml(rows, opt = {}){
 const NO_TABLE = `<div class="noev">Pas de classement pour cette compétition.<br><small style="opacity:.8">Les coupes et les phases à élimination directe n'en ont pas, ou le fournisseur de données ne l'envoie pas.</small></div>`;
 
 // --- dans la page d'un match
+const noTable = note => note ? `<div class="noev">Pas de classement pour cette compétition.<br><small style="opacity:.8">${esc(note)}</small></div>` : NO_TABLE;
 function tabTable(d){
   if (!d.leagueId) return `<div class="card2">${NO_TABLE}</div>`;
   if (DETAIL.standErr) return `<div class="card2"><div class="noev">Impossible de charger le classement.<br><small style="opacity:.8">${esc(DETAIL.standErr).slice(0,200)}</small><br><button class="retry" id="sretry">Réessayer</button></div></div>`;
   const S = STAND[d.leagueId];
   if (!S){ loadDetailStand(d.leagueId); return `<div class="card2"><div class="noev">Chargement du classement…</div></div>`; }
-  if (!S.rows.length) return `<div class="card2">${NO_TABLE}</div>`;
+  if (!S.rows.length) return `<div class="card2">${noTable(S.note)}</div>`;
   return `<div class="card2">${standingsHtml(S.rows, { ids:[d.homeId, d.awayId], names:[d.home, d.away], favs:true, leagueId:d.leagueId })}</div>${zoneLegend(S.rows)}`;
 }
 function loadDetailStand(id){
@@ -1081,7 +1084,7 @@ function panelTable(c){
   if (PANEL.standErr) return `<div class="empty">Impossible de charger le classement.<small>${esc(PANEL.standErr).slice(0,200)}</small><button class="retry" id="sretry">Réessayer</button></div>`;
   const S = STAND[c.id];
   if (!S){ loadPanelStand(c.id); return `<div class="empty">Chargement du classement…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`; }
-  if (!S.rows.length) return `<div class="card2" style="margin:0 0 14px">${NO_TABLE}</div>`;
+  if (!S.rows.length) return `<div class="card2" style="margin:0 0 14px">${noTable(S.note)}</div>`;
   return `<div class="card2" style="margin:0 0 14px">${standingsHtml(S.rows, { favs:true, leagueId:c.id })}</div>${zoneLegend(S.rows)}`;
 }
 function loadPanelStand(id){
