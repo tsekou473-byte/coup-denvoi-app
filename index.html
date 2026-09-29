@@ -345,7 +345,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v28';
+const VERSION = 'v29';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -409,7 +409,7 @@ const FR_COUNTRIES = {
   'Argentina':'Argentine','Brazil':'Brésil','Chile':'Chili','Colombia':'Colombie','Ecuador':'Équateur','Peru':'Pérou','Bolivia':'Bolivie','Mexico':'Mexique',
   'USA':'États-Unis','United States':'États-Unis','Jamaica':'Jamaïque','Haiti':'Haïti','Morocco':'Maroc','Algeria':'Algérie','Tunisia':'Tunisie','Egypt':'Égypte',
   'Senegal':'Sénégal','Cameroon':'Cameroun','Ivory Coast':"Côte d'Ivoire",'South Africa':'Afrique du Sud','DR Congo':'RD Congo','Cape Verde':'Cap-Vert','Guinea':'Guinée',
-  'Zambia':'Zambie','Japan':'Japon','South Korea':'Corée du Sud','China':'Chine','Australia':'Australie','Iraq':'Irak','Saudi Arabia':'Arabie saoudite',
+  'Zambia':'Zambie','Japan':'Japon','South Korea':'Corée du Sud','China':'Chine','Australia':'Australie','Iraq':'Irak','Saudi Arabia':'Arabie saoudite','Saudi-Arabia':'Arabie saoudite',
   'United Arab Emirates':'Émirats arabes unis','Uzbekistan':'Ouzbékistan','India':'Inde','New Zealand':'Nouvelle-Zélande','Netherlands Antilles':'Antilles néerlandaises',
   'Europe':'Europe','eurocups':'Europe','World':'Monde','Africa':'Afrique','South-Africa':'Afrique du Sud','Asia':'Asie','South America':'Amérique du Sud','North America':'Amérique du Nord','Oceania':'Océanie','Intl':'International',
   'Angola':'Angola', 'Benin':'Bénin', 'Botswana':'Botswana', 'Burkina Faso':'Burkina Faso', 'Burundi':'Burundi', 'Cape Verde Islands':'Cap-Vert', 'Central African Republic':'Centrafrique', 'Chad':'Tchad', 'Comoros':'Comores', 'Congo':'Congo', 'Congo DR':'RD Congo', 'Djibouti':'Djibouti', 'Equatorial Guinea':'Guinée équatoriale', 'Eritrea':'Érythrée', 'Eswatini':'Eswatini', 'Swaziland':'Eswatini', 'Ethiopia':'Éthiopie', 'Gabon':'Gabon', 'Gambia':'Gambie', 'Ghana':'Ghana', 'Guinea-Bissau':'Guinée-Bissau', 'Kenya':'Kenya', 'Lesotho':'Lesotho', 'Liberia':'Liberia', 'Libya':'Libye', 'Madagascar':'Madagascar', 'Malawi':'Malawi', 'Mali':'Mali', 'Mauritania':'Mauritanie', 'Mauritius':'Maurice', 'Mozambique':'Mozambique', 'Namibia':'Namibie', 'Niger':'Niger', 'Nigeria':'Nigeria', 'Rwanda':'Rwanda', 'Sao Tome and Principe':'Sao Tomé-et-Principe', 'Seychelles':'Seychelles', 'Sierra Leone':'Sierra Leone', 'Somalia':'Somalie', 'South Sudan':'Soudan du Sud', 'Sudan':'Soudan', 'Tanzania':'Tanzanie', 'Togo':'Togo', 'Uganda':'Ouganda', 'Zimbabwe':'Zimbabwe', 'Reunion':'La Réunion'
@@ -448,16 +448,26 @@ function trComp(c){
     .replace(/UEFA Europa League/i, 'Ligue Europa UEFA')
     .replace(/UEFA Nations League/i, 'Ligue des nations UEFA')
     .replace(/Africa(n)? Cup of Nations|AFCON/i, "Coupe d'Afrique des nations")
-    .replace(/CAF Champions League/i, 'Ligue des champions CAF')
-    .replace(/CAF Confederation Cup/i, 'Coupe de la Confédération CAF')
-    .replace(/CAF Super Cup/i, 'Supercoupe CAF')
+    .replace(/\bCAF Champions League/i, 'Ligue des champions CAF')
+    .replace(/\bCAF Confederation Cup/i, 'Coupe de la Confédération CAF')
+    .replace(/\bCAF Super Cup/i, 'Supercoupe CAF')
     .replace(/African Nations Championship/i, "Championnat d'Afrique des nations (CHAN)")
+    .replace(/AFC Champions League Elite/i, 'Ligue des champions AFC')
+    .replace(/AFC Champions League Two/i, 'Ligue des champions AFC 2')
     .replace(/AFC Champions League/i, 'Ligue des champions AFC')
+    .replace(/CONCACAF Champions League/i, 'Ligue des champions CONCACAF')
+    .replace(/CONCACAF Nations League/i, 'Ligue des nations CONCACAF')
+    .replace(/CONCACAF Gold Cup/i, 'Gold Cup CONCACAF')
+    .replace(/CONMEBOL Libertadores/i, 'Copa Libertadores')
+    .replace(/CONMEBOL Sudamericana/i, 'Copa Sudamericana')
+    .replace(/FIFA Club World Cup/i, 'Coupe du monde des clubs FIFA')
     .replace(/Copa America/i, 'Copa América')
     .replace(/Asian Cup/i, "Coupe d'Asie")
     .replace(/World Cup/i, 'Coupe du monde')
     .replace(/Qualification|Qualifiers?/i, 'Éliminatoires')
     .replace(/\bAfrica\b/g, 'Afrique')
+    .replace(/\bSouth America\b/g, 'Amérique du Sud')
+    .replace(/\bAsia\b/g, 'Asie')
     .replace(/\bLeague ([A-D])\b/, 'Ligue $1')
     .replace(/ - /g, ' · ');
 }
