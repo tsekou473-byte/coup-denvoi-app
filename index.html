@@ -260,7 +260,6 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .pface{ width:44px; height:44px; border-radius:50%; background:var(--card-head); overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; color:var(--muted); box-shadow:0 0 0 1px var(--line); }
 .pface img{ width:100%; height:100%; object-fit:cover; }
 .pface.big{ width:96px; height:96px; font-size:1.7rem; margin:0 auto; }
-.sbtap{ outline:3px dashed red; }
 .postitle{ padding:11px 14px 4px; font-family:'Barlow Condensed',sans-serif; color:var(--accent-ink); letter-spacing:.06em; text-transform:uppercase; font-size:1.05rem; }
 .prow2{ display:grid; grid-template-columns:26px auto 1fr; align-items:center; gap:12px; padding:10px 14px; border-top:1px solid var(--line); cursor:pointer; }
 .prow2:first-of-type{ border-top:none; }
@@ -342,10 +341,8 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 </nav>
 
 <script>
-window.onerror = function(msg, url, line, col, err){ alert('Erreur JS non gérée (diagnostic) :\n' + msg + '\nligne ' + line + '\n\nEnvoie une capture à Claude.'); };
-window.addEventListener('unhandledrejection', e => { alert('Erreur asynchrone non gérée (diagnostic) :\n' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '\n\nEnvoie une capture à Claude.'); });
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v19-debug';
+const VERSION = 'v20';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -1045,11 +1042,8 @@ function openTeam(teamId, leagueId, name, logo){
     }
     PANEL.team = { id: String(teamId), leagueId: String(leagueId), name: name || '', logo: logo || null };
     PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = null; PANEL.player = null;
-    alert('Étape 1 : sur le point d\'appeler openPanel. panel.hidden = ' + $('panel').hidden);
     openPanel('team');
-    alert('Étape 2 : openPanel a fini. panel.hidden = ' + $('panel').hidden + ' | PANEL.kind = ' + PANEL.kind);
     loadSquad();
-    alert('Étape 3 : loadSquad lancé.');
   } catch (e) {
     alert('Diagnostic — erreur en ouvrant l\'équipe :\n' + (e && e.message ? e.message : e) + '\n\nEnvoie une capture de ce message à Claude.');
   }
@@ -1159,7 +1153,6 @@ function renderDetail(){
   box.querySelectorAll('.sbtap').forEach(el => el.onclick = () => {
     const home = el.dataset.side === 'home';
     const id = home ? g.homeId : g.awayId;
-    alert(`Diagnostic\néquipe id : ${id || '(vide)'}\nchampionnat id : ${g.leagueId || '(vide)'}\n\nEnvoie une capture à Claude.`);
     openTeam(id, g.leagueId, home ? g.home : g.away, home ? g.homeLogo : g.awayLogo);
   });
   box.querySelectorAll('.follow').forEach(b => b.onclick = () => {
