@@ -345,7 +345,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v24';
+const VERSION = 'v25';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -411,7 +411,7 @@ const FR_COUNTRIES = {
   'Senegal':'Sénégal','Cameroon':'Cameroun','Ivory Coast':"Côte d'Ivoire",'South Africa':'Afrique du Sud','DR Congo':'RD Congo','Cape Verde':'Cap-Vert','Guinea':'Guinée',
   'Zambia':'Zambie','Japan':'Japon','South Korea':'Corée du Sud','China':'Chine','Australia':'Australie','Iraq':'Irak','Saudi Arabia':'Arabie saoudite',
   'United Arab Emirates':'Émirats arabes unis','Uzbekistan':'Ouzbékistan','India':'Inde','New Zealand':'Nouvelle-Zélande','Netherlands Antilles':'Antilles néerlandaises',
-  'Europe':'Europe','eurocups':'Europe','World':'Monde','Africa':'Afrique','Asia':'Asie','South America':'Amérique du Sud','North America':'Amérique du Nord','Oceania':'Océanie','Intl':'International'
+  'Europe':'Europe','eurocups':'Europe','World':'Monde','Africa':'Afrique','South-Africa':'Afrique du Sud','Asia':'Asie','South America':'Amérique du Sud','North America':'Amérique du Nord','Oceania':'Océanie','Intl':'International'
 };
 function trCountry(n){ return SETTINGS.fr ? (FR_COUNTRIES[n] || n || '') : (n === 'eurocups' ? 'Europe' : (n || '')); }
 function trTeam(n){
@@ -420,6 +420,25 @@ function trTeam(n){
   const fr = m && FR_COUNTRIES[m[1]];
   return fr ? fr + (m[2] || '') : n;
 }
+function trRound(r){
+  const t = String(r || '').trim();
+  if (!t) return '';
+  if (/^\d+$/.test(t)) return 'Journée ' + t;
+  if (!SETTINGS.fr) return t;
+  return t
+    .replace(/^Group Stage - (\d+)$/i, 'Phase de groupes · journée $1')
+    .replace(/^Regular Season - (\d+)$/i, 'Journée $1')
+    .replace(/Group Stage/i, 'Phase de groupes')
+    .replace(/Preliminary Round/i, 'Tour préliminaire')
+    .replace(/Round of 16/i, 'Huitièmes de finale')
+    .replace(/Quarter-?finals?/i, 'Quarts de finale')
+    .replace(/Semi-?finals?/i, 'Demi-finales')
+    .replace(/3rd Place Final/i, 'Match pour la 3e place')
+    .replace(/^Final$/i, 'Finale')
+    .replace(/(\d+)(?:st|nd|rd|th) Qualifying Round/i, 'Tour de qualification $1')
+    .replace(/Play-?offs?/i, 'Barrages');
+}
+
 function trComp(c){
   if (!SETTINGS.fr) return c || '';
   return String(c || '')
@@ -429,11 +448,15 @@ function trComp(c){
     .replace(/UEFA Nations League/i, 'Ligue des nations UEFA')
     .replace(/Africa(n)? Cup of Nations|AFCON/i, "Coupe d'Afrique des nations")
     .replace(/CAF Champions League/i, 'Ligue des champions CAF')
+    .replace(/CAF Confederation Cup/i, 'Coupe de la Confédération CAF')
+    .replace(/CAF Super Cup/i, 'Supercoupe CAF')
+    .replace(/African Nations Championship/i, "Championnat d'Afrique des nations (CHAN)")
     .replace(/AFC Champions League/i, 'Ligue des champions AFC')
     .replace(/Copa America/i, 'Copa América')
     .replace(/Asian Cup/i, "Coupe d'Asie")
     .replace(/World Cup/i, 'Coupe du monde')
     .replace(/Qualification|Qualifiers?/i, 'Éliminatoires')
+    .replace(/\bAfrica\b/g, 'Afrique')
     .replace(/\bLeague ([A-D])\b/, 'Ligue $1')
     .replace(/ - /g, ' · ');
 }
@@ -593,6 +616,7 @@ function middle(g){
 
 function priority(g){
   const c = g.comp || '', k = g.country || '';
+  if (/^caf |africa cup|african nations|qualification africa/i.test(c)) return 8;
   if (/champions league/i.test(c)) return 0;
   if (/europa league|conference league/i.test(c)) return 1;
   if (/^premier league$/i.test(c) && /england/i.test(k)) return 2;
@@ -1177,7 +1201,7 @@ function renderDetail(){
   if (box.hidden || !DETAIL.id) return;
   const top = box.scrollTop;
   const d = DETAIL.data, g = d || GAME_INDEX[DETAIL.id];
-  const meta = [d && d.stadium, d && d.referee ? 'Arbitre : ' + d.referee : '', d && d.round ? 'Journée ' + d.round : ''].filter(Boolean).map(esc).join(' · ');
+  const meta = [d && d.stadium, d && d.referee ? 'Arbitre : ' + d.referee : '', d && d.round ? trRound(d.round) : ''].filter(Boolean).map(esc).join(' · ');
   let body;
   if (DETAIL.err && !d) body = `<div class="empty">Impossible de charger le détail.<small>${esc(DETAIL.err).slice(0,200)}</small><button class="retry" id="dretry">Réessayer</button></div>`;
   else if (!d) body = `<div class="empty">Chargement du match…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
