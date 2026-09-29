@@ -209,7 +209,6 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .legend{ text-align:center; color:var(--muted); font-size:.82rem; padding:0 16px 10px; }
 
 /* explorer : toutes les compétitions */
-#detail{ z-index:50; }
 .exsearch{ padding:2px 0 12px; }
 .exsearch input{ width:100%; border:1px solid var(--line); border-radius:12px; background:var(--card-head); color:var(--text); padding:11px 14px; font-size:1.05rem; font-family:inherit; outline:none; }
 .excount{ color:var(--muted); font-size:.9rem; padding:0 4px 10px; }
@@ -342,12 +341,14 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v20';
+const VERSION = 'v21';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
 
 const $ = id => document.getElementById(id);
+const Z = { top: 40 };
+const bringToFront = el => { el.style.zIndex = String(++Z.top); };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ---------- réglages et profil (enregistrés sur l'appareil) ---------- */
@@ -750,7 +751,7 @@ function openMatch(id){
   if (!g) return;
   DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.data = null; DETAIL.err = null; DETAIL.standErr = null; DETAIL.standLoading = false;
   const box = $('detail');
-  box.hidden = false; box.scrollTop = 0;
+  box.hidden = false; box.scrollTop = 0; bringToFront(box);
   document.body.style.overflow = 'hidden';
   history.pushState({ d:1 }, '');
   renderDetail();
@@ -1179,7 +1180,7 @@ function openPanel(kind){
   closeDrawer();
   PANEL.kind = kind; PANEL.msg = false;
   const box = $('panel');
-  box.hidden = false; box.scrollTop = 0;
+  box.hidden = false; box.scrollTop = 0; bringToFront(box);
   document.body.style.overflow = 'hidden';
   history.pushState({ p:1 }, '');
   renderPanel();
