@@ -345,7 +345,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v29';
+const VERSION = 'v31';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -371,13 +371,14 @@ const FAV = { teams:[], matches:[] };
 try { Object.assign(FAV, JSON.parse(localStorage.getItem('ce_favs') || '{}')); } catch(e) {}
 if (!Array.isArray(FAV.teams)) FAV.teams = [];
 if (!Array.isArray(FAV.matches)) FAV.matches = [];
+FAV.matches.forEach(m => { if (typeof m.ts === 'number'){ const d = new Date(m.ts); m.pdate = m.pdate || m.date; m.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; m.time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; } });
 const FAVSTATE = { games:null, loading:false, err:null, dirty:true, ts:0, failed:0 };
 const saveFav = () => { FAVSTATE.dirty = true; try { localStorage.setItem('ce_favs', JSON.stringify(FAV)); } catch(e) {} };
 const isFavTeam = id => !!id && FAV.teams.some(t => t.id === String(id));
 const isFavMatch = id => !!id && FAV.matches.some(m => m.id === String(id));
 const isFavGame = g => isFavMatch(g.id) || isFavTeam(g.homeId) || isFavTeam(g.awayId);
 function snap(g){
-  return { id:String(g.id), date:g.date, time:g.time || '', home:g.home, away:g.away, homeLogo:g.homeLogo || null, awayLogo:g.awayLogo || null,
+  return { id:String(g.id), date:g.date, time:g.time || '', ts:g.ts ?? null, pdate:g.pdate || g.date, home:g.home, away:g.away, homeLogo:g.homeLogo || null, awayLogo:g.awayLogo || null,
     hs:g.hs ?? null, as:g.as ?? null, status:g.status, minute:g.minute || null, comp:g.comp || '', country:g.country || '', homeId:g.homeId || '', awayId:g.awayId || '' };
 }
 function toggleFavMatch(g){
@@ -479,6 +480,27 @@ function fromIso(iso){ const [y,m,d] = iso.split('-').map(Number); return new Da
 function addDays(iso, n){ const d = fromIso(iso); d.setDate(d.getDate()+n); return isoOf(d); }
 const TODAY = isoOf(new Date());
 
+/* ---------- heure locale : le serveur donne l'instant exact (ts, en ms UTC), l'appareil l'affiche dans SON fuseau ---------- */
+function localize(g){
+  if (!g) return g;
+  if (g.pdate === undefined) g.pdate = g.date;            // date « Paris » d'origine (utile pour les demandes au serveur)
+  if (typeof g.ts === 'number' && isFinite(g.ts)){
+    const d = new Date(g.ts);
+    g.date = isoOf(d);
+    g.time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  }
+  return g;
+}
+/* jours « Paris » que recouvre un jour local (ex. à New York, le 10 octobre local = les 10 et 11 à Paris) */
+function parisDaysOf(iso){
+  const a = fromIso(iso), b = new Date(a.getFullYear(), a.getMonth(), a.getDate() + 1, 0, 0, 0, -1);
+  const fmt = new Intl.DateTimeFormat('en-US', { timeZone:'Europe/Paris', year:'numeric', month:'2-digit', day:'2-digit' });
+  const key = d => { const p = {}; fmt.formatToParts(d).forEach(x => { p[x.type] = x.value; }); return `${p.year}-${p.month}-${p.day}`; };
+  const first = key(a), last = key(b), out = [first];
+  for (let d = first, n = 0; d !== last && n < 3; n++){ d = addDays(d, 1); out.push(d); }
+  return out;
+}
+
 function dayLabel(iso){
   const diff = Math.round((fromIso(iso) - fromIso(TODAY)) / 86400000);
   if (diff === -1) return 'HIER';
@@ -568,8 +590,11 @@ async function apiGet(url){
 async function getDay(iso, force){
   const c = cache[iso];
   if (c && !force && Date.now() - c.ts < 60000) return c.games;
-  const { data, stale } = await apiGet(`${BACKEND}/api/fixtures?from=${iso}&to=${iso}`);
-  cache[iso] = { games: data.games || [], ts: stale ? 0 : Date.now() };
+  const parts = await Promise.all(parisDaysOf(iso).map(d => apiGet(`${BACKEND}/api/fixtures?from=${d}&to=${d}`)));
+  const seen = new Set(), all = [];
+  parts.forEach(p => (p.data.games || []).forEach(g => { if (!seen.has(g.id)){ seen.add(g.id); all.push(g); } }));
+  const stale = parts.some(p => p.stale);
+  cache[iso] = { games: all.map(localize).filter(g => g.date === iso), ts: stale ? 0 : Date.now() };
   cache[iso].games.forEach(g => { GAME_INDEX[g.id] = g; });
   return cache[iso].games;
 }
@@ -820,7 +845,7 @@ async function loadDetail(silent){
   if (!id) return;
   const g = GAME_INDEX[id];
   try {
-    const { data, stale } = await apiGet(`${BACKEND}/api/match?id=${encodeURIComponent(id)}&date=${encodeURIComponent(g.date)}`);
+    const { data, stale } = await apiGet(`${BACKEND}/api/match?id=${encodeURIComponent(id)}&date=${encodeURIComponent(g.pdate || g.date)}`);
     if (DETAIL.id !== id || (stale && silent)) return;
     DETAIL.data = data; DETAIL.err = null;
     Object.assign(GAME_INDEX[id], { status:data.status, minute:data.minute, hs:data.hs, as:data.as });
@@ -1326,7 +1351,11 @@ function renderPanel(){
     let mbody;
     if (PANEL.err) mbody = `<div class="empty">Impossible de charger les matchs.<small>${esc(PANEL.err).slice(0,200)}</small><button class="retry" id="cretry2">Réessayer</button></div>`;
     else if (!PANEL.games) mbody = `<div class="empty">Chargement des matchs…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
-    else if (!PANEL.games.length) mbody = `<div class="empty">Aucun match récent ou à venir pour cette compétition.<small>Recherche du ${esc(dayLabel(addDays(TODAY, -14)))} au ${esc(dayLabel(addDays(TODAY, 30)))}. Elle est peut-être en pause ou hors saison.</small></div>`;
+    else if (!PANEL.games.length) {
+      const rng = PANEL.searched === undefined ? { from: addDays(TODAY, -14), to: addDays(TODAY, 30) } : PANEL.searched;
+      const where = rng ? `Recherche du ${esc(dayLabel(rng.from))} au ${esc(dayLabel(rng.to))}. ` : '';
+      mbody = `<div class="empty">Aucun match récent ou à venir pour cette compétition.<small>${where}Elle est peut-être en pause ou hors saison.</small></div>`;
+    }
     else {
       const byDate = {};
       PANEL.games.forEach(g => { (byDate[g.date] = byDate[g.date] || []).push(g); });
@@ -1464,7 +1493,7 @@ function renderExplorerList(){
 function openCompetition(id){
   const c = (COMP.list || []).find(x => x.id === id);
   if (!c) return;
-  PANEL.comp = c; PANEL.games = null; PANEL.err = null; PANEL.scrolled = false; PANEL.ctab = 'matches'; PANEL.standErr = null; PANEL.standLoading = false;
+  PANEL.comp = c; PANEL.games = null; PANEL.searched = undefined; PANEL.err = null; PANEL.scrolled = false; PANEL.ctab = 'matches'; PANEL.standErr = null; PANEL.standLoading = false;
   openPanel('competition');
   loadCompetitionGames(id);
 }
@@ -1472,7 +1501,8 @@ async function loadCompetitionGames(id){
   try {
     const { data, stale } = await apiGet(`${BACKEND}/api/fixtures?league_id=${encodeURIComponent(id)}&from=${addDays(TODAY, -14)}&to=${addDays(TODAY, 30)}`);
     if (PANEL.kind !== 'competition' || !PANEL.comp || PANEL.comp.id !== id) return;
-    PANEL.games = data.games || [];
+    PANEL.games = (data.games || []).map(localize);
+    PANEL.searched = data.searched;   // période réellement cherchée par le serveur (absente = période habituelle ; null = derniers et prochains matchs)
     PANEL.games.forEach(g => { GAME_INDEX[g.id] = g; });
   } catch (e) {
     if (PANEL.kind !== 'competition' || !PANEL.comp || PANEL.comp.id !== id) return;
@@ -1498,7 +1528,7 @@ async function loadFavGames(){
   renderFavoris();
   const from = addDays(TODAY, -7), to = addDays(TODAY, 14);
   const map = {};
-  FAV.matches.forEach(m => { map[m.id] = { ...m }; if (!GAME_INDEX[m.id]) GAME_INDEX[m.id] = map[m.id]; });
+  FAV.matches.forEach(m => { localize(m); map[m.id] = { ...m }; if (!GAME_INDEX[m.id]) GAME_INDEX[m.id] = map[m.id]; });
 
   const teams = FAV.teams.slice(0, 15);
   const results = await Promise.allSettled(teams.map(async t => {
@@ -1507,7 +1537,7 @@ async function loadFavGames(){
   }));
   let firstErr = '';
   results.forEach(r => {
-    if (r.status === 'fulfilled') r.value.forEach(g => { map[g.id] = g; GAME_INDEX[g.id] = g; });
+    if (r.status === 'fulfilled') r.value.forEach(g => { localize(g); map[g.id] = g; GAME_INDEX[g.id] = g; });
     else { FAVSTATE.failed++; firstErr = firstErr || (r.reason && r.reason.message) || 'Erreur'; }
   });
 
