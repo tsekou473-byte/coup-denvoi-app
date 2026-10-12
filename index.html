@@ -350,7 +350,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v35';
+const VERSION = 'v36';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -1015,7 +1015,11 @@ function loadLineupPhotos(d){
   const st = PHSTATE[d.id] = PHSTATE[d.id] || { tries: 0, busy: false, done: false };
   if (st.busy || st.done || st.tries >= 20 || Date.now() < (st.nextAt || 0)) return;
   // les noms complets (« Joe Willock ») viennent de l'effectif : on l'attend s'il est en cours de chargement
-  if (!String(d.leagueId || '').startsWith('afr:') && [d.homeId, d.awayId].some(id => id && d.leagueId && TEAM[teamKey(d.leagueId, id) + ':loading'])) return;
+  st.t0 = st.t0 || Date.now();
+  if (Date.now() - st.t0 < 20000 && !String(d.leagueId || '').startsWith('afr:') && [d.homeId, d.awayId].some(id => id && d.leagueId && TEAM[teamKey(d.leagueId, id) + ':loading'])) {
+    setTimeout(() => { if (DETAIL.id === d.id) loadLineupPhotos(DETAIL.data || d); }, 4000);   // l'effectif tarde : on réessaie, et au bout de 20 s on cherche sans lui
+    return;
+  }
   st.busy = true; st.tries++;
   const sides = ['home', 'away'];
   Promise.all(sides.map(async side => {
@@ -1024,23 +1028,25 @@ function loadLineupPhotos(d){
     const teamId = side === 'home' ? d.homeId : d.awayId;
     const names = [...(l.starters || []), ...(l.subs || [])].map(p => p.name).filter(Boolean);
     const need = names.filter(n => !PH[phKey(teamName, n)] && !(PH[phKey(teamName, n) + '#miss']));
+    if (!names.length) return { left: 0, paused: false, none: true };
     if (!teamName || !need.length) return { left: 0, paused: false };
     const fullOf = n => { const f = findSquadPlayer(d.leagueId, teamId, n); return f && f.fullName && f.fullName !== n ? f.fullName : ''; };
     try {
       const q = need.map(n => { const f = fullOf(n); return f ? `${n}~${f}` : n; }).join('|');
       const res = await fetch(`${BACKEND}/api/photos?team=${encodeURIComponent(teamName)}&names=${encodeURIComponent(q)}`);
       const j = await res.json();
-      if (!res.ok || j.error) return { left: 0, paused: false };
+      if (!res.ok || j.error) return { left: 1, paused: false, err: true };
       const got = j.photos || {};
       need.forEach(n => { if (got[n]) PH[phKey(teamName, n)] = got[n]; else if (!j.pending && !j.paused) PH[phKey(teamName, n) + '#miss'] = 1; });
       return { left: (j.pending || 0) + (j.paused ? 1 : 0), paused: !!j.paused };
-    } catch (e) { return { left: 0, paused: false }; }
+    } catch (e) { return { left: 1, paused: false, err: true }; }   // serveur qui se réveille, réseau coupé… : on réessaie
   })).then(r => {
     st.busy = false;
+    if (r.every(b => b.none)){ st.tries--; return; }   // pas encore de compositions : rien à chercher, on ne se déclare pas « terminé »
     const left = r.reduce((a, b) => a + b.left, 0);
     const paused = r.some(b => b.paused);
     if (DETAIL.id === d.id && DETAIL.tab === 'compos') renderDetail();
-    const wait = paused ? 20000 : 3000;
+    const wait = paused ? 20000 : (r.some(b => b.err) ? 6000 : 3000);
     if (left > 0) st.nextAt = Date.now() + wait;
     if (left > 0) setTimeout(() => { if (DETAIL.id === d.id) loadLineupPhotos(DETAIL.data || d); }, wait + 300);
     else st.done = true;
