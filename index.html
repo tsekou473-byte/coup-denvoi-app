@@ -203,6 +203,9 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .pn{ position:relative; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.15rem; box-shadow:0 2px 6px rgba(0,0,0,.35); }
 .pph{ position:absolute; inset:0; border-radius:50%; overflow:hidden; }
 .pph img{ width:100%; height:100%; object-fit:cover; object-position:center top; display:block; }
+.pnum{ display:none; }
+.pn.nophoto .pnum{ display:inline; }
+.pn.nophoto .pph, .pn.nophoto .pnbadge{ display:none; }
 .pn.has-photo{ background-size:cover; background-position:center top; }
 .pnbadge{ position:absolute; bottom:-3px; right:-4px; width:15px; height:15px; border-radius:50%; background:#1b1305; color:#fff; font-size:.62rem; line-height:1; display:flex; align-items:center; justify-content:center; font-weight:700; box-shadow:0 0 0 1.5px #fff; font-family:'Barlow Condensed',sans-serif; }
 .pp.h .pn{ background:var(--accent); color:#1b1305; }
@@ -347,7 +350,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v34';
+const VERSION = 'v35';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -1060,7 +1063,7 @@ function tabCompos(d){
     const cd = cards[k] ? `<i class="cd ${cards[k] === 'red' ? 'r' : 'y'}"></i>` : '';
     const so = out[k] ? '<i class="so">↓</i>' : '';
     const ph = phUrl(d, side, p.name);
-    const pn = ph ? `<span class="pn"><span class="pph"><img src="${esc(ph)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.parentNode.classList.add('nophoto');this.remove()"></span><i class="pnbadge">${esc(p.n)}</i>${cd}${so}</span>`
+    const pn = ph ? `<span class="pn"><span class="pph"><img src="${esc(ph)}" alt="" referrerpolicy="no-referrer" onerror="this.closest('.pn').classList.add('nophoto')"></span><span class="pnum">${esc(p.n)}</span><i class="pnbadge">${esc(p.n)}</i>${cd}${so}</span>`
                   : `<span class="pn">${esc(p.n)}${cd}${so}</span>`;
     return `<div class="pp ${side === 'home' ? 'h' : 'a'}" data-side="${side}" data-name="${esc(p.name)}" data-n="${esc(p.n)}">${pn}<span class="pnm">${esc(lastName(p.name))}</span></div>`;
   };
