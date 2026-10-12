@@ -350,7 +350,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v36';
+const VERSION = 'v37';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -873,6 +873,7 @@ async function loadDetail(silent){
     if (DETAIL.id !== id || (stale && silent)) return;
     localize(data);
     DETAIL.data = data; DETAIL.err = null;
+    if (data.lineups && (((data.lineups.home || {}).starters || []).length || ((data.lineups.away || {}).starters || []).length)){ preloadSquadPhotos(data); loadLineupPhotos(data); }   // on cherche les photos dès l'ouverture du match, pas seulement sur l'onglet Compos
     Object.assign(GAME_INDEX[id], { status:data.status, minute:data.minute, hs:data.hs, as:data.as });
   } catch (e) {
     if (DETAIL.id !== id || silent) return;
@@ -1003,7 +1004,20 @@ function openPitchPlayer(side, name, number, d){
 }
 
 /* ---------- photos des joueurs (via le serveur, source TheSportsDB) ---------- */
-const PH = {};            // « équipe|clé joueur » -> adresse de la photo
+const PH = {};            // « équipe|clé joueur » -> adresse de la photo (gardé sur l'appareil : les photos déjà trouvées s'affichent tout de suite)
+try { const saved = JSON.parse(localStorage.getItem('ce_photos') || '{}'); Object.keys(saved).forEach(k => { if (typeof saved[k] === 'string') PH[k] = saved[k]; }); } catch(e) {}
+let phSaveTimer = null;
+function savePhotos(){
+  clearTimeout(phSaveTimer);
+  phSaveTimer = setTimeout(() => {
+    try {
+      const keys = Object.keys(PH).filter(k => !k.endsWith('#miss'));
+      const out = {};
+      keys.slice(-2500).forEach(k => { out[k] = PH[k]; });
+      localStorage.setItem('ce_photos', JSON.stringify(out));
+    } catch(e) {}
+  }, 800);
+}
 const PHSTATE = {};       // identifiant du match -> { tries, busy }
 function phKey(teamName, name){ return norm(teamName) + '|' + pkey(name); }
 function phUrl(d, side, name){
@@ -1037,6 +1051,7 @@ function loadLineupPhotos(d){
       const j = await res.json();
       if (!res.ok || j.error) return { left: 1, paused: false, err: true };
       const got = j.photos || {};
+      if (Object.keys(got).length) savePhotos();
       need.forEach(n => { if (got[n]) PH[phKey(teamName, n)] = got[n]; else if (!j.pending && !j.paused) PH[phKey(teamName, n) + '#miss'] = 1; });
       return { left: (j.pending || 0) + (j.paused ? 1 : 0), paused: !!j.paused };
     } catch (e) { return { left: 1, paused: false, err: true }; }   // serveur qui se réveille, réseau coupé… : on réessaie
