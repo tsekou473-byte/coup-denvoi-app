@@ -345,7 +345,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v31';
+const VERSION = 'v32';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -792,9 +792,27 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
 setInterval(async () => {
   if (!SETTINGS.auto || document.hidden || state.page !== 'matchs') return;
   const iso = state.sel === 'live' ? TODAY : state.sel;
-  if (iso !== TODAY || liveCount() === 0) return;
+  if (iso !== TODAY || !needsRefresh()) return;
   try { await getDay(TODAY, true); renderDates(); refreshList(); } catch(e) {}
 }, 90000);
+
+/* des matchs en direct, ou dont l'heure de début est passée mais qui s'affichent encore « pas commencé » */
+function needsRefresh(){
+  const c = cache[TODAY];
+  if (!c) return false;
+  const now = Date.now();
+  return c.games.some(g => g.status === 'live' || (g.status === 'scheduled' && typeof g.ts === 'number' && g.ts <= now && now - g.ts < 4 * 3600000));
+}
+
+/* retour dans l'app (après une pause ou un autre écran) : nouveau jour -> on recharge ; sinon on remet les scores à jour */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) return;
+  if (isoOf(new Date()) !== TODAY){ location.reload(); return; }
+  if (state.page !== 'matchs') return;
+  const iso = state.sel === 'live' ? TODAY : state.sel;
+  const c = cache[iso];
+  if (c && Date.now() - c.ts > 60000){ delete cache[iso]; show(); }
+});
 
 
 /* ---------- détail d'un match ---------- */
@@ -832,6 +850,7 @@ function hideDetail(){
   clearInterval(DETAIL.timer);
   DETAIL.id = null;
   if (state.page === 'favoris') showFavoris();
+  else if (state.page === 'matchs') refreshList();
 }
 function backFromDetail(){ if (history.state && history.state.d) history.back(); else hideDetail(); }
 window.addEventListener('popstate', () => { if (!$('detail').hidden) hideDetail(); else if (!$('panel').hidden) hidePanel(); });
@@ -847,6 +866,7 @@ async function loadDetail(silent){
   try {
     const { data, stale } = await apiGet(`${BACKEND}/api/match?id=${encodeURIComponent(id)}&date=${encodeURIComponent(g.pdate || g.date)}`);
     if (DETAIL.id !== id || (stale && silent)) return;
+    localize(data);
     DETAIL.data = data; DETAIL.err = null;
     Object.assign(GAME_INDEX[id], { status:data.status, minute:data.minute, hs:data.hs, as:data.as });
   } catch (e) {
