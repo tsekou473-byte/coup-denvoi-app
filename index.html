@@ -200,7 +200,9 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .half::after{ content:''; position:absolute; left:50%; top:50%; width:64px; height:64px; margin:-32px 0 0 -32px; border:2px solid rgba(255,255,255,.22); border-radius:50%; }
 .pp{ width:58px; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
 .pp:active .pn, .subtap:active{ opacity:.7; }
-.pn{ position:relative; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.1rem; box-shadow:0 2px 6px rgba(0,0,0,.35); overflow:hidden; }
+.pn{ position:relative; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.15rem; box-shadow:0 2px 6px rgba(0,0,0,.35); }
+.pph{ position:absolute; inset:0; border-radius:50%; overflow:hidden; }
+.pph img{ width:100%; height:100%; object-fit:cover; object-position:center top; display:block; }
 .pn.has-photo{ background-size:cover; background-position:center top; }
 .pnbadge{ position:absolute; bottom:-3px; right:-4px; width:15px; height:15px; border-radius:50%; background:#1b1305; color:#fff; font-size:.62rem; line-height:1; display:flex; align-items:center; justify-content:center; font-weight:700; box-shadow:0 0 0 1.5px #fff; font-family:'Barlow Condensed',sans-serif; }
 .pp.h .pn{ background:var(--accent); color:#1b1305; }
@@ -345,7 +347,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v32';
+const VERSION = 'v33';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -990,14 +992,54 @@ function openPitchPlayer(side, name, number, d){
   const teamLogo = side === 'home' ? d.homeLogo : d.awayLogo;
   const found = findSquadPlayer(d.leagueId, teamId, name);
   const player = found || { id: pkey(name), name, fullName: name, number: number ?? null, age: null, birthdate: null, country: null, position: null, photo: null, captain: false, injured: false, stats: {} };
+  if (!player.photo){ const u = phUrl(d, side, name); if (u) player.photo = u; }
   PANEL.team = { id: String(teamId || ''), leagueId: String(d.leagueId || ''), name: teamName || '', logo: teamLogo || null };
   PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = 'player'; PANEL.player = player;
   openPanel('team');
   if (teamId && d.leagueId) loadSquad();
 }
 
+/* ---------- photos des joueurs (via le serveur, source TheSportsDB) ---------- */
+const PH = {};            // « équipe|clé joueur » -> adresse de la photo
+const PHSTATE = {};       // identifiant du match -> { tries, busy }
+function phKey(teamName, name){ return norm(teamName) + '|' + pkey(name); }
+function phUrl(d, side, name){
+  if (!SETTINGS.logos) return '';
+  return PH[phKey(side === 'home' ? d.home : d.away, name)] || '';
+}
+function loadLineupPhotos(d){
+  if (!d || !d.lineups) return;
+  const st = PHSTATE[d.id] = PHSTATE[d.id] || { tries: 0, busy: false, done: false };
+  if (st.busy || st.done || st.tries >= 8 || Date.now() < (st.nextAt || 0)) return;
+  st.busy = true; st.tries++;
+  const sides = ['home', 'away'];
+  Promise.all(sides.map(async side => {
+    const teamName = side === 'home' ? d.home : d.away;
+    const l = d.lineups[side] || {};
+    const names = [...(l.starters || []), ...(l.subs || [])].map(p => p.name).filter(Boolean);
+    const need = names.filter(n => !PH[phKey(teamName, n)] && !(PH[phKey(teamName, n) + '#miss']));
+    if (!teamName || !need.length) return 0;
+    try {
+      const res = await fetch(`${BACKEND}/api/photos?team=${encodeURIComponent(teamName)}&names=${encodeURIComponent(need.join('|'))}`);
+      const j = await res.json();
+      if (!res.ok || j.error) return 0;
+      const got = j.photos || {};
+      need.forEach(n => { if (got[n]) PH[phKey(teamName, n)] = got[n]; else if (!j.pending && !j.paused) PH[phKey(teamName, n) + '#miss'] = 1; });
+      return (j.pending || 0) + (j.paused ? 1 : 0);
+    } catch (e) { return 0; }
+  })).then(r => {
+    st.busy = false;
+    const left = r.reduce((a, b) => a + b, 0);
+    if (DETAIL.id === d.id && DETAIL.tab === 'compos') renderDetail();
+    if (left > 0) st.nextAt = Date.now() + 3000;
+    if (left > 0) setTimeout(() => { if (DETAIL.id === d.id) loadLineupPhotos(DETAIL.data || d); }, 3500);
+    else st.done = true;
+  });
+}
+
 function tabCompos(d){
-  preloadSquadPhotos(d); // charge l'effectif en arrière-plan pour que les fiches joueurs s'ouvrent complètes
+  preloadSquadPhotos(d);
+  loadLineupPhotos(d); // charge l'effectif en arrière-plan pour que les fiches joueurs s'ouvrent complètes
   const L = d.lineups;
   if (!L.home.starters.length && !L.away.starters.length)
     return `<div class="card2"><div class="noev">Pas de compositions pour ce match.<br><small style="opacity:.8">Le fournisseur de données ne les envoie pas pour toutes les compétitions, ni avant le coup d'envoi.</small></div></div>`;
@@ -1010,7 +1052,9 @@ function tabCompos(d){
     const k = side + ':' + pkey(p.name);
     const cd = cards[k] ? `<i class="cd ${cards[k] === 'red' ? 'r' : 'y'}"></i>` : '';
     const so = out[k] ? '<i class="so">↓</i>' : '';
-    const pn = `<span class="pn">${esc(p.n)}${cd}${so}</span>`;
+    const ph = phUrl(d, side, p.name);
+    const pn = ph ? `<span class="pn"><span class="pph"><img src="${esc(ph)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.parentNode.classList.add('nophoto');this.remove()"></span><i class="pnbadge">${esc(p.n)}</i>${cd}${so}</span>`
+                  : `<span class="pn">${esc(p.n)}${cd}${so}</span>`;
     return `<div class="pp ${side === 'home' ? 'h' : 'a'}" data-side="${side}" data-name="${esc(p.name)}" data-n="${esc(p.n)}">${pn}<span class="pnm">${esc(lastName(p.name))}</span></div>`;
   };
   const rowHtml = (row, side) => `<div class="prow">${row.map(p => tok(p, side)).join('')}</div>`;
