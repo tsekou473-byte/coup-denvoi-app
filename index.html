@@ -419,7 +419,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v72';
+const VERSION = 'v73';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1638,14 +1638,26 @@ const noTable = note => note ? `<div class="noev">Pas de classement pour cette c
 function liveRows(rows, leagueId, cur){
   const games = Object.values(GAME_INDEX).filter(g => g && String(g.leagueId) === String(leagueId) && g.status === 'live' && g.hs != null && g.as != null && (!cur || g.id !== cur.id));
   if (cur && cur.status === 'live' && cur.hs != null && cur.as != null) games.push(cur);
-  if (!games.length) return { rows, live:false };
+  // match terminé mais pas encore compté par le classement officiel (il retarde souvent de plusieurs heures) :
+  // la « journée » du match dit combien de matchs chaque équipe doit avoir joués
+  const rn = cur && cur.round ? parseInt((String(cur.round).match(/\d+/) || [])[0], 10) : NaN;
+  const fin = [];
+  if (rn > 0 && cur.date){
+    const same = Object.values(GAME_INDEX).filter(g => g && g.id !== cur.id && String(g.leagueId) === String(leagueId) && g.status === 'finished' && g.date === cur.date && g.hs != null && g.as != null);
+    if (cur.status === 'finished' && cur.hs != null && cur.as != null) same.push(cur);
+    same.forEach(g => fin.push(g));
+  }
+  if (!games.length && !fin.length) return { rows, live:false };
   const out = rows.map(r => ({ ...r })), by = {};
   out.forEach(r => { if (r.teamId != null) by[String(r.teamId)] = r; by['n:' + norm(r.team)] = r; });
   const find = (id, name) => by[String(id)] || by['n:' + norm(name)];
   let touched = false;
+  const isFin = new Set(fin);
+  games.push(...fin);
   games.forEach(g => {
     const h = find(g.homeId, g.home), a = find(g.awayId, g.away);
     if (!h || !a || h === a) return;
+    if (isFin.has(g) && ((h.played || 0) >= rn || (a.played || 0) >= rn)) return;
     const hs = +g.hs, as = +g.as;
     [[h, hs, as], [a, as, hs]].forEach(([r, f, ag]) => {
       r.played = (r.played || 0) + 1; r.gf = (r.gf || 0) + f; r.ga = (r.ga || 0) + ag;
@@ -1664,7 +1676,7 @@ function liveRows(rows, leagueId, cur){
     list.sort((a,b) => (b.pts||0) - (a.pts||0) || ((b.gf||0)-(b.ga||0)) - ((a.gf||0)-(a.ga||0)) || (b.gf||0) - (a.gf||0) || (oldPos.get(a) ?? 999) - (oldPos.get(b) ?? 999));
     list.forEach((r, i) => { const p0 = oldPos.get(r); r.pos = i + 1; r.zone = zones[i]; r.mv = r.lv && p0 ? p0 - r.pos : 0; });
   });
-  return { rows: out, live:true };
+  return { rows: out, live: games.some(g => !isFin.has(g)), prov:true };
 }
 function tabTable(d){
   if (!d.leagueId) return `<div class="card2">${NO_TABLE}</div>`;
@@ -1673,7 +1685,7 @@ function tabTable(d){
   if (!S){ loadDetailStand(d.leagueId); return `<div class="card2"><div class="noev">Chargement du classement…</div></div>`; }
   if (!S.rows.length) return `<div class="card2">${noTable(S.note)}</div>`;
   const L = liveRows(S.rows, d.leagueId, d);
-  return `${L.live ? '<div class="livetag">Classement en direct · provisoire</div>' : ''}<div class="card2">${standingsHtml(L.rows, { ids:[d.homeId, d.awayId], names:[d.home, d.away], favs:true, leagueId:d.leagueId })}</div>${zoneLegend(L.rows)}`;
+  return `${L.live ? '<div class="livetag">Classement en direct · provisoire</div>' : L.prov ? '<div class="livetag" style="color:var(--muted)">Classement mis à jour · provisoire</div>' : ''}<div class="card2">${standingsHtml(L.rows, { ids:[d.homeId, d.awayId], names:[d.home, d.away], favs:true, leagueId:d.leagueId })}</div>${zoneLegend(L.rows)}`;
 }
 function loadDetailStand(id){
   if (DETAIL.standLoading) return;
