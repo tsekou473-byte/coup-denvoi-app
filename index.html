@@ -122,6 +122,15 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .ptr{ position:fixed; left:0; right:0; top:0; z-index:60; display:flex; justify-content:center; pointer-events:none; transform:translateY(-60px); }
 .ptr span{ margin-top:calc(env(safe-area-inset-top) + 8px); background:var(--card); color:var(--text); border:1px solid var(--line); box-shadow:0 2px 8px rgba(20,30,50,.15); border-radius:999px; padding:7px 16px; font-size:.9rem; }
 body{ overflow-x:hidden; } .detail{ overflow-x:hidden; }
+.pred{ grid-column:1 / -1; margin-top:2px; }
+.pbar{ display:flex; height:5px; border-radius:3px; overflow:hidden; gap:2px; background:transparent; }
+.pbar i{ display:block; min-width:3px; border-radius:3px; } .pbar .h{ background:var(--accent); } .pbar .d{ background:#b9c2d0; } .pbar .a{ background:#4f7cff; }
+.pnums{ display:flex; justify-content:space-between; font-size:.74rem; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums; }
+.pnums b{ color:var(--text); font-weight:600; }
+.pcard{ padding:14px 14px 12px; } .pcard h4{ margin:0 0 10px; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+.pcard .pbar{ height:10px; border-radius:6px; } .pcard .pnums{ font-size:.92rem; margin-top:8px; } .pcard .pnums b{ font-size:1.25rem; display:block; }
+.pcard .pnums div:nth-child(2){ text-align:center; } .pcard .pnums div:nth-child(3){ text-align:right; }
+.pcard small.pn{ display:block; margin-top:8px; color:var(--muted); font-size:.72rem; }
 .langsel{ border:1px solid var(--line); background:var(--card-head); color:var(--text); border-radius:10px; padding:8px 10px; font-size:1rem; font-family:inherit; max-width:46%; }
 [dir=rtl] .chev{ display:inline-block; transform:scaleX(-1); }
 [dir=rtl] .dh .icon-btn svg{ transform:scaleX(-1); }
@@ -380,7 +389,7 @@ body{ overflow-x:hidden; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v46';
+const VERSION = 'v47';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -391,10 +400,11 @@ const bringToFront = el => { el.style.zIndex = String(++Z.top); };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ---------- réglages et profil (enregistrés sur l'appareil) ---------- */
-const SETTINGS = { size:'normal', fr:true, auto:true, logos:true };
+const SETTINGS = { size:'small', fr:true, auto:true, logos:true };
 const PROFILE = { name:'' };
 let HAD_SETTINGS = false;
 try { HAD_SETTINGS = !!localStorage.getItem('ce_settings'); Object.assign(SETTINGS, JSON.parse(localStorage.getItem('ce_settings') || '{}')); } catch(e) {}
+if (!SETTINGS.sizeV2){ SETTINGS.size = 'small'; SETTINGS.sizeV2 = true; try { localStorage.setItem('ce_settings', JSON.stringify(SETTINGS)); } catch(e) {} }   // nouvelle taille par défaut : Petit
 if (!SETTINGS.lang) SETTINGS.lang = HAD_SETTINGS ? 'fr' : I18N.detect();
 I18N.setLang(SETTINGS.lang);
 try { Object.assign(PROFILE, JSON.parse(localStorage.getItem('ce_profile') || '{}')); } catch(e) {}
@@ -641,6 +651,7 @@ async function getDay(iso, force){
   const stale = parts.some(p => p.stale);
   cache[iso] = { games: all.map(localize).filter(g => g.date === iso), ts: stale ? 0 : Date.now() };
   cache[iso].games.forEach(g => { GAME_INDEX[g.id] = g; });
+  if (cache[iso].games.some(g => g.status === 'scheduled')) loadPreds(parisDaysOf(iso), () => { if (state.page === 'matchs' && $('detail').hidden) refreshList(); });
   return cache[iso].games;
 }
 function liveCount(){
@@ -709,12 +720,44 @@ function priority(g){
   return 100;
 }
 
+
+/* probabilités de victoire (avant le match) */
+const PRED = {};            // id du match -> { h, d, a } en %
+const PRED_DAYS = {};       // jour (Paris) -> heure du dernier chargement
+function predRow(g){
+  const p = PRED[g.id];
+  if (!p || g.status !== 'scheduled') return '';
+  const r = n => Math.round(n);
+  return `<div class="pred" aria-label="Probabilité de victoire"><div class="pbar"><i class="h" style="flex:${Math.max(p.h, 1)}"></i><i class="d" style="flex:${Math.max(p.d, 1)}"></i><i class="a" style="flex:${Math.max(p.a, 1)}"></i></div><div class="pnums"><span><b>${r(p.h)}%</b></span><span>${r(p.d)}%</span><span><b>${r(p.a)}%</b></span></div></div>`;
+}
+function loadPreds(parisDays, done){
+  const need = parisDays.filter(d => !PRED_DAYS[d] || Date.now() - PRED_DAYS[d] > 3600000);
+  if (!need.length) return;
+  need.forEach(d => { PRED_DAYS[d] = Date.now(); });
+  Promise.all(need.map(d => apiGet(`${BACKEND}/api/predictions?date=${d}`).then(r => r.data.predictions || {}).catch(() => { delete PRED_DAYS[d]; return null; })))
+    .then(list => {
+      let got = false;
+      list.forEach(m => { if (m) Object.keys(m).forEach(id => { PRED[id] = m[id]; got = true; }); });
+      if (got && done) done();
+    });
+}
+function predCard(d){
+  const p = PRED[d.id];
+  if (!p || d.status !== 'scheduled') return '';
+  const r = n => Math.round(n);
+  return `<div class="card2 pcard"><h4>Probabilité de victoire</h4>
+    <div class="pbar"><i class="h" style="flex:${Math.max(p.h, 1)}"></i><i class="d" style="flex:${Math.max(p.d, 1)}"></i><i class="a" style="flex:${Math.max(p.a, 1)}"></i></div>
+    <div class="pnums"><div><b>${r(p.h)}%</b>${esc(trTeam(d.home))}</div><div><b>${r(p.d)}%</b>Nul</div><div><b>${r(p.a)}%</b>${esc(trTeam(d.away))}</div></div>
+    <small class="pn">Estimation du fournisseur de données, à titre indicatif.</small></div>`;
+}
+
 function matchRow(g){
   return `
       <div class="match${isFavGame(g) ? ' fav' : ''}" data-id="${esc(g.id)}">
         <div class="tn h">${esc(trTeam(g.home))}</div>${crest(trTeam(g.home) || '', g.homeLogo)}
         ${middle(g)}
         ${crest(trTeam(g.away) || '', g.awayLogo)}<div class="tn a">${esc(trTeam(g.away))}</div>
+        ${predRow(g)}
       </div>`;
 }
 
@@ -1164,7 +1207,8 @@ function tabResume(d){
   const nb = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
   const hasLu = d.lineups.home.starters.length || d.lineups.away.starters.length;
   const avail = `Données reçues : ${nb(d.goals.length, 'but')} · ${nb(d.cards.length, 'carton')} · ${nb(d.subs.length, 'remplacement')} · compositions ${hasLu ? 'oui' : 'non'} · statistiques ${d.stats.length ? 'oui' : 'non'}`;
-  return `<div class="card2">${html}</div>${h2hHtml(d)}<div class="avail">${avail}</div>`;
+  if (d.status === 'scheduled' && !PRED[d.id]) loadPreds([d.pdate || d.date], () => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); });
+  return `${predCard(d)}<div class="card2">${html}</div>${h2hHtml(d)}<div class="avail">${avail}</div>`;
 }
 
 const PARTICLES = new Set(['de','da','do','dos','das','van','von','der','den','di','del','le','la','el','al','bin','ter','ten']);
@@ -1657,7 +1701,7 @@ function renderPanel(){
     const seg = [['small','Petit'],['normal','Normal'],['large','Grand']].map(([v,l]) => `<button data-v="${v}" class="${SETTINGS.size===v?'on':''}">${l}</button>`).join('');
     html = head('Réglages') + `
       <div class="card2 set" style="margin-top:16px">
-        <div class="row"><div class="rl"><b>Taille du texte</b><small>« Normal » est le réglage recommandé</small></div><div class="seg" id="segSize">${seg}</div></div>
+        <div class="row"><div class="rl"><b>Taille du texte</b><small>« Petit » est le réglage par défaut</small></div><div class="seg" id="segSize">${seg}</div></div>
         <div class="row"><div class="rl"><b>Langue</b><small>Langue de l'application</small></div><select class="langsel" id="setLang" data-notr>${I18N.LANGS.map(l => `<option value="${l.code}" ${SETTINGS.lang===l.code?'selected':''}>${l.name}</option>`).join('')}</select></div>
         <div class="row"><div class="rl"><b>Noms en français</b><small>Pays, sélections et compétitions</small></div><label class="sw"><input type="checkbox" id="setFr" ${SETTINGS.fr ? 'checked' : ''}><i></i></label></div>
         <div class="row"><div class="rl"><b>Logos des équipes et des compétitions</b><small>Désactive-les pour n'afficher que les initiales</small></div><label class="sw"><input type="checkbox" id="setLogos" ${SETTINGS.logos ? 'checked' : ''}><i></i></label></div>
