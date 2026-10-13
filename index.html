@@ -119,6 +119,16 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .dtabs{ display:flex; gap:8px; padding:4px 12px 14px; max-width:640px; margin:0 auto; }
 .dtab{ flex:1; border:none; background:var(--card); box-shadow:0 1px 2px rgba(20,30,50,.08); padding:9px 0; border-radius:999px; font-family:'Barlow Condensed',sans-serif; font-size:1.08rem; letter-spacing:.05em; text-transform:uppercase; color:var(--text); cursor:pointer; }
 .dtab.active{ background:var(--accent); color:#1b1305; font-weight:600; box-shadow:none; }
+.h2h{ padding:14px 14px 12px; }
+.h2h h4{ margin:0 0 10px; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+.h2bar{ display:flex; height:10px; border-radius:6px; overflow:hidden; background:var(--card-head); }
+.h2bar i{ display:block; } .h2bar .a{ background:var(--accent); } .h2bar .d{ background:#b9c2d0; } .h2bar .b{ background:#4f7cff; }
+.h2nums{ display:flex; justify-content:space-between; margin-top:8px; font-size:.92rem; }
+.h2nums b{ font-size:1.25rem; } .h2nums small{ display:block; color:var(--muted); font-size:.72rem; }
+.h2nums div:nth-child(2){ text-align:center; } .h2nums div:nth-child(3){ text-align:right; }
+.h2row{ display:flex; gap:8px; align-items:center; padding:8px 0; border-top:1px solid var(--line); font-size:.88rem; }
+.h2row .dt{ color:var(--muted); width:74px; flex:none; font-size:.76rem; }
+.h2row .tm{ flex:1; } .h2row .sc{ font-weight:700; white-space:nowrap; }
 .card2{ background:var(--card); border:1px solid var(--line); border-radius:18px; margin:0 10px 14px; overflow:hidden; max-width:620px; box-shadow:0 1px 3px rgba(20,30,50,.05); }
 @media (min-width:660px){ .card2{ margin-left:auto; margin-right:auto; } }
 .noev{ text-align:center; color:var(--muted); padding:34px 18px; font-size:1.05rem; }
@@ -361,7 +371,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v40';
+const VERSION = 'v41';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -962,6 +972,35 @@ function evRow(e){
   return `<div class="ev">${home ? cell : '<div></div>'}<div class="min">${esc(e.time)}'</div>${home ? '<div></div>' : cell}</div>`;
 }
 
+
+/* confrontations directes */
+const H2H = {};   // "a|b" -> { data } | { err } | { loading:true }
+function h2hKey(d){ return d.homeId && d.awayId ? d.homeId + '|' + d.awayId : null; }
+function loadH2H(d){
+  const k = h2hKey(d); if (!k || H2H[k]) return;
+  H2H[k] = { loading:true };
+  apiGet(`${BACKEND}/api/h2h?a=${encodeURIComponent(d.homeId)}&b=${encodeURIComponent(d.awayId)}`)
+    .then(r => { H2H[k] = { data:r.data }; }).catch(e => { H2H[k] = { err:e.message }; })
+    .finally(() => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); });
+}
+function h2hHtml(d){
+  const k = h2hKey(d); if (!k) return '';
+  if (!H2H[k]) loadH2H(d);
+  const h = H2H[k] || { loading:true };
+  const wrap = inner => `<div class="card2 h2h"><h4>Face-à-face</h4>${inner}</div>`;
+  if (h.loading) return wrap('<div class="noev" style="padding:6px 0">Chargement de l\'historique…</div>');
+  if (h.err) return wrap('<div class="noev" style="padding:6px 0">Historique indisponible pour le moment.</div>');
+  const sm = h.data && h.data.summary;
+  if (!sm || !sm.total) return wrap('<div class="noev" style="padding:6px 0">Aucune confrontation trouvée dans l\'historique.</div>');
+  const pct = n => (100 * n / sm.total).toFixed(1);
+  const plural = (n, w) => n > 1 ? w + 's' : w;
+  const rows = (h.data.matches || []).slice(0, 5).map(m => `<div class="h2row"><span class="dt">${esc(shortDate(m.date))}</span><span class="tm">${esc(trTeam(m.home))} – ${esc(trTeam(m.away))}<small style="display:block;color:var(--muted)">${esc(trComp(m.league || ''))}</small></span><span class="sc">${esc(m.hs)} - ${esc(m.as)}</span></div>`).join('');
+  return wrap(`<div class="h2bar"><i class="a" style="width:${pct(sm.aWins)}%"></i><i class="d" style="width:${pct(sm.draws)}%"></i><i class="b" style="width:${pct(sm.bWins)}%"></i></div>
+    <div class="h2nums"><div><b>${sm.aWins}</b><small>${plural(sm.aWins, 'victoire')} ${esc(trTeam(d.home))}</small></div><div><b>${sm.draws}</b><small>${plural(sm.draws, 'nul')}</small></div><div><b>${sm.bWins}</b><small>${plural(sm.bWins, 'victoire')} ${esc(trTeam(d.away))}</small></div></div>
+    <div style="margin:8px 0 4px;color:var(--muted);font-size:.78rem">${sm.total} ${plural(sm.total, 'confrontation')} · buts ${sm.aGoals}-${sm.bGoals}</div>${rows}`);
+}
+function shortDate(iso){ const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; }
+
 function tabResume(d){
   const ev = [];
   d.goals.forEach(x => ev.push({ k:'goal', ...x }));
@@ -982,7 +1021,7 @@ function tabResume(d){
   const nb = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
   const hasLu = d.lineups.home.starters.length || d.lineups.away.starters.length;
   const avail = `Données reçues : ${nb(d.goals.length, 'but')} · ${nb(d.cards.length, 'carton')} · ${nb(d.subs.length, 'remplacement')} · compositions ${hasLu ? 'oui' : 'non'} · statistiques ${d.stats.length ? 'oui' : 'non'}`;
-  return `<div class="card2">${html}</div><div class="avail">${avail}</div>`;
+  return `<div class="card2">${html}</div>${h2hHtml(d)}<div class="avail">${avail}</div>`;
 }
 
 const PARTICLES = new Set(['de','da','do','dos','das','van','von','der','den','di','del','le','la','el','al','bin','ter','ten']);
