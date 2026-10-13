@@ -122,6 +122,8 @@ const ROWS = [
  ['Biographie','Biography','Biografía','Biografia','السيرة','Biografie','Biografia','Biyografi'],
  ['Lieu de naissance','Birthplace','Lugar de nacimiento','Local de nascimento','مكان الميلاد','Geburtsort','Luogo di nascita','Doğum yeri'],
  ['Taille','Height','Altura','Altura','الطول','Größe','Altezza','Boy'],
+ ['Nationalité','Nationality','Nacionalidad','Nacionalidade','الجنسية','Nationalität','Nazionalità','Uyruk'],
+ ['Né le','Born','Nacimiento','Nascimento','تاريخ الميلاد','Geboren','Nato il','Doğum'],
  ['Classement en direct · provisoire','Live table · provisional','Clasificación en directo · provisional','Classificação ao vivo · provisória','الترتيب المباشر · مؤقت','Live-Tabelle · vorläufig','Classifica live · provvisoria','Canlı puan durumu · geçici'],
  ['Classement mis à jour · provisoire','Updated table · provisional','Clasificación actualizada · provisional','Classificação atualizada · provisória','الترتيب المحدّث · مؤقت','Aktualisierte Tabelle · vorläufig','Classifica aggiornata · provvisoria','Güncel puan durumu · geçici'],
  ['Buts','Goals','Goles','Gols','الأهداف','Tore','Gol','Goller'],
