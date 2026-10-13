@@ -121,6 +121,11 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .dtab.active{ background:var(--accent); color:#1b1305; font-weight:600; box-shadow:none; }
 .ptr{ position:fixed; left:0; right:0; top:0; z-index:60; display:flex; justify-content:center; pointer-events:none; transform:translateY(-60px); }
 .ptr span{ margin-top:calc(env(safe-area-inset-top) + 8px); background:var(--card); color:var(--text); border:1px solid var(--line); box-shadow:0 2px 8px rgba(20,30,50,.15); border-radius:999px; padding:7px 16px; font-size:.9rem; }
+.langsel{ border:1px solid var(--line); background:var(--card-head); color:var(--text); border-radius:10px; padding:8px 10px; font-size:1rem; font-family:inherit; max-width:46%; }
+[dir=rtl] .chev{ display:inline-block; transform:scaleX(-1); }
+[dir=rtl] .dh .icon-btn svg{ transform:scaleX(-1); }
+[dir=rtl] .match, [dir=rtl] .sb, [dir=rtl] .tr, [dir=rtl] .pitch, [dir=rtl] .dtabs, [dir=rtl] .dates, [dir=rtl] .bottom-nav, [dir=rtl] .h2bar, [dir=rtl] .h2nums, [dir=rtl] .h2row, [dir=rtl] .lucol{ direction:ltr; }
+[dir=rtl] .tm, [dir=rtl] .h2row .tm, [dir=rtl] .cname, [dir=rtl] .rl{ unicode-bidi:plaintext; }
 .h2h{ padding:14px 14px 12px; }
 .h2h h4{ margin:0 0 10px; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
 .h2bar{ display:flex; height:10px; border-radius:6px; overflow:hidden; background:var(--card-head); }
@@ -371,9 +376,10 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
   </button>
 </nav>
 
+<script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v43';
+const VERSION = 'v44';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -386,7 +392,10 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 /* ---------- réglages et profil (enregistrés sur l'appareil) ---------- */
 const SETTINGS = { size:'normal', fr:true, auto:true, logos:true };
 const PROFILE = { name:'' };
-try { Object.assign(SETTINGS, JSON.parse(localStorage.getItem('ce_settings') || '{}')); } catch(e) {}
+let HAD_SETTINGS = false;
+try { HAD_SETTINGS = !!localStorage.getItem('ce_settings'); Object.assign(SETTINGS, JSON.parse(localStorage.getItem('ce_settings') || '{}')); } catch(e) {}
+if (!SETTINGS.lang) SETTINGS.lang = HAD_SETTINGS ? 'fr' : I18N.detect();
+I18N.setLang(SETTINGS.lang);
 try { Object.assign(PROFILE, JSON.parse(localStorage.getItem('ce_profile') || '{}')); } catch(e) {}
 const saveSettings = () => { try { localStorage.setItem('ce_settings', JSON.stringify(SETTINGS)); } catch(e) {} };
 const saveProfile = () => { try { localStorage.setItem('ce_profile', JSON.stringify(PROFILE)); } catch(e) {} };
@@ -443,9 +452,14 @@ const FR_COUNTRIES = {
   'Europe':'Europe','eurocups':'Europe','World':'Monde','Africa':'Afrique','South-Africa':'Afrique du Sud','Asia':'Asie','South America':'Amérique du Sud','North America':'Amérique du Nord','Oceania':'Océanie','Intl':'International',
   'Angola':'Angola', 'Benin':'Bénin', 'Botswana':'Botswana', 'Burkina Faso':'Burkina Faso', 'Burundi':'Burundi', 'Cape Verde Islands':'Cap-Vert', 'Central African Republic':'Centrafrique', 'Chad':'Tchad', 'Comoros':'Comores', 'Congo':'Congo', 'Congo DR':'RD Congo', 'Djibouti':'Djibouti', 'Equatorial Guinea':'Guinée équatoriale', 'Eritrea':'Érythrée', 'Eswatini':'Eswatini', 'Swaziland':'Eswatini', 'Ethiopia':'Éthiopie', 'Gabon':'Gabon', 'Gambia':'Gambie', 'Ghana':'Ghana', 'Guinea-Bissau':'Guinée-Bissau', 'Kenya':'Kenya', 'Lesotho':'Lesotho', 'Liberia':'Liberia', 'Libya':'Libye', 'Madagascar':'Madagascar', 'Malawi':'Malawi', 'Mali':'Mali', 'Mauritania':'Mauritanie', 'Mauritius':'Maurice', 'Mozambique':'Mozambique', 'Namibia':'Namibie', 'Niger':'Niger', 'Nigeria':'Nigeria', 'Rwanda':'Rwanda', 'Sao Tome and Principe':'Sao Tomé-et-Principe', 'Seychelles':'Seychelles', 'Sierra Leone':'Sierra Leone', 'Somalia':'Somalie', 'South Sudan':'Soudan du Sud', 'Sudan':'Soudan', 'Tanzania':'Tanzanie', 'Togo':'Togo', 'Uganda':'Ouganda', 'Zimbabwe':'Zimbabwe', 'Reunion':'La Réunion'
 };
-function trCountry(n){ return SETTINGS.fr ? (FR_COUNTRIES[n] || n || '') : (n === 'eurocups' ? 'Europe' : (n || '')); }
+function trCountry(n){ if (I18N.lang !== 'fr') return SETTINGS.fr ? (I18N.country(n) || (n === 'eurocups' ? 'Europe' : (n || ''))) : (n === 'eurocups' ? 'Europe' : (n || '')); return SETTINGS.fr ? (FR_COUNTRIES[n] || n || '') : (n === 'eurocups' ? 'Europe' : (n || '')); }
 function trTeam(n){
   if (!SETTINGS.fr || !n) return n || '';
+  if (I18N.lang !== 'fr'){
+    const mm = String(n).match(/^(.+?)(\s+(?:U\d{2}|W))?$/);
+    const loc = mm && I18N.country(mm[1]);
+    return loc ? loc + (mm[2] || '') : n;
+  }
   const m = String(n).match(/^(.+?)(\s+(?:U\d{2}|W))?$/);
   const fr = m && FR_COUNTRIES[m[1]];
   return fr ? fr + (m[2] || '') : n;
@@ -454,6 +468,7 @@ function trRound(r){
   const t = String(r || '').trim();
   if (!t) return '';
   if (/^\d+$/.test(t)) return 'Journée ' + t;
+  if (I18N.lang !== 'fr') return SETTINGS.fr ? (I18N.round(t) || t) : t;
   if (!SETTINGS.fr) return t;
   return t
     .replace(/^Group Stage - (\d+)$/i, 'Phase de groupes · journée $1')
@@ -470,7 +485,7 @@ function trRound(r){
 }
 
 function trComp(c){
-  if (!SETTINGS.fr) return c || '';
+  if (!SETTINGS.fr || I18N.lang !== 'fr') return c || '';
   return String(c || '')
     .replace(/UEFA Champions League/i, 'Ligue des champions UEFA')
     .replace(/UEFA (Europa )?Conference League/i, 'Ligue Europa Conférence UEFA')
@@ -535,6 +550,7 @@ function dayLabel(iso){
   if (diff === 0) return "AUJOURD'HUI";
   if (diff === 1) return 'DEMAIN';
   const d = fromIso(iso);
+  if (I18N.lang !== 'fr'){ const x = I18N.dayLabel(d); if (x) return x; }
   return `${JOURS[d.getDay()]} ${d.getDate()} ${MOIS[d.getMonth()]}`;
 }
 
@@ -740,7 +756,7 @@ function staleDay(iso){
   parts.forEach(p => (p.data.games || []).forEach(g => { if (!seen.has(g.id)){ seen.add(g.id); all.push(g); } }));
   return { games: all.map(localize).filter(g => g.date === iso), ts: Math.min(...parts.map(p => p.ts || 0)) };
 }
-const stalebar = ts => `<div class="stalebar">Dernière mise à jour : ${esc(new Date(ts).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }))} · actualisation en cours…</div>`;
+const stalebar = ts => `<div class="stalebar">Dernière mise à jour : ${esc(new Date(ts).toLocaleTimeString(I18N.locale, { hour:'2-digit', minute:'2-digit' }))} · actualisation en cours…</div>`;
 
 async function show(){
   if (state.page !== 'matchs') return;
@@ -820,6 +836,7 @@ $('datePick').onchange = e => {
 
 
 function agoFr(ts){
+  { const x = I18N.ago(ts); if (x) return x; }
   const m = Math.max(1, Math.round((Date.now() - ts) / 60000));
   if (m < 60) return 'il y a ' + m + ' min';
   const h = Math.round(m / 60); if (h < 24) return 'il y a ' + h + ' h';
@@ -1503,7 +1520,7 @@ function renderDetail(){
   box.querySelectorAll('.follow').forEach(b => b.onclick = () => {
     const home = b.dataset.side === 'home';
     const ok = toggleFavTeam(home ? g.homeId : g.awayId, home ? g.home : g.away, home ? g.homeLogo : g.awayLogo, g.leagueId);
-    if (!ok) alert('Tu peux suivre 15 équipes au maximum.');
+    if (!ok) alert(I18N.tr('Tu peux suivre 15 équipes au maximum.'));
     renderDetail(); refreshList();
   });
   box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { DETAIL.tab = b.dataset.t; renderDetail(); });
@@ -1519,7 +1536,7 @@ function renderDetail(){
 const PANEL = { kind:null, msg:false };
 const POS_FR = { Goalkeepers:{g:'Gardiens',one:'Gardien'}, Defenders:{g:'Défenseurs',one:'Défenseur'}, Midfielders:{g:'Milieux',one:'Milieu'}, Forwards:{g:'Attaquants',one:'Attaquant'} };
 const MOIS_TXT = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-function formatBirth(iso){ if(!iso) return ''; const d = fromIso(iso); if(isNaN(d)) return ''; return `${d.getDate()} ${MOIS_TXT[d.getMonth()]} ${d.getFullYear()}`; }
+function formatBirth(iso){ if(!iso) return ''; const d = fromIso(iso); if(isNaN(d)) return ''; if (I18N.lang !== 'fr'){ const x = I18N.birth(d); if (x) return x; } return `${d.getDate()} ${MOIS_TXT[d.getMonth()]} ${d.getFullYear()}`; }
 function openPanel(kind){
   closeDrawer();
   PANEL.kind = kind; PANEL.msg = false;
@@ -1562,6 +1579,7 @@ function renderPanel(){
     html = head('Réglages') + `
       <div class="card2 set" style="margin-top:16px">
         <div class="row"><div class="rl"><b>Taille du texte</b><small>« Normal » est le réglage recommandé</small></div><div class="seg" id="segSize">${seg}</div></div>
+        <div class="row"><div class="rl"><b>Langue</b><small>Langue de l'application</small></div><select class="langsel" id="setLang" data-notr>${I18N.LANGS.map(l => `<option value="${l.code}" ${SETTINGS.lang===l.code?'selected':''}>${l.name}</option>`).join('')}</select></div>
         <div class="row"><div class="rl"><b>Noms en français</b><small>Pays, sélections et compétitions</small></div><label class="sw"><input type="checkbox" id="setFr" ${SETTINGS.fr ? 'checked' : ''}><i></i></label></div>
         <div class="row"><div class="rl"><b>Logos des équipes et des compétitions</b><small>Désactive-les pour n'afficher que les initiales</small></div><label class="sw"><input type="checkbox" id="setLogos" ${SETTINGS.logos ? 'checked' : ''}><i></i></label></div>
         <div class="row"><div class="rl"><b>Actualisation automatique</b><small>Met à jour les matchs en direct toutes les 90 secondes</small></div><label class="sw"><input type="checkbox" id="setAuto" ${SETTINGS.auto ? 'checked' : ''}><i></i></label></div>
@@ -1607,7 +1625,7 @@ function renderPanel(){
       <div class="acc">
         <div class="avatar big ${n ? 'has' : ''}">${n ? esc(n.charAt(0).toUpperCase()) : '👤'}</div>
         <h3>${n ? 'Salut ' + esc(n) + ' 👋' : "Tu utilises l'app sans compte"}</h3>
-        <p>Un compte est <b>facultatif</b> : il servira à retrouver tes favoris et tes réglages sur tous tes appareils. Tout le reste fonctionne très bien sans compte.</p>
+        <p data-tx="acc_intro">Un compte est <b>facultatif</b> : il servira à retrouver tes favoris et tes réglages sur tous tes appareils. Tout le reste fonctionne très bien sans compte.</p>
         <button class="btn primary" id="accLogin">Se connecter <span class="soon-tag">Bientôt</span></button>
         <button class="btn" id="accSignup">Créer un compte <span class="soon-tag">Bientôt</span></button>
         ${PANEL.msg ? `<div class="note">La connexion arrive bientôt. En attendant, tu peux choisir un pseudo ci-dessous : il reste enregistré sur cet appareil.</div>` : ''}
@@ -1624,6 +1642,7 @@ function renderPanel(){
 
   if (PANEL.kind === 'settings'){
     box.querySelectorAll('#segSize button').forEach(b => b.onclick = () => { SETTINGS.size = b.dataset.v; saveSettings(); applySize(); renderPanel(); });
+    $('setLang').onchange = e => { SETTINGS.lang = e.target.value; saveSettings(); location.reload(); };
     $('setFr').onchange = e => { SETTINGS.fr = e.target.checked; saveSettings(); refreshAfterSetting(); };
     $('setAuto').onchange = e => { SETTINGS.auto = e.target.checked; saveSettings(); };
     $('setLogos').onchange = e => { SETTINGS.logos = e.target.checked; saveSettings(); refreshAfterSetting(); };
