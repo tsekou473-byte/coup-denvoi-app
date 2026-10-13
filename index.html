@@ -420,7 +420,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v76';
+const VERSION = 'v77';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -786,8 +786,10 @@ function crest(name, logo, cls=''){
   let h = 0;
   for (let i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) >>> 0;
   const initials = name.split(' ').filter(w => w.length>2 || /^[A-Z]/.test(w)).slice(0,2).map(w => w[0]).join('').toUpperCase().slice(0,2) || name.slice(0,2).toUpperCase();
-  const img = (logo && SETTINGS.logos) ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
-  return `<span class="crest ${cls}" style="--c:${CREST_COLORS[h % CREST_COLORS.length]}">${esc(initials)}${img}</span>`;
+  // avec un logo, pas de lettres derrière (elles transparaissent) : elles n'apparaissent que si le logo manque ou ne charge pas
+  const has = logo && SETTINGS.logos;
+  const img = has ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.insertAdjacentText('afterbegin',this.dataset.i);this.remove()" data-i="${esc(initials)}">` : '';
+  return `<span class="crest ${cls}" style="--c:${CREST_COLORS[h % CREST_COLORS.length]}">${has ? '' : esc(initials)}${img}</span>`;
 }
 
 /* carton rouge à côté de l'écusson */
@@ -1758,8 +1760,9 @@ function loadSquad(){
 function playerIdent(p){ return p.id || pkey(p.name); }
 function pfacePlayer(p, cls=''){
   const initials = String(p.name || '').split(' ').filter(w => w.length > 1).slice(-2).map(w => w[0]).join('').toUpperCase() || '?';
-  const img = (p.photo && SETTINGS.logos) ? `<img src="${esc(p.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
-  return `<span class="pface ${cls}">${esc(initials)}${img}</span>`;
+  const has = p.photo && SETTINGS.logos;
+  const img = has ? `<img src="${esc(p.photo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.insertAdjacentText('afterbegin',this.dataset.i);this.remove()" data-i="${esc(initials)}">` : '';
+  return `<span class="pface ${cls}">${has ? '' : esc(initials)}${img}</span>`;
 }
 function teamSquadHtml(){
   if (PANEL.teamErr) return `<div class="empty">Impossible de charger l'effectif.<small>${esc(PANEL.teamErr).slice(0,200)}</small><button class="retry" id="tretry">Réessayer</button></div>`;
