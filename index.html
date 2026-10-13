@@ -293,6 +293,9 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .chips{ display:flex; flex-wrap:wrap; gap:8px; padding:0 2px 6px; }
 .fchip{ display:inline-flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:5px 6px 5px 6px; box-shadow:0 1px 2px rgba(20,30,50,.05); }
 .fchip b{ font-weight:500; font-size:1rem; }
+.crw{ position:relative; display:inline-flex; flex:none; }
+.rcb{ position:absolute; top:-3px; right:-4px; min-width:11px; height:15px; padding:0 2px; box-sizing:border-box; background:#e5231b; border-radius:2px; border:1px solid #fff; color:#fff; font:700 .6rem/13px system-ui; text-align:center; font-style:normal; box-shadow:0 1px 2px rgba(0,0,0,.4); }
+.rcb.big{ min-width:14px; height:19px; line-height:17px; top:-2px; right:-3px; }
 .crest.sm{ width:26px; height:26px; font-size:.65rem; box-shadow:none; }
 .crest.sm img{ padding:3px; }
 .fx{ font-style:normal; color:var(--muted); padding:2px 8px; cursor:pointer; font-size:.95rem; }
@@ -409,7 +412,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v68';
+const VERSION = 'v69';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -779,6 +782,19 @@ function crest(name, logo, cls=''){
   return `<span class="crest ${cls}" style="--c:${CREST_COLORS[h % CREST_COLORS.length]}">${esc(initials)}${img}</span>`;
 }
 
+/* carton rouge à côté de l'écusson */
+function redCount(g, side){
+  const k = side === 'home' ? 'rcH' : 'rcA';
+  if (g[k] != null && !Array.isArray(g.cards)) return g[k];
+  if (Array.isArray(g.cards)) return g.cards.filter(c => c.team === side && c.card === 'red').length;
+  return g[k] || 0;
+}
+function crestRc(g, side, cls=''){
+  const name = trTeam(side === 'home' ? g.home : g.away) || '', logo = side === 'home' ? g.homeLogo : g.awayLogo;
+  const n = redCount(g, side), c = crest(name, logo, cls);
+  return n ? `<span class="crw">${c}<i class="rcb${cls==='big'?' big':''}">${n > 1 ? n : ''}</i></span>` : c;
+}
+
 /* minute en direct : entre deux mises à jour du serveur, on l'avance seul chaque minute */
 const ANCH = {};   // id du match -> { m: minute connue, at: moment où on l'a apprise }
 const estMin = (a, cap) => Math.min(cap, a.m + Math.floor((Date.now() - a.at) / 60000));
@@ -855,9 +871,9 @@ function predCard(d){
 function matchRow(g){
   return `
       <div class="match${isFavGame(g) ? ' fav' : ''}" data-id="${esc(g.id)}">
-        <div class="tn h">${esc(trTeam(g.home))}</div>${crest(trTeam(g.home) || '', g.homeLogo)}
+        <div class="tn h">${esc(trTeam(g.home))}</div>${crestRc(g, 'home')}
         ${middle(g)}
-        ${crest(trTeam(g.away) || '', g.awayLogo)}<div class="tn a">${esc(trTeam(g.away))}</div>
+        ${crestRc(g, 'away')}<div class="tn a">${esc(trTeam(g.away))}</div>
       </div>`;
 }
 
@@ -1799,9 +1815,9 @@ function renderDetail(){
       <button class="icon-btn" id="dfav" aria-label="Suivre ce match">${starSvg(isFavMatch(g.id))}</button>
     </div>
     <div class="sb">
-      <div class="sbteam"><div class="sbtap" data-side="home">${crest(trTeam(g.home) || '', g.homeLogo, 'big')}<span>${esc(trTeam(g.home))}</span></div>${followBtn(g, 'home')}</div>
+      <div class="sbteam"><div class="sbtap" data-side="home">${crestRc(g, 'home', 'big')}<span>${esc(trTeam(g.home))}</span></div>${followBtn(g, 'home')}</div>
       <div class="sbmid">${sbMid(g)}</div>
-      <div class="sbteam"><div class="sbtap" data-side="away">${crest(trTeam(g.away) || '', g.awayLogo, 'big')}<span>${esc(trTeam(g.away))}</span></div>${followBtn(g, 'away')}</div>
+      <div class="sbteam"><div class="sbtap" data-side="away">${crestRc(g, 'away', 'big')}<span>${esc(trTeam(g.away))}</span></div>${followBtn(g, 'away')}</div>
     </div>
     ${meta ? `<div class="meta">${meta}</div>` : ''}`;
   const bodyHtml = `
