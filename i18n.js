@@ -106,6 +106,7 @@ const ROWS = [
  ['Matchs joués','Matches played','Partidos jugados','Jogos disputados','المباريات الملعوبة','Gespielte Spiele','Partite giocate','Oynanan maç'],
  ['Cartons','Cards','Tarjetas','Cartões','البطاقات','Karten','Cartellini','Kartlar'],
  ['Changements','Substitutions','Cambios','Substituições','التغييرات','Wechsel','Cambi','Değişiklikler'],
+ ['Classement en direct · provisoire','Live table · provisional','Clasificación en directo · provisional','Classificação ao vivo · provisória','الترتيب المباشر · مؤقت','Live-Tabelle · vorläufig','Classifica live · provvisoria','Canlı puan durumu · geçici'],
  ['Buts','Goals','Goles','Gols','الأهداف','Tore','Gol','Goller'],
  ['Passes décisives','Assists','Asistencias','Assistências','التمريرات الحاسمة','Vorlagen','Assist','Asistler'],
  ['Cartons jaunes','Yellow cards','Tarjetas amarillas','Cartões amarelos','البطاقات الصفراء','Gelbe Karten','Cartellini gialli','Sarı kartlar'],

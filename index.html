@@ -307,6 +307,12 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .tr .tm b{ font-weight:500; line-height:1.1; overflow-wrap:anywhere; }
 .tr .pt{ font-weight:700; }
 .tr.hl{ background:rgba(255,181,71,.16); }
+.tr .ps{ position:relative; }
+.tr .mv{ position:absolute; left:50%; bottom:-1px; transform:translateX(-50%); font-style:normal; font-size:.5rem; line-height:1; }
+.tr .mv.up{ color:#1f9d55; } .tr .mv.dn{ color:#d64545; }
+.tr.lv .pt{ color:var(--accent-ink); font-weight:700; }
+.livetag{ display:flex; align-items:center; gap:6px; margin:0 14px 8px; color:var(--live,#d64545); font-family:'Barlow Condensed',sans-serif; letter-spacing:.06em; text-transform:uppercase; font-size:.95rem; }
+.livetag::before{ content:''; width:8px; height:8px; border-radius:50%; background:currentColor; }
 .tr.hl .tm b{ font-weight:700; }
 .tr.fv .tm b{ color:var(--accent-ink); }
 .stg{ padding:11px 14px 4px; font-family:'Barlow Condensed',sans-serif; color:var(--accent-ink); letter-spacing:.06em; text-transform:uppercase; font-size:1.05rem; }
@@ -403,7 +409,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v67';
+const VERSION = 'v68';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1594,7 +1600,7 @@ function standingsHtml(rows, opt = {}){
       const fav = opt.favs && isFavTeam(r.teamId);
       const zk = zoneKey(r.zone);
       const diff = (r.gf != null && r.ga != null) ? r.gf - r.ga : null;
-      return `<div class="tr${hl ? ' hl' : ''}${fav ? ' fv' : ''}" data-tid="${esc(r.teamId||'')}" data-lid="${esc(opt.leagueId||'')}" data-name="${esc(r.team||'')}" data-logo="${esc(r.badge||'')}"><span class="ps" style="box-shadow:inset 3px 0 0 ${zk ? ZONES[zk].c : 'transparent'}">${r.pos ?? ''}</span><span class="tm">${crest(trTeam(r.team) || '', r.badge, 'sm')}<b>${esc(trTeam(r.team))}</b></span><span>${r.played ?? ''}</span><span>${r.w ?? ''}</span><span>${r.d ?? ''}</span><span>${r.l ?? ''}</span><span>${diff == null ? '' : (diff > 0 ? '+' + diff : diff)}</span><span class="pt">${r.pts ?? ''}</span></div>`;
+      return `<div class="tr${hl ? ' hl' : ''}${fav ? ' fv' : ''}${r.lv ? ' lv' : ''}" data-tid="${esc(r.teamId||'')}" data-lid="${esc(opt.leagueId||'')}" data-name="${esc(r.team||'')}" data-logo="${esc(r.badge||'')}"><span class="ps" style="box-shadow:inset 3px 0 0 ${zk ? ZONES[zk].c : 'transparent'}">${r.pos ?? ''}${r.mv ? `<i class="mv ${r.mv > 0 ? 'up' : 'dn'}">${r.mv > 0 ? '▲' : '▼'}</i>` : ''}</span><span class="tm">${crest(trTeam(r.team) || '', r.badge, 'sm')}<b>${esc(trTeam(r.team))}</b></span><span>${r.played ?? ''}</span><span>${r.w ?? ''}</span><span>${r.d ?? ''}</span><span>${r.l ?? ''}</span><span>${diff == null ? '' : (diff > 0 ? '+' + diff : diff)}</span><span class="pt">${r.pts ?? ''}</span></div>`;
     }).join('');
     const title = multi ? `<div class="stg">${esc(String(k).replace(/^Group /, 'Groupe '))}</div>` : '';
     return title + `<div class="tbl">${th}${body}</div>`;
@@ -1604,13 +1610,47 @@ const NO_TABLE = `<div class="noev">Pas de classement pour cette compétition.<b
 
 // --- dans la page d'un match
 const noTable = note => note ? `<div class="noev">Pas de classement pour cette compétition.<br><small style="opacity:.8">${esc(note)}</small></div>` : NO_TABLE;
+
+/* classement provisoire : on ajoute le score en cours des matchs « en direct » de cette compétition */
+function liveRows(rows, leagueId, cur){
+  const games = Object.values(GAME_INDEX).filter(g => g && String(g.leagueId) === String(leagueId) && g.status === 'live' && g.hs != null && g.as != null && (!cur || g.id !== cur.id));
+  if (cur && cur.status === 'live' && cur.hs != null && cur.as != null) games.push(cur);
+  if (!games.length) return { rows, live:false };
+  const out = rows.map(r => ({ ...r })), by = {};
+  out.forEach(r => { if (r.teamId != null) by[String(r.teamId)] = r; by['n:' + norm(r.team)] = r; });
+  const find = (id, name) => by[String(id)] || by['n:' + norm(name)];
+  let touched = false;
+  games.forEach(g => {
+    const h = find(g.homeId, g.home), a = find(g.awayId, g.away);
+    if (!h || !a || h === a) return;
+    const hs = +g.hs, as = +g.as;
+    [[h, hs, as], [a, as, hs]].forEach(([r, f, ag]) => {
+      r.played = (r.played || 0) + 1; r.gf = (r.gf || 0) + f; r.ga = (r.ga || 0) + ag;
+      if (f > ag){ r.w = (r.w || 0) + 1; r.pts = (r.pts || 0) + 3; } else if (f === ag){ r.d = (r.d || 0) + 1; r.pts = (r.pts || 0) + 1; } else r.l = (r.l || 0) + 1;
+      r.lv = true;
+    });
+    touched = true;
+  });
+  if (!touched) return { rows, live:false };
+  const groups = {};
+  out.forEach((r, i) => { r._i = i; (groups[r.stage || ''] = groups[r.stage || ''] || []).push(r); });
+  Object.values(groups).forEach(list => {
+    const old = list.slice().sort((a,b) => (a.pos ?? 999) - (b.pos ?? 999));
+    const zones = old.map(r => r.zone);
+    const oldPos = new Map(old.map(r => [r, r.pos]));
+    list.sort((a,b) => (b.pts||0) - (a.pts||0) || ((b.gf||0)-(b.ga||0)) - ((a.gf||0)-(a.ga||0)) || (b.gf||0) - (a.gf||0) || (oldPos.get(a) ?? 999) - (oldPos.get(b) ?? 999));
+    list.forEach((r, i) => { const p0 = oldPos.get(r); r.pos = i + 1; r.zone = zones[i]; r.mv = r.lv && p0 ? p0 - r.pos : 0; });
+  });
+  return { rows: out, live:true };
+}
 function tabTable(d){
   if (!d.leagueId) return `<div class="card2">${NO_TABLE}</div>`;
   if (DETAIL.standErr) return `<div class="card2"><div class="noev">Impossible de charger le classement.<br><small style="opacity:.8">${esc(DETAIL.standErr).slice(0,200)}</small><br><button class="retry" id="sretry">Réessayer</button></div></div>`;
   const S = STAND[d.leagueId];
   if (!S){ loadDetailStand(d.leagueId); return `<div class="card2"><div class="noev">Chargement du classement…</div></div>`; }
   if (!S.rows.length) return `<div class="card2">${noTable(S.note)}</div>`;
-  return `<div class="card2">${standingsHtml(S.rows, { ids:[d.homeId, d.awayId], names:[d.home, d.away], favs:true, leagueId:d.leagueId })}</div>${zoneLegend(S.rows)}`;
+  const L = liveRows(S.rows, d.leagueId, d);
+  return `${L.live ? '<div class="livetag">Classement en direct · provisoire</div>' : ''}<div class="card2">${standingsHtml(L.rows, { ids:[d.homeId, d.awayId], names:[d.home, d.away], favs:true, leagueId:d.leagueId })}</div>${zoneLegend(L.rows)}`;
 }
 function loadDetailStand(id){
   if (DETAIL.standLoading) return;
