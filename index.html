@@ -371,7 +371,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v41';
+const VERSION = 'v42';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -975,11 +975,11 @@ function evRow(e){
 
 /* confrontations directes */
 const H2H = {};   // "a|b" -> { data } | { err } | { loading:true }
-function h2hKey(d){ return d.homeId && d.awayId ? d.homeId + '|' + d.awayId : null; }
+function h2hKey(d){ return d.homeId && d.awayId ? 'v2|' + d.homeId + '|' + d.awayId : null; }
 function loadH2H(d){
   const k = h2hKey(d); if (!k || H2H[k]) return;
   H2H[k] = { loading:true };
-  apiGet(`${BACKEND}/api/h2h?a=${encodeURIComponent(d.homeId)}&b=${encodeURIComponent(d.awayId)}`)
+  apiGet(`${BACKEND}/api/h2h?a=${encodeURIComponent(d.homeId)}&b=${encodeURIComponent(d.awayId)}&an=${encodeURIComponent(d.home)}&bn=${encodeURIComponent(d.away)}`)
     .then(r => { H2H[k] = { data:r.data }; }).catch(e => { H2H[k] = { err:e.message }; })
     .finally(() => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); });
 }
