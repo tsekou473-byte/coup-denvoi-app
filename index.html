@@ -133,7 +133,10 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .dtab{ flex:1; border:none; background:var(--card); box-shadow:0 1px 2px rgba(20,30,50,.08); padding:9px 0; border-radius:999px; font-family:'Barlow Condensed',sans-serif; font-size:1.08rem; letter-spacing:.05em; text-transform:uppercase; color:var(--text); cursor:pointer; }
 .dtab.active{ background:var(--accent); color:#1b1305; font-weight:600; box-shadow:none; }
 .ptr{ position:fixed; left:0; right:0; top:0; z-index:60; display:flex; justify-content:center; pointer-events:none; transform:translateY(-160px); opacity:0; visibility:hidden; }
-.ptr span{ margin-top:calc(env(safe-area-inset-top) + 8px); background:var(--card); color:var(--text); border:1px solid var(--line); box-shadow:0 2px 8px rgba(20,30,50,.15); border-radius:999px; padding:7px 16px; font-size:.9rem; }
+.ptr span{ margin-top:calc(env(safe-area-inset-top) + 8px); background:var(--card); color:var(--text); border:1px solid var(--line); box-shadow:0 2px 8px rgba(20,30,50,.15); border-radius:50%; width:42px; height:42px; padding:0; display:flex; align-items:center; justify-content:center; }
+.ptr svg{ width:24px; height:24px; color:var(--brand,#1f5fa8); }
+.ptr.spin svg{ animation:ptrspin .8s linear infinite; }
+@keyframes ptrspin{ to{ transform:rotate(360deg); } }
 html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .pred{ grid-column:1 / -1; margin-top:2px; }
 .pbar{ display:flex; height:5px; border-radius:3px; overflow:hidden; gap:2px; background:transparent; }
@@ -425,7 +428,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v85';
+const VERSION = 'v86';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1146,10 +1149,12 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
     lbl.style.marginTop = page ? '8px' : '';
     const p = Math.min(px, 90);
     bar.style.transform = `translateY(${p - (page ? 50 : 60)}px)`;
-    lbl.textContent = text;
+    if (!lbl.firstChild) lbl.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4a8 8 0 0 1 7.2 4.5l1.9-1.1-.4 5.2-4.5-2.8 1.7-1A5.6 5.6 0 0 0 6.9 9.3L5.2 7.7A8 8 0 0 1 12 4z"/><path d="M12 20a8 8 0 0 1-7.2-4.5l-1.9 1.1.4-5.2 4.5 2.8-1.7 1a5.6 5.6 0 0 0 9.0 1.5l1.7 1.6A8 8 0 0 1 12 20z"/></svg>';
+    lbl.firstChild.style.transform = text === 'Actualisation…' ? '' : `rotate(${p * 4}deg)`;
+    bar.classList.toggle('spin', text === 'Actualisation…');
     const t = target(); if (t){ t.style.transition = 'none'; t.style.transform = `translateY(${p}px)`; }
   };
-  const hideBar = () => { ['main','dbody'].forEach(id => { const t = $(id); if (t && t.style.transform){ t.style.transition = 'transform .25s'; t.style.transform = ''; } }); bar.style.transition = 'transform .25s, opacity .25s'; bar.style.transform = 'translateY(-160px)'; bar.style.opacity = '0'; setTimeout(() => { if (bar.style.opacity === '0') bar.style.visibility = 'hidden'; }, 280); };
+  const hideBar = () => { bar.classList.remove('spin'); ['main','dbody'].forEach(id => { const t = $(id); if (t && t.style.transform){ t.style.transition = 'transform .25s'; t.style.transform = ''; } }); bar.style.transition = 'transform .25s, opacity .25s'; bar.style.transform = 'translateY(-160px)'; bar.style.opacity = '0'; setTimeout(() => { if (bar.style.opacity === '0') bar.style.visibility = 'hidden'; }, 280); };
   function doRefresh(){
     if (!$('panel').hidden){ if (PANEL.kind === 'team' && PANEL.team){ delete TEAM[PANEL.team.leagueId + ':' + PANEL.team.id]; PANEL.squad = null; renderPanel(); loadSquad(); } else if (PANEL.kind === 'competition' && PANEL.comp){ openCompetition(PANEL.comp.id); } return; }
     if (!$('detail').hidden){ DETAIL.err = null; loadDetail(); return; }
