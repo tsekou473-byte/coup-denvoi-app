@@ -146,6 +146,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .h2row{ display:flex; gap:8px; align-items:center; padding:8px 0; border-top:1px solid var(--line); font-size:.88rem; }
 .h2row .dt{ color:var(--muted); width:74px; flex:none; font-size:.76rem; }
 .h2row .tm{ flex:1; } .h2row .sc{ font-weight:700; white-space:nowrap; }
+#dhead, #dbody{ display:contents; }
 .card2{ background:var(--card); border:1px solid var(--line); border-radius:18px; margin:0 10px 14px; overflow:hidden; max-width:620px; box-shadow:0 1px 3px rgba(20,30,50,.05); }
 @media (min-width:660px){ .card2{ margin-left:auto; margin-right:auto; } }
 
@@ -402,7 +403,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v66';
+const VERSION = 'v67';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1751,7 +1752,7 @@ function renderDetail(){
   else if (!d) body = `<div class="empty">Chargement du match…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
   else body = DETAIL.tab === 'resume' ? tabResume(d) : DETAIL.tab === 'compos' ? tabCompos(d) : DETAIL.tab === 'stats' ? tabStats(d) : tabTable(d);
 
-  box.innerHTML = `
+  const headHtml = `
     <div class="dh">
       <button class="icon-btn" id="dback" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="ttl"><b>${esc(trComp(g.comp))}</b><small>${esc(dayLabel(g.date))}${g.time ? ' · ' + esc(g.time) : ''}</small></div>
@@ -1762,9 +1763,19 @@ function renderDetail(){
       <div class="sbmid">${sbMid(g)}</div>
       <div class="sbteam"><div class="sbtap" data-side="away">${crest(trTeam(g.away) || '', g.awayLogo, 'big')}<span>${esc(trTeam(g.away))}</span></div>${followBtn(g, 'away')}</div>
     </div>
-    ${meta ? `<div class="meta">${meta}</div>` : ''}
+    ${meta ? `<div class="meta">${meta}</div>` : ''}`;
+  const bodyHtml = `
     <div class="dtabs">${[['resume','Résumé'],['compos','Compos'],['stats','Stats'],['table','Classement']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}`;
+  // l'en-tête (écussons, score) n'est redessiné que s'il a changé : changer d'onglet ne fait plus clignoter les images
+  const sig = DETAIL.id + '§' + headHtml + '§' + I18N.lang;
+  let hd = $('dhead'), bd = $('dbody');
+  if (!hd || !bd || hd.parentNode !== box){
+    box.innerHTML = '<div id="dhead"></div><div id="dbody"></div>';
+    hd = $('dhead'); bd = $('dbody'); DETAIL.headSig = null;
+  }
+  if (DETAIL.headSig !== sig){ hd.innerHTML = headHtml; DETAIL.headSig = sig; }
+  bd.innerHTML = bodyHtml;
 
   $('dback').onclick = backFromDetail;
   // on met à jour le bouton et l'étoile sur place (sans tout redessiner) : les écussons ne clignotent plus
