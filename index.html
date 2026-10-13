@@ -203,6 +203,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .pn{ position:relative; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.15rem; box-shadow:0 2px 6px rgba(0,0,0,.35); }
 .pph{ position:absolute; inset:0; border-radius:50%; overflow:hidden; }
 .pph img{ width:100%; height:100%; object-fit:cover; object-position:center top; display:block; }
+.stalebar{ margin:6px 14px 0; padding:7px 12px; border-radius:10px; background:var(--card-head, #e8ecf4); color:var(--muted); font-size:.82rem; text-align:center; }
 .pnum{ display:none; }
 .pn.nophoto .pnum{ display:inline; }
 .pn.nophoto .pph, .pn.nophoto .pnbadge{ display:none; }
@@ -350,7 +351,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v37';
+const VERSION = 'v38';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -709,14 +710,32 @@ function renderGames(list){
   }).join('') + `<div class="ver">Coup d'Envoi · ${VERSION}</div>`;
 }
 
+/* dernière liste connue (gardée sur l'appareil) : affichée tout de suite pendant que le serveur se réveille */
+function staleDay(iso){
+  const parts = parisDaysOf(iso).map(d => memLoad(`${BACKEND}/api/fixtures?from=${d}&to=${d}`));
+  if (parts.some(p => !p || !p.data || Date.now() - (p.ts || 0) > 36 * 3600000)) return null;
+  const seen = new Set(), all = [];
+  parts.forEach(p => (p.data.games || []).forEach(g => { if (!seen.has(g.id)){ seen.add(g.id); all.push(g); } }));
+  return { games: all.map(localize).filter(g => g.date === iso), ts: Math.min(...parts.map(p => p.ts || 0)) };
+}
+const stalebar = ts => `<div class="stalebar">Dernière mise à jour : ${esc(new Date(ts).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }))} · actualisation en cours…</div>`;
+
 async function show(){
   if (state.page !== 'matchs') return;
   const my = ++reqId;
   const iso = state.sel === 'live' ? TODAY : state.sel;
   const main = $('main');
   if (!cache[iso] || Date.now() - cache[iso].ts >= 60000){
-    main.innerHTML = `<div class="empty">Chargement des matchs…<small id="loadnote"></small></div>`;
-    setTimeout(() => { const n = $('loadnote'); if (n && reqId === my) n.textContent = "Le serveur se réveille, cela peut prendre jusqu'à une minute. Les prochaines fois seront rapides."; }, 4000);
+    const old = staleDay(iso);
+    if (old && old.games.length){
+      old.games.forEach(g => { if (!GAME_INDEX[g.id]) GAME_INDEX[g.id] = g; });
+      renderDates();
+      renderGames(old.games.map(g => ({ ...g, status: g.status === 'live' ? 'scheduled' : g.status })));   // un « en direct » ancien n'est plus fiable
+      main.insertAdjacentHTML('afterbegin', stalebar(old.ts));
+    } else {
+      main.innerHTML = `<div class="empty">Chargement des matchs…<small id="loadnote"></small></div>`;
+      setTimeout(() => { const n = $('loadnote'); if (n && reqId === my) n.textContent = "Le serveur se réveille, cela peut prendre jusqu'à une minute. Les prochaines fois seront rapides."; }, 4000);
+    }
   }
   let games;
   try {
