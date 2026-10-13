@@ -402,7 +402,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v65';
+const VERSION = 'v66';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1767,7 +1767,12 @@ function renderDetail(){
     ${body}`;
 
   $('dback').onclick = backFromDetail;
-  $('dfav').onclick = () => { toggleFavMatch(g); renderDetail(); refreshList(); };
+  // on met à jour le bouton et l'étoile sur place (sans tout redessiner) : les écussons ne clignotent plus
+  const syncFollow = () => {
+    box.querySelectorAll('.follow').forEach(b => { const id = b.dataset.side === 'home' ? g.homeId : g.awayId; const on = isFavTeam(id); b.classList.toggle('on', on); b.textContent = on ? '★ Suivie' : '☆ Suivre'; });
+    $('dfav').innerHTML = starSvg(isFavMatch(g.id));
+  };
+  $('dfav').onclick = () => { toggleFavMatch(g); syncFollow(); refreshList(); };
   box.querySelectorAll('.pp[data-name], .subtap[data-name]').forEach(el => el.onclick = () => {
     openPitchPlayer(el.dataset.side, el.dataset.name, el.dataset.n, g);
   });
@@ -1780,7 +1785,7 @@ function renderDetail(){
     const home = b.dataset.side === 'home';
     const ok = toggleFavTeam(home ? g.homeId : g.awayId, home ? g.home : g.away, home ? g.homeLogo : g.awayLogo, g.leagueId);
     if (!ok) alert(I18N.tr('Tu peux suivre 15 équipes au maximum.'));
-    renderDetail(); refreshList();
+    syncFollow(); refreshList();
   });
   box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { DETAIL.tab = b.dataset.t; renderDetail(); });
   const r = $('dretry');
