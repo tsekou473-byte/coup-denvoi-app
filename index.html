@@ -389,7 +389,7 @@ body{ overflow-x:hidden; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v49';
+const VERSION = 'v50';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -421,7 +421,60 @@ if (!Array.isArray(FAV.teams)) FAV.teams = [];
 if (!Array.isArray(FAV.matches)) FAV.matches = [];
 FAV.matches.forEach(m => { if (typeof m.ts === 'number'){ const d = new Date(m.ts); m.pdate = m.pdate || m.date; m.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; m.time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; } });
 const FAVSTATE = { games:null, loading:false, err:null, dirty:true, ts:0, failed:0 };
-const saveFav = () => { FAVSTATE.dirty = true; try { localStorage.setItem('ce_favs', JSON.stringify(FAV)); } catch(e) {} };
+const saveFav = () => { FAVSTATE.dirty = true; if (window.pushSyncSoon) pushSyncSoon(); try { localStorage.setItem('ce_favs', JSON.stringify(FAV)); } catch(e) {} };
+
+/* ---------- notifications (buts, coup d'envoi, fin de match de tes favoris) ---------- */
+const PUSH = {
+  supported: 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
+  standalone: (typeof navigator !== 'undefined' && navigator.standalone === true) || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches),
+  enabledOnServer: null, timer: null
+};
+const b64ToU8 = b => { const p = '='.repeat((4 - b.length % 4) % 4), r = atob((b + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...r].map(c => c.charCodeAt(0))); };
+async function pushGetSub(){ const reg = await navigator.serviceWorker.ready; return reg.pushManager.getSubscription(); }
+async function pushServerKey(){
+  const r = await fetch(`${BACKEND}/api/push/key`); const d = await r.json();
+  PUSH.enabledOnServer = !!d.enabled; return d.enabled ? d.key : null;
+}
+async function pushSync(){
+  try {
+    if (!SETTINGS.push || !PUSH.supported || Notification.permission !== 'granted') return;
+    const sub = await pushGetSub(); if (!sub) return;
+    await fetch(`${BACKEND}/api/push/sync`, { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ subscription: sub.toJSON(), teams: FAV.teams.map(t => t.id), matches: FAV.matches.map(m => m.id), lang: I18N.lang }) });
+  } catch(e) {}
+}
+window.pushSyncSoon = () => { clearTimeout(PUSH.timer); PUSH.timer = setTimeout(pushSync, 1500); };
+async function pushEnable(){
+  const perm = await Notification.requestPermission();           // doit venir directement du toucher
+  if (perm !== 'granted') throw new Error('denied');
+  const key = await pushServerKey();
+  if (!key) throw new Error('server');
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: b64ToU8(key) });
+  SETTINGS.push = true; saveSettings();
+  await pushSync();
+}
+async function pushDisable(){
+  SETTINGS.push = false; saveSettings();
+  try { const sub = await pushGetSub(); if (sub){ fetch(`${BACKEND}/api/push/unsubscribe`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {}); await sub.unsubscribe(); } } catch(e) {}
+}
+async function pushTest(){
+  const sub = await pushGetSub(); if (!sub) throw new Error('nosub');
+  const r = await fetch(`${BACKEND}/api/push/test`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+  if (!r.ok) throw new Error('fail');
+}
+function pushRow(){
+  let hint = 'Buts, coups d\'envoi et fins de match de tes favoris';
+  let dis = '';
+  if (!PUSH.supported){ hint = PUSH.standalone ? 'Ton téléphone ne gère pas les notifications pour cette app.' : 'Ajoute d\'abord l\'app à l\'écran d\'accueil (Partager, puis « Sur l\'écran d\'accueil »).'; dis = 'disabled'; }
+  else if (Notification.permission === 'denied'){ hint = 'Bloquées : autorise-les dans les Réglages de ton téléphone.'; dis = 'disabled'; }
+  const on = SETTINGS.push && PUSH.supported && Notification.permission === 'granted';
+  return `<div class="row"><div class="rl"><b>Notifications</b><small>${hint}</small></div><label class="sw"><input type="checkbox" id="setPush" ${on ? 'checked' : ''} ${dis}><i></i></label></div>`
+    + (on ? `<div class="row"><div class="rl"><b>Envoyer une notification test</b><small>Pour vérifier que tout fonctionne</small></div><button class="btn small" id="pushTest">Envoyer</button></div>` : '');
+}
+pushSync();
+
 const isFavTeam = id => !!id && FAV.teams.some(t => t.id === String(id));
 const isFavMatch = id => !!id && FAV.matches.some(m => m.id === String(id));
 const isFavGame = g => isFavMatch(g.id) || isFavTeam(g.homeId) || isFavTeam(g.awayId);
@@ -1701,6 +1754,7 @@ function renderPanel(){
         <div class="row"><div class="rl"><b>Langue</b><small>Langue de l'application</small></div><select class="langsel" id="setLang" data-notr>${I18N.LANGS.map(l => `<option value="${l.code}" ${SETTINGS.lang===l.code?'selected':''}>${l.name}</option>`).join('')}</select></div>
         <div class="row"><div class="rl"><b>Noms en français</b><small>Pays, sélections et compétitions</small></div><label class="sw"><input type="checkbox" id="setFr" ${SETTINGS.fr ? 'checked' : ''}><i></i></label></div>
         <div class="row"><div class="rl"><b>Logos des équipes et des compétitions</b><small>Désactive-les pour n'afficher que les initiales</small></div><label class="sw"><input type="checkbox" id="setLogos" ${SETTINGS.logos ? 'checked' : ''}><i></i></label></div>
+        ${pushRow()}
         <div class="row"><div class="rl"><b>Actualisation automatique</b><small>Met à jour les matchs en direct toutes les 90 secondes</small></div><label class="sw"><input type="checkbox" id="setAuto" ${SETTINGS.auto ? 'checked' : ''}><i></i></label></div>
       </div>
       <div class="card2 set">
@@ -1761,6 +1815,17 @@ function renderPanel(){
 
   if (PANEL.kind === 'settings'){
     box.querySelectorAll('#segSize button').forEach(b => b.onclick = () => { SETTINGS.size = b.dataset.v; saveSettings(); applySize(); renderPanel(); });
+    if ($('setPush')) $('setPush').onchange = async e => {
+      const el = e.target;
+      try {
+        if (el.checked) await pushEnable(); else await pushDisable();
+      } catch (err) {
+        el.checked = false; SETTINGS.push = false; saveSettings();
+        alert(I18N.tr(err && err.message === 'denied' ? 'Notifications refusées. Tu peux les autoriser dans les Réglages de ton téléphone.' : err && err.message === 'server' ? 'Les notifications ne sont pas encore disponibles sur le serveur.' : 'Impossible d\'activer les notifications pour le moment.'));
+      }
+      renderPanel();
+    };
+    if ($('pushTest')) $('pushTest').onclick = async () => { try { await pushTest(); } catch(e) { alert(I18N.tr('Impossible d\'envoyer la notification test.')); } };
     $('setLang').onchange = e => { SETTINGS.lang = e.target.value; saveSettings(); location.reload(); };
     $('setFr').onchange = e => { SETTINGS.fr = e.target.checked; saveSettings(); refreshAfterSetting(); };
     $('setAuto').onchange = e => { SETTINGS.auto = e.target.checked; saveSettings(); };

@@ -5,7 +5,7 @@
 // - Les données de matchs (serveur Render) sont gérées par l'app elle-même.
 // Change VERSION à chaque mise à jour pour renouveler la copie.
 
-const VERSION = 'v49';
+const VERSION = 'v50';
 const SHELL = 'ce-shell-' + VERSION;
 const RUNTIME = 'ce-runtime';
 const PRECACHE = ['./', 'index.html', 'i18n.js', 'manifest.json', 'privacy.html', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
@@ -69,4 +69,20 @@ self.addEventListener('fetch', event => {
       })
     )
   );
+});
+
+// Notifications push (buts, coup d'envoi, fin de match)
+self.addEventListener('push', event => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (e) { d = { title: "Coup d'Envoi", body: event.data ? event.data.text() : '' }; }
+  event.waitUntil(self.registration.showNotification(d.title || "Coup d'Envoi", {
+    body: d.body || '', tag: d.tag || undefined, icon: 'icon-192.png', badge: 'icon-192.png', data: { url: d.url || './' }
+  }));
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow((event.notification.data && event.notification.data.url) || './');
+  }));
 });
