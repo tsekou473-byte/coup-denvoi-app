@@ -5,10 +5,10 @@
 // - Les données de matchs (serveur Render) sont gérées par l'app elle-même.
 // Change VERSION à chaque mise à jour pour renouveler la copie.
 
-const VERSION = 'v69';
+const VERSION = 'v70';
 const SHELL = 'ce-shell-' + VERSION;
 const RUNTIME = 'ce-runtime';
-const PRECACHE = ['./', 'index.html', 'i18n.js', 'manifest.json', 'privacy.html', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
+const PRECACHE = ['./', 'index.html', 'i18n.js', 'bg-header.jpg', 'manifest.json', 'privacy.html', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(

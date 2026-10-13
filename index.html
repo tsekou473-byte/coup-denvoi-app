@@ -26,7 +26,7 @@ body{ background:var(--bg); color:var(--text); font-family:'Barlow Semi Condense
 button{ font-family:inherit; color:inherit; }
 
 /* en-tête */
-header{ position:sticky; top:0; z-index:10; background:linear-gradient(180deg,var(--brand),var(--brand-dark)); color:#fff; padding-top:env(safe-area-inset-top,0px); }
+header{ position:sticky; top:0; z-index:10; background:#12324f url(bg-header.jpg) center/cover no-repeat; color:#fff; padding-top:env(safe-area-inset-top,0px); }
 .top{ display:flex; align-items:center; justify-content:space-between; padding:10px 12px 6px 16px; }
 .brand{ display:flex; align-items:center; gap:9px; font-family:'Barlow Condensed',sans-serif; font-size:1.6rem; font-weight:600; letter-spacing:.02em; }
 .brand svg{ width:27px; height:27px; }
@@ -352,7 +352,6 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
   <div class="top">
     <div class="brand">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#ffb547"/><path d="M12 6.4 16.5 9.6 14.8 15h-5.6L7.5 9.6Z" fill="#0e1320"/></svg>
-      Coup d'Envoi
     </div>
     <div class="right">
       <label class="icon-btn cal" aria-label="Choisir une date">
@@ -412,7 +411,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v69';
+const VERSION = 'v70';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
