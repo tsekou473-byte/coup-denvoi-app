@@ -419,7 +419,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v74';
+const VERSION = 'v75';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1229,7 +1229,7 @@ function hideDetail(){
   else if (state.page === 'matchs') refreshList();
 }
 function backFromDetail(){ if (history.state && history.state.d) history.back(); else hideDetail(); }
-window.addEventListener('popstate', () => { if (!$('detail').hidden) hideDetail(); else if (!$('panel').hidden) hidePanel(); });
+window.addEventListener('popstate', () => { if (!$('panel').hidden) hidePanel(); else if (!$('detail').hidden) hideDetail(); });
 $('main').addEventListener('click', e => {
   const m = e.target.closest('.match');
   if (m) openMatch(m.dataset.id);
