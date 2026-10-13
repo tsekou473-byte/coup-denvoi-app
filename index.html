@@ -428,7 +428,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v87';
+const VERSION = 'v88';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1167,7 +1167,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
 (function(){
   const bar = document.createElement('div'); bar.className = 'ptr'; bar.innerHTML = '<span></span>'; document.body.appendChild(bar);
   const lbl = bar.firstChild;
-  let y0 = null, dy = 0, busy = false, scroller = null;
+  let y0 = null, x0 = null, dy = 0, busy = false, scroller = null;
   const activeScroller = () => {
     if (!$('panel').hidden) return $('panel');
     if (!$('detail').hidden) return $('detail');
@@ -1187,9 +1187,10 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
     if (!lbl.firstChild) lbl.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4a8 8 0 0 1 7.2 4.5l1.9-1.1-.4 5.2-4.5-2.8 1.7-1A5.6 5.6 0 0 0 6.9 9.3L5.2 7.7A8 8 0 0 1 12 4z"/><path d="M12 20a8 8 0 0 1-7.2-4.5l-1.9 1.1.4-5.2 4.5 2.8-1.7 1a5.6 5.6 0 0 0 9.0 1.5l1.7 1.6A8 8 0 0 1 12 20z"/></svg>';
     lbl.firstChild.style.transform = text === 'Actualisation…' ? '' : `rotate(${p * 4}deg)`;
     bar.classList.toggle('spin', text === 'Actualisation…');
-    const t = target(); if (t){ t.style.transition = 'none'; t.style.transform = `translateY(${p}px)`; }
+    const t = target(); if (t){ applied = t; t.style.transition = 'none'; t.style.transform = `translateY(${p}px)`; }
   };
-  const hideBar = () => { bar.classList.remove('spin'); ['main','dbody'].forEach(id => { const t = $(id); if (t && t.style.transform){ t.style.transition = 'transform .25s'; t.style.transform = ''; } }); bar.style.transition = 'transform .25s, opacity .25s'; bar.style.transform = 'translateY(-160px)'; bar.style.opacity = '0'; setTimeout(() => { if (bar.style.opacity === '0') bar.style.visibility = 'hidden'; }, 280); };
+  let applied = null;
+  const hideBar = () => { bar.classList.remove('spin'); if (applied){ const t = applied; applied = null; t.style.transition = 'transform .25s'; t.style.transform = ''; setTimeout(() => { if (!t.style.transform) t.style.transition = ''; }, 280); } bar.style.transition = 'transform .25s, opacity .25s'; bar.style.transform = 'translateY(-160px)'; bar.style.opacity = '0'; setTimeout(() => { if (bar.style.opacity === '0') bar.style.visibility = 'hidden'; }, 280); };
   function doRefresh(){
     if (!$('panel').hidden){ if (PANEL.kind === 'team' && PANEL.team){ delete TEAM[PANEL.team.leagueId + ':' + PANEL.team.id]; PANEL.squad = null; renderPanel(); loadSquad(); } else if (PANEL.kind === 'competition' && PANEL.comp){ openCompetition(PANEL.comp.id); } return; }
     if (!$('detail').hidden){ DETAIL.err = null; loadDetail(); return; }
@@ -1201,11 +1202,12 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
     if (busy || e.touches.length !== 1 || $('drawer').classList.contains('open')) { y0 = null; return; }
     scroller = activeScroller();
     if (!atTop(scroller) || e.target.closest('input,textarea,select')) { y0 = null; return; }
-    y0 = e.touches[0].clientY; dy = 0;
+    y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; dy = 0;
   }, { passive:true });
   document.addEventListener('touchmove', e => {
     if (y0 == null) return;
     dy = e.touches[0].clientY - y0;
+    if (x0 != null && Math.abs(e.touches[0].clientX - x0) > Math.abs(dy) && !applied){ y0 = null; return; }
     if (dy <= 0){ if (!atTop(scroller)) y0 = null; hideBar(); return; }
     if (!atTop(scroller)){ y0 = null; hideBar(); return; }
     const pull = dy * 0.5;
