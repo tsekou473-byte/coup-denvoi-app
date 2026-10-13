@@ -419,7 +419,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v73';
+const VERSION = 'v74';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1643,8 +1643,8 @@ function liveRows(rows, leagueId, cur){
   const rn = cur && cur.round ? parseInt((String(cur.round).match(/\d+/) || [])[0], 10) : NaN;
   const fin = [];
   if (rn > 0 && cur.date){
-    const same = Object.values(GAME_INDEX).filter(g => g && g.id !== cur.id && String(g.leagueId) === String(leagueId) && g.status === 'finished' && g.date === cur.date && g.hs != null && g.as != null);
-    if (cur.status === 'finished' && cur.hs != null && cur.as != null) same.push(cur);
+    const same = Object.values(GAME_INDEX).filter(g => g && g.id !== cur.id && String(g.leagueId) === String(leagueId) && g.status === 'final' && g.date === cur.date && g.hs != null && g.as != null);
+    if (cur.status === 'final' && cur.hs != null && cur.as != null) same.push(cur);
     same.forEach(g => fin.push(g));
   }
   if (!games.length && !fin.length) return { rows, live:false };
