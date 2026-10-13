@@ -389,7 +389,27 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v51';
+const VERSION = 'v52';
+const DIAG = () => { try { const v = window.visualViewport; return ` · ${innerWidth}x${innerHeight}/${screen.height}${v ? '/' + Math.round(v.height) : ''}`; } catch (e) { return ''; } };
+(function(){
+  // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
+  const nav = document.getElementById('bottomNav');
+  function fix(){
+    const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
+    let diff = 0;
+    if (standalone && innerHeight > innerWidth) {
+      diff = Math.round(screen.height - innerHeight);
+      if (diff < 3 || diff > 120) diff = 0;
+    }
+    nav.style.bottom = diff ? (-diff) + 'px' : '';
+    document.body.style.paddingBottom = '';
+  }
+  fix();
+  addEventListener('resize', fix);
+  addEventListener('orientationchange', () => setTimeout(fix, 300));
+  addEventListener('pageshow', () => setTimeout(fix, 100));
+  document.addEventListener('visibilitychange', () => setTimeout(fix, 200));
+})();
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -823,7 +843,7 @@ function renderGames(list){
     const why = state.sel === 'live' ? 'Aucun match en direct pour le moment.'
               : (lg && lg.test) ? `Aucun match de ${lg.name} ce jour-là.`
               : 'Aucun match ce jour-là.';
-    main.innerHTML = `<div class="empty">${why}</div><div class="ver">Coup d'Envoi · ${VERSION}</div>`;
+    main.innerHTML = `<div class="empty">${why}</div><div class="ver">Coup d'Envoi · ${VERSION}${DIAG()}</div>`;
     return;
   }
 
@@ -838,7 +858,7 @@ function renderGames(list){
     const rows = gr.items.sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('');
     const flag = gr.flag ? `<img src="${esc(gr.flag)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
     return `<section class="group"><div class="lg">${flag}<span class="lgn">${esc(trComp(gr.comp))} <span class="lgc">· ${esc(trCountry(gr.country))}</span></span></div>${rows}</section>`;
-  }).join('') + `<div class="ver">Coup d'Envoi · ${VERSION}</div>`;
+  }).join('') + `<div class="ver">Coup d'Envoi · ${VERSION}${DIAG()}</div>`;
 }
 
 /* dernière liste connue (gardée sur l'appareil) : affichée tout de suite pendant que le serveur se réveille */
@@ -1765,7 +1785,7 @@ function renderPanel(){
       </div>
       <div class="card2 set">
         <div class="row tap" id="goPrivacy"><div class="rl"><b>Confidentialité</b><small>Ce que l'app enregistre et envoie</small></div><span class="chev">›</span></div>
-        <div class="row"><div class="rl"><b>À propos</b><small>Coup d'Envoi · ${VERSION}</small></div></div>
+        <div class="row"><div class="rl"><b>À propos</b><small>Coup d'Envoi · ${VERSION}${DIAG()}</small></div></div>
       </div>`;
   } else if (PANEL.kind === 'competition') {
     const c = PANEL.comp;
@@ -2075,7 +2095,7 @@ function renderFavoris(){
     if (!up.length && !past.length) html += `<div class="empty">Aucun match trouvé pour tes favoris entre le ${esc(dayLabel(addDays(TODAY, -7)))} et le ${esc(dayLabel(addDays(TODAY, 14)))}.</div>`;
     if (FAVSTATE.failed) html += `<div class="avail">${FAVSTATE.failed} équipe${FAVSTATE.failed > 1 ? 's' : ''} n'${FAVSTATE.failed > 1 ? 'ont' : 'a'} pas pu être chargée${FAVSTATE.failed > 1 ? 's' : ''}. Rouvre la page pour réessayer.</div>`;
   }
-  main.innerHTML = html + `<div class="ver">Coup d'Envoi · ${VERSION}</div>`;
+  main.innerHTML = html + `<div class="ver">Coup d'Envoi · ${VERSION}${DIAG()}</div>`;
   const r = $('fretry');
   if (r) r.onclick = () => { FAVSTATE.dirty = true; showFavoris(); };
 }
