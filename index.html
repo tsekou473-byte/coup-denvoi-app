@@ -73,6 +73,10 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .empty{ text-align:center; color:var(--muted); padding:60px 24px; font-size:1.05rem; line-height:1.5; }
 .empty small{ display:block; margin-top:8px; font-size:.85rem; opacity:.85; word-break:break-word; }
 .retry{ margin-top:16px; border:1px solid var(--line); background:var(--card-head); color:var(--text); padding:9px 18px; border-radius:12px; font-size:1rem; cursor:pointer; }
+.news{ display:flex; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:10px; margin-bottom:10px; text-decoration:none; color:var(--text); box-shadow:0 1px 3px rgba(20,30,50,.05); }
+.news img{ width:96px; height:72px; object-fit:cover; border-radius:10px; flex:none; background:var(--card-head); }
+.news .nt{ font-weight:600; font-size:.98rem; line-height:1.3; }
+.news .nm{ color:var(--muted); font-size:.78rem; margin-top:6px; }
 .ver{ text-align:center; color:var(--muted); font-size:.75rem; margin-top:8px; }
 
 /* tiroir */
@@ -351,7 +355,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v38';
+const VERSION = 'v39';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -796,6 +800,26 @@ $('datePick').onchange = e => {
   renderDates(); show();
 };
 
+
+function agoFr(ts){
+  const m = Math.max(1, Math.round((Date.now() - ts) / 60000));
+  if (m < 60) return 'il y a ' + m + ' min';
+  const h = Math.round(m / 60); if (h < 24) return 'il y a ' + h + ' h';
+  const d = Math.round(h / 24); return 'il y a ' + d + ' j';
+}
+async function renderNews(kind){
+  const main = $('main'), my = ++reqId;
+  main.innerHTML = '<div class="empty">Chargement…</div>';
+  try {
+    const { data } = await apiGet(`${BACKEND}/api/news?type=${kind}`);
+    if (my !== reqId || state.page !== kind) return;
+    const items = data.items || [];
+    if (!items.length){ main.innerHTML = `<div class="empty">${kind === 'transferts' ? 'Aucun transfert pour le moment.' : 'Aucune actu pour le moment.'}</div>`; return; }
+    main.innerHTML = '<div style="padding:12px 14px 0">' + items.map(i => `<a class="news" href="${esc(i.link)}" target="_blank" rel="noopener">${i.image ? `<img src="${esc(i.image)}" loading="lazy" alt="" onerror="this.remove()">` : ''}<div><div class="nt">${esc(i.title)}</div><div class="nm">${esc(i.source)} · ${agoFr(i.ts)}</div></div></a>`).join('') + '</div><div class="ver">Coup d\'Envoi · ' + VERSION + '</div>';
+  } catch (e) {
+    if (my === reqId) main.innerHTML = `<div class="empty">Impossible de charger les actus. Réessaie dans un instant.</div>`;
+  }
+}
 const STUBS = {
   favoris:'Ajoute des équipes en favoris pour les retrouver ici.',
   explorer:'Explore les compétitions et classements du monde entier.',
@@ -809,7 +833,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
   const isMatchs = state.page === 'matchs';
   $('dates').hidden = !isMatchs;
   if (isMatchs){ renderDates(); renderFilterBar(); show(); }
-  else { $('filterBar').hidden = true; reqId++; if (state.page === 'explorer') renderExplorer(); else if (state.page === 'favoris') showFavoris(); else $('main').innerHTML = `<div class="empty">${STUBS[state.page]}</div>`; }
+  else { $('filterBar').hidden = true; reqId++; if (state.page === 'explorer') renderExplorer(); else if (state.page === 'favoris') showFavoris(); else if (state.page === 'transferts' || state.page === 'infos') renderNews(state.page); else $('main').innerHTML = `<div class="empty">${STUBS[state.page]}</div>`; }
 });
 
 /* rafraîchissement automatique quand des matchs sont en direct */

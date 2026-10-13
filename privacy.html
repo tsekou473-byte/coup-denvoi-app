@@ -49,6 +49,7 @@ Contact : <a href="mailto:Tsekou473@gmail.com">Tsekou473@gmail.com</a></p>
 <h2>4. Services tiers</h2>
 <ul>
   <li><b>Données sportives</b> : notre serveur interroge un fournisseur de données de football (ApiFootball, via RapidAPI). Ce fournisseur reçoit les demandes de notre serveur, pas ton adresse IP.</li>
+  <li><b>Actus</b> : les titres de l'onglet Infos/Transferts viennent du flux public de Foot Mercato, récupéré par notre serveur. Les images des articles sont chargées depuis le site source, qui reçoit ton adresse IP ; un clic sur un article ouvre le site du média.</li>
   <li><b>Logos et drapeaux</b> : les images des équipes, compétitions et pays sont chargées depuis le serveur d'images du fournisseur de données. Ce serveur reçoit ton adresse IP quand une image est chargée. Tu peux désactiver les logos dans « Réglages ».</li>
   <li><b>Polices</b> : les polices de caractères sont chargées depuis Google Fonts. Google reçoit ton adresse IP à cette occasion.</li>
   <li><b>Hébergement de l'application</b> : GitHub Pages (GitHub) sert les fichiers de l'application et reçoit ton adresse IP.</li>
@@ -87,7 +88,7 @@ Contact : <a href="mailto:Tsekou473@gmail.com">Tsekou473@gmail.com</a></p>
 <p>To display scores, the app sends requests to our server (hosted by Render). They contain dates, competition or match identifiers and, on the Favourites page, the identifiers of the teams you follow. We do not link these requests to an identity, and our server does not store them in a database. As with any host, Render may keep technical logs (IP address, date, requested address) for security and operation.</p>
 
 <h2>Third parties</h2>
-<p>Football data comes from a data provider (ApiFootball via RapidAPI), which receives requests from our server, not your IP address. Team, competition and country images are loaded from the data provider's image server, which receives your IP address (logos can be turned off in Settings). Fonts are loaded from Google Fonts, and the app files are served by GitHub Pages; both receive your IP address. Each service applies its own privacy policy.</p>
+<p>Football data comes from a data provider (ApiFootball via RapidAPI), which receives requests from our server, not your IP address. Team, competition and country images are loaded from the data provider's image server, which receives your IP address (logos can be turned off in Settings). News headlines (Info/Transfers tabs) come from Foot Mercato's public RSS feed, fetched by our server; article images load from the source site, which receives your IP address, and tapping an article opens the publisher's site. Fonts are loaded from Google Fonts, and the app files are served by GitHub Pages; both receive your IP address. Each service applies its own privacy policy.</p>
 
 <h2>Cookies, tracking, children, your rights</h2>
 <p>The app uses no cookies, no tracking and no advertising, and does not knowingly collect personal data from children. Since we keep no identifying data, most of your information is on your device, under your control. For any question or request, contact us at the address above.</p>
