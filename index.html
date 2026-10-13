@@ -390,7 +390,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v58';
+const VERSION = 'v59';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1151,7 +1151,10 @@ function openMatch(id){
   clearInterval(DETAIL.timer);
   DETAIL.timer = setInterval(() => {
     const cur = DETAIL.data || GAME_INDEX[DETAIL.id];
-    if (SETTINGS.auto && !document.hidden && cur && cur.status === 'live') loadDetail(true);
+    if (!SETTINGS.auto || document.hidden || !cur) return;
+    const soon = typeof cur.ts === 'number' && cur.status !== 'live' && cur.status !== 'final' && cur.ts - Date.now() < 100 * 60000;   // compos attendues ~1 h avant le coup d'envoi
+    const noLu = !(cur.lineups && ((cur.lineups.home || {}).starters || []).length);
+    if (cur.status === 'live' || (soon && noLu)) loadDetail(true);
   }, 60000);
 }
 function hideDetail(){
@@ -1417,6 +1420,8 @@ function tabCompos(d){
   preloadSquadPhotos(d);
   loadLineupPhotos(d); // charge l'effectif en arrière-plan pour que les fiches joueurs s'ouvrent complètes
   const L = d.lineups;
+  if (!L.home.starters.length && !L.away.starters.length && d.status !== 'live' && d.status !== 'final')
+    return `<div class="card2"><div class="noev">Les compositions seront affichées ici dès qu'elles sont annoncées, environ 1 h avant le coup d'envoi.<br><small style="opacity:.8">Cette page se met à jour toute seule.</small></div></div>`;
   if (!L.home.starters.length && !L.away.starters.length)
     return `<div class="card2"><div class="noev">Pas de compositions pour ce match.<br><small style="opacity:.8">Le fournisseur de données ne les envoie pas pour toutes les compétitions, ni avant le coup d'envoi.</small></div></div>`;
 
