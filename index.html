@@ -148,6 +148,18 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .h2row .tm{ flex:1; } .h2row .sc{ font-weight:700; white-space:nowrap; }
 .card2{ background:var(--card); border:1px solid var(--line); border-radius:18px; margin:0 10px 14px; overflow:hidden; max-width:620px; box-shadow:0 1px 3px rgba(20,30,50,.05); }
 @media (min-width:660px){ .card2{ margin-left:auto; margin-right:auto; } }
+
+.sec{ margin-bottom:12px; }
+.sech{ width:100%; display:flex; align-items:center; gap:10px; padding:13px 14px; border:none; background:var(--card); cursor:pointer; text-align:left; font:inherit; color:var(--text); }
+.sech b{ font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; letter-spacing:.05em; text-transform:uppercase; flex:1; }
+.sech .secx{ display:flex; align-items:center; gap:6px; color:var(--muted); font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; }
+.sech svg{ transition:transform .2s; color:var(--text); flex-shrink:0; }
+.cbox{ display:inline-block; width:12px; height:15px; border-radius:2px; background:#f1c232; }
+.ev .evp{ width:30px; height:30px; font-size:.75rem; flex-shrink:0; }
+.sec .ev{ grid-template-columns:1fr 50px 1fr; gap:4px; padding:10px 10px; }
+.sec .ev .tx b{ overflow-wrap:break-word; word-break:normal; hyphens:none; }
+.ev .l, .ev .r{ gap:6px; }
+.ev .gsc{ color:var(--accent-ink); font-weight:600; }
 .noev{ text-align:center; color:var(--muted); padding:34px 18px; font-size:1.05rem; }
 .ev{ display:grid; grid-template-columns:1fr 60px 1fr; align-items:center; gap:6px; padding:11px 12px; border-top:1px solid var(--line); }
 .ev:first-child{ border-top:none; }
@@ -390,7 +402,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v63';
+const VERSION = 'v64';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1277,28 +1289,55 @@ function h2hHtml(d){
 }
 function shortDate(iso){ const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; }
 
+function evAvatar(d, e){
+  const side = e.team === 'home' ? 'home' : 'away';
+  return pfacePlayer({ name: e.player || e.in || '', photo: phUrl(d, side, e.player || e.in || '') }, 'evp');
+}
+function evRow2(d, e){
+  const home = e.team === 'home';
+  let ic, tx, who = e.player;
+  if (e.k === 'goal'){
+    ic = '⚽';
+    const extra = [e.assist ? 'Passe : ' + e.assist : '', /pen/i.test(e.info) ? 'Penalty' : (/own/i.test(e.info) ? 'Contre son camp' : '')].filter(Boolean).join(' · ');
+    tx = `<b>${esc(e.player)}</b>${(e.score || extra) ? `<small>${e.score ? `<span class="gsc">${esc(e.score)}</span>` : ''}${e.score && extra ? ' · ' : ''}${esc(extra)}</small>` : ''}`;
+  } else if (e.k === 'card'){
+    ic = e.card === 'red' ? '🟥' : '🟨';
+    const why = e.info && !/^(yellow|red)( card)?$/i.test(e.info) ? e.info : '';
+    tx = `<b>${esc(e.player)}</b>${why ? `<small>${esc(why)}</small>` : ''}`;
+  } else {
+    ic = ''; who = e.in;
+    tx = `<b class="in">▲ ${esc(e.in)}</b><small class="out">▼ ${esc(e.out)}</small>`;
+  }
+  const av = evAvatar(d, { ...e, player: who });
+  const cell = `<div class="${home?'l':'r'}">${home ? `<div class="tx">${tx}</div>${ic ? `<span class="ic">${ic}</span>` : ''}${av}` : `${av}${ic ? `<span class="ic">${ic}</span>` : ''}<div class="tx">${tx}</div>`}</div>`;
+  return `<div class="ev">${home ? cell : '<div></div>'}<div class="min">${esc(e.time)}'</div>${home ? '<div></div>' : cell}</div>`;
+}
+function secCard(key, title, list, d, extraHead){
+  if (!list.length) return '';
+  const open = (DETAIL.sec || {})[key] !== undefined ? DETAIL.sec[key] : key !== 'subs';
+  return `<div class="card2 sec"><button class="sech" data-sec="${key}" aria-expanded="${open}"><b>${esc(title)}</b><span class="secx">${extraHead || ''}</span><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(${open ? 180 : 0}deg)"><path d="m6 9 6 6 6-6"/></svg></button>${open ? list.map(e => evRow2(d, e)).join('') : ''}</div>`;
+}
 function tabResume(d){
-  const ev = [];
-  d.goals.forEach(x => ev.push({ k:'goal', ...x }));
-  d.cards.forEach(x => ev.push({ k:'card', ...x }));
-  d.subs.forEach(x => ev.push({ k:'sub', ...x }));
-  ev.sort((a,b) => minOf(a.time) - minOf(b.time));
+  const mk = (k, arr) => arr.map(x => ({ k, ...x })).sort((a,b) => minOf(a.time) - minOf(b.time));
+  const goals = mk('goal', d.goals), cards = mk('card', d.cards), subs = mk('sub', d.subs);
+  if (goals.length || cards.length || subs.length) loadLineupPhotos(d);
   const showHT = d.status !== 'scheduled' && d.htHome !== '' && d.htHome != null &&
     (d.status === 'final' || minOf(d.minute) > 45 || /ht|half/i.test(d.minute || ''));
-  const htRow = `<div class="sep">Mi-temps · ${esc(d.htHome)} - ${esc(d.htAway)}</div>`;
-  let html = '', htDone = false;
-  ev.forEach(e => {
-    if (showHT && !htDone && minOf(e.time) >= 46){ html += htRow; htDone = true; }
-    html += evRow(e);
-  });
-  if (showHT && !htDone) html += htRow;
-  if (!ev.length) html = `<div class="noev">${d.status === 'scheduled' ? "Le match n'a pas encore commencé." : 'Aucun événement enregistré.'}</div>` + html;
-  if (d.status === 'final') html += `<div class="sep">Fin du match · ${esc(d.hs ?? 0)} - ${esc(d.as ?? 0)}</div>`;
+  let top = '';
+  if (showHT) top += `<div class="sep">Mi-temps · ${esc(d.htHome)} - ${esc(d.htAway)}</div>`;
+  if (d.status === 'final') top += `<div class="sep">Fin du match · ${esc(d.hs ?? 0)} - ${esc(d.as ?? 0)}</div>`;
+  const cnt = (arr, f) => arr.filter(f);
+  const yh = cards.filter(c => c.team === 'home').length, ya = cards.filter(c => c.team === 'away').length;
+  let html = '';
+  if (!goals.length && !cards.length && !subs.length)
+    html = `<div class="card2"><div class="noev">${d.status === 'scheduled' ? "Le match n'a pas encore commencé." : 'Aucun événement enregistré.'}</div></div>`;
+  else
+    html = (top ? `<div class="card2">${top}</div>` : '') + secCard('goals', 'Buts', goals, d, `${d.hs ?? 0} - ${d.as ?? 0}`) + secCard('cards', 'Cartons', cards, d, `<i class="cbox"></i>${yh} - ${ya}`) + secCard('subs', 'Changements', subs, d, `${subs.filter(x => x.team === 'home').length} - ${subs.filter(x => x.team === 'away').length}`);
   const nb = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
   const hasLu = d.lineups.home.starters.length || d.lineups.away.starters.length;
   const avail = `Données reçues : ${nb(d.goals.length, 'but')} · ${nb(d.cards.length, 'carton')} · ${nb(d.subs.length, 'remplacement')} · compositions ${hasLu ? 'oui' : 'non'} · statistiques ${d.stats.length ? 'oui' : 'non'}`;
   if (d.status === 'scheduled') loadWinProb(d);
-  return `${predCard(d)}<div class="card2">${html}</div>${h2hHtml(d)}<div class="avail">${avail}</div>`;
+  return `${predCard(d)}${html}${h2hHtml(d)}<div class="avail">${avail}</div>`;
 }
 
 const PARTICLES = new Set(['de','da','do','dos','das','van','von','der','den','di','del','le','la','el','al','bin','ter','ten']);
@@ -1427,7 +1466,7 @@ function loadLineupPhotos(d){
     if (r.every(b => b.none)){ st.tries--; return; }   // pas encore de compositions : rien à chercher, on ne se déclare pas « terminé »
     const left = r.reduce((a, b) => a + b.left, 0);
     const paused = r.some(b => b.paused);
-    if (DETAIL.id === d.id && DETAIL.tab === 'compos') renderDetail();
+    if (DETAIL.id === d.id && (DETAIL.tab === 'compos' || DETAIL.tab === 'resume')) renderDetail();
     const wait = paused ? 20000 : (r.some(b => b.err) ? 6000 : 3000);
     if (left > 0) st.nextAt = Date.now() + wait;
     if (left > 0) setTimeout(() => { if (DETAIL.id === d.id) loadLineupPhotos(DETAIL.data || d); }, wait + 300);
@@ -2034,7 +2073,10 @@ async function loadCompetitionGames(id){
 $('main').addEventListener('click', e => { const c = e.target.closest('.crow'); if (c) openCompetition(c.dataset.id); });
 $('panel').addEventListener('click', e => { const m = e.target.closest('.match'); if (m) openMatch(m.dataset.id); });
 $('panel').addEventListener('click', e => { const el = e.target.closest('.tr[data-tid]'); if (el) openTeam(el.dataset.tid, el.dataset.lid, el.dataset.name, el.dataset.logo || null); });
-$('detail').addEventListener('click', e => { const el = e.target.closest('.tr[data-tid]'); if (el) openTeam(el.dataset.tid, el.dataset.lid, el.dataset.name, el.dataset.logo || null); });
+$('detail').addEventListener('click', e => {
+  const sh = e.target.closest('.sech');
+  if (sh){ DETAIL.sec = DETAIL.sec || {}; DETAIL.sec[sh.dataset.sec] = sh.getAttribute('aria-expanded') !== 'true'; const st = $('detail').scrollTop; renderDetail(); $('detail').scrollTop = st; return; }
+  const el = e.target.closest('.tr[data-tid]'); if (el) openTeam(el.dataset.tid, el.dataset.lid, el.dataset.name, el.dataset.logo || null); });
 $('dExplore').onclick = () => {
   closeDrawer();
   const btn = [...document.querySelectorAll('.nav-item')].find(b => b.dataset.page === 'explorer');
