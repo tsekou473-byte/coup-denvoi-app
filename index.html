@@ -224,6 +224,12 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 /* explorer : toutes les compétitions */
 .exsearch{ padding:2px 0 12px; }
+.srow{ display:flex; align-items:center; gap:12px; padding:10px 14px; border-top:1px solid var(--line); cursor:pointer; }
+.srow:first-of-type{ border-top:0; }
+.srow img,.srow .sph{ width:34px; height:34px; border-radius:50%; object-fit:cover; background:var(--card-head); flex:none; }
+.srow .sn{ font-weight:600; } .srow small{ display:block; color:var(--muted); font-weight:400; font-size:.78rem; }
+.shead{ font-weight:700; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); padding:6px 4px 8px; }
+
 .exsearch input{ width:100%; border:1px solid var(--line); border-radius:12px; background:var(--card-head); color:var(--text); padding:11px 14px; font-size:1.05rem; font-family:inherit; outline:none; }
 .excount{ color:var(--muted); font-size:.9rem; padding:0 4px 10px; }
 .crow{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-top:1px solid var(--line); cursor:pointer; }
@@ -355,7 +361,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v39';
+const VERSION = 'v40';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -1600,10 +1606,52 @@ function renderExplorer(){
     loadCompetitions();
     return;
   }
-  main.innerHTML = `<div class="exsearch"><input id="cq" type="search" placeholder="Rechercher une compétition ou un pays (ex : Afrique)" value="${esc(COMP.q)}"></div><div id="exlist"></div>`;
-  $('cq').oninput = e => { COMP.q = e.target.value; renderExplorerList(); };
+  main.innerHTML = `<div class="exsearch"><input id="cq" type="search" placeholder="Joueur, club, pays ou compétition" value="${esc(COMP.q)}"></div><div id="exsres"></div><div id="exlist"></div>`;
+  $('cq').oninput = e => { COMP.q = e.target.value; renderExplorerList(); scheduleSearch(); };
   renderExplorerList();
+  scheduleSearch();
 }
+
+
+/* recherche de clubs et joueurs (index côté serveur) */
+const SRCH = { t:null, res:null, q:'', seq:0, list:[] };
+function scheduleSearch(){
+  clearTimeout(SRCH.t);
+  const q = COMP.q.trim();
+  if (q.length < 2){ SRCH.res = null; renderSearchRes(); return; }
+  SRCH.t = setTimeout(async () => {
+    const my = ++SRCH.seq;
+    try {
+      const { data } = await apiGet(`${BACKEND}/api/search?q=${encodeURIComponent(q)}`);
+      if (my !== SRCH.seq) return;
+      SRCH.res = data; SRCH.q = q;
+    } catch (e) { SRCH.res = null; }
+    renderSearchRes();
+  }, 350);
+}
+function renderSearchRes(){
+  const box = $('exsres');
+  if (!box) return;
+  const r = SRCH.res;
+  if (!r || COMP.q.trim().length < 2){ box.innerHTML = ''; return; }
+  SRCH.list = r.players;
+  const img = (u, cls) => u ? `<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML='<span class=sph></span>'">` : '<span class="sph"></span>';
+  let h = '';
+  if (r.teams.length) h += `<div class="shead">Clubs et équipes</div><section class="group">` + r.teams.map(t =>
+    `<div class="srow" data-k="t" data-tid="${esc(t.id)}" data-lid="${esc(t.leagueId)}" data-name="${esc(t.name)}" data-logo="${esc(t.badge || '')}">${img(SETTINGS.logos ? t.badge : null)}<div class="sn">${esc(trTeam(t.name))}<small>${esc(trComp(t.leagueName || ''))}</small></div><span class="chev">›</span></div>`).join('') + '</section>';
+  if (r.players.length) h += `<div class="shead">Joueurs</div><section class="group">` + r.players.map((x, i) =>
+    `<div class="srow" data-k="p" data-i="${i}">${img(x.player.photo)}<div class="sn">${esc(x.player.fullName || x.player.name)}<small>${esc(trTeam(x.team.name))}${x.player.position ? ' · ' + esc(x.player.position) : ''}</small></div><span class="chev">›</span></div>`).join('') + '</section>';
+  if (!h && r.building) h = `<div class="empty" style="padding:20px 24px">Le serveur prépare la recherche de joueurs et de clubs (${r.indexed}/${r.total}). Réessaie dans un instant.</div>`;
+  box.innerHTML = h;
+}
+$('main').addEventListener('click', e => {
+  const el = e.target.closest('.srow'); if (!el) return;
+  if (el.dataset.k === 't'){ openTeam(el.dataset.tid, el.dataset.lid, el.dataset.name, el.dataset.logo || null); return; }
+  const x = SRCH.list[+el.dataset.i]; if (!x) return;
+  PANEL.team = { id: String(x.team.id), leagueId: String(x.team.leagueId), name: x.team.name, logo: x.team.badge || null };
+  PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = 'player'; PANEL.player = x.player;
+  openPanel('team'); loadSquad();
+});
 
 function renderExplorerList(){
   const box = $('exlist');
@@ -1611,6 +1659,7 @@ function renderExplorerList(){
   const q = norm(COMP.q);
   const items = COMP.list.filter(c => !q || norm(`${c.name} ${trComp(c.name)} ${c.country} ${trCountry(c.country)}`).includes(q));
   if (!items.length){
+    if (q.length >= 2){ box.innerHTML = `<div class="excount">Aucune compétition ne correspond.</div>`; return; }
     box.innerHTML = `<div class="empty">Aucune compétition ne correspond à « ${esc(COMP.q)} ».<small>La liste contient toutes les compétitions incluses dans ton abonnement de données (${COMP.list.length} au total).</small></div>`;
     return;
   }
