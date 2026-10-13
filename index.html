@@ -389,8 +389,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v56';
-const DIAG = () => { try { const v = window.visualViewport, n = document.getElementById('bottomNav'), r = n.getBoundingClientRect(), e = document.elementFromPoint(innerWidth / 2, innerHeight - 6), e2 = document.elementFromPoint(innerWidth / 2, r.bottom + 8); const nm = x => x ? (x.id || x.className || x.tagName) : '-'; return ` · ${innerWidth}x${innerHeight}/${screen.height}/${v ? Math.round(v.height) : ''} nav:${Math.round(r.top)}-${Math.round(r.bottom)} sc:${Math.round(scrollY)} ch:${document.documentElement.clientHeight} bh:${document.body.offsetHeight} pt:${nm(e)} ${nm(e2)}`; } catch (x) { return ' · ' + x.message; } };
+const VERSION = 'v57';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -834,7 +833,7 @@ function renderGames(list){
     const why = state.sel === 'live' ? 'Aucun match en direct pour le moment.'
               : (lg && lg.test) ? `Aucun match de ${lg.name} ce jour-là.`
               : 'Aucun match ce jour-là.';
-    main.innerHTML = `<div class="empty">${why}</div><div class="ver">Coup d'Envoi · ${VERSION}${DIAG()}</div>`;
+    main.innerHTML = `<div class="empty">${why}</div><div class="ver">Coup d'Envoi · ${VERSION}</div>`;
     return;
   }
 
@@ -849,7 +848,7 @@ function renderGames(list){
     const rows = gr.items.sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('');
     const flag = gr.flag ? `<img src="${esc(gr.flag)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
     return `<section class="group"><div class="lg">${flag}<span class="lgn">${esc(trComp(gr.comp))} <span class="lgc">· ${esc(trCountry(gr.country))}</span></span></div>${rows}</section>`;
-  }).join('') + `<div class="ver">Coup d'Envoi · ${VERSION}${DIAG()}</div>`;
+  }).join('') + `<div class="ver">Coup d'Envoi · ${VERSION}</div>`;
 }
 
 /* dernière liste connue (gardée sur l'appareil) : affichée tout de suite pendant que le serveur se réveille */
@@ -1776,7 +1775,7 @@ function renderPanel(){
       </div>
       <div class="card2 set">
         <div class="row tap" id="goPrivacy"><div class="rl"><b>Confidentialité</b><small>Ce que l'app enregistre et envoie</small></div><span class="chev">›</span></div>
-        <div class="row"><div class="rl"><b>À propos</b><small>Coup d'Envoi · ${VERSION}${DIAG()}</small></div></div>
+        <div class="row"><div class="rl"><b>À propos</b><small>Coup d'Envoi · ${VERSION}</small></div></div>
       </div>`;
   } else if (PANEL.kind === 'competition') {
     const c = PANEL.comp;
@@ -2086,7 +2085,7 @@ function renderFavoris(){
     if (!up.length && !past.length) html += `<div class="empty">Aucun match trouvé pour tes favoris entre le ${esc(dayLabel(addDays(TODAY, -7)))} et le ${esc(dayLabel(addDays(TODAY, 14)))}.</div>`;
     if (FAVSTATE.failed) html += `<div class="avail">${FAVSTATE.failed} équipe${FAVSTATE.failed > 1 ? 's' : ''} n'${FAVSTATE.failed > 1 ? 'ont' : 'a'} pas pu être chargée${FAVSTATE.failed > 1 ? 's' : ''}. Rouvre la page pour réessayer.</div>`;
   }
-  main.innerHTML = html + `<div class="ver">Coup d'Envoi · ${VERSION}${DIAG()}</div>`;
+  main.innerHTML = html + `<div class="ver">Coup d'Envoi · ${VERSION}</div>`;
   const r = $('fretry');
   if (r) r.onclick = () => { FAVSTATE.dirty = true; showFavoris(); };
 }
