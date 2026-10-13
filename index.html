@@ -390,7 +390,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v61';
+const VERSION = 'v62';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -757,13 +757,28 @@ function crest(name, logo, cls=''){
   return `<span class="crest ${cls}" style="--c:${CREST_COLORS[h % CREST_COLORS.length]}">${esc(initials)}${img}</span>`;
 }
 
+/* minute en direct : entre deux mises à jour du serveur, on l'avance seul chaque minute */
+function minTag(g){
+  const m = g.minute ? String(g.minute) : 'LIVE';
+  if (/^\d+$/.test(m)){
+    if (!g._at) g._at = Date.now();
+    return `<span class="lmin" data-m="${m}" data-at="${g._at}">${m}'</span>`;
+  }
+  return esc(m);
+}
+setInterval(() => {
+  document.querySelectorAll('.lmin').forEach(el => {
+    const add = Math.min(3, Math.floor((Date.now() - (+el.dataset.at)) / 60000));
+    const t = (+el.dataset.m + Math.max(0, add)) + "'";
+    if (el.textContent !== t) el.textContent = t;
+  });
+}, 10000);
+
 function middle(g){
   const score = `${g.hs ?? 0} - ${g.as ?? 0}`;
   if (g.status === 'final') return `<div class="mid"><div class="score">${score}</div><div class="sub">Terminé</div></div>`;
   if (g.status === 'live'){
-    let m = g.minute ? String(g.minute) : 'LIVE';
-    if (/^\d+$/.test(m)) m += "'";
-    return `<div class="mid"><div class="score live">${score}</div><div class="sub live">${esc(m)}</div></div>`;
+    return `<div class="mid"><div class="score live">${score}</div><div class="sub live">${minTag(g)}</div></div>`;
   }
   if (g.status === 'postponed') return `<div class="mid"><div class="score muted strike">${esc(g.time||'')}</div><div class="sub">Reporté</div></div>`;
   return `<div class="mid"><div class="score muted">${esc(g.time||'--:--')}</div></div>`;
@@ -1104,7 +1119,7 @@ setInterval(async () => {
   const iso = state.sel === 'live' ? TODAY : state.sel;
   if (iso !== TODAY || !needsRefresh()) return;
   try { await getDay(TODAY, true); renderDates(); refreshList(); } catch(e) {}
-}, 90000);
+}, 30000);
 
 /* des matchs en direct, ou dont l'heure de début est passée mais qui s'affichent encore « pas commencé » */
 function needsRefresh(){
@@ -1155,7 +1170,7 @@ function openMatch(id){
     const soon = typeof cur.ts === 'number' && cur.status !== 'live' && cur.status !== 'final' && cur.ts - Date.now() < 100 * 60000;   // compos attendues ~1 h avant le coup d'envoi
     const noLu = !(cur.lineups && ((cur.lineups.home || {}).starters || []).length);
     if (cur.status === 'live' || (soon && noLu)) loadDetail(true);
-  }, 60000);
+  }, 30000);
 }
 function hideDetail(){
   $('detail').hidden = true;
@@ -1195,9 +1210,7 @@ function sbMid(g){
   const score = `${g.hs ?? 0} - ${g.as ?? 0}`;
   if (g.status === 'final') return `<div class="score">${score}</div><div class="sub">Terminé</div>`;
   if (g.status === 'live'){
-    let m = g.minute ? String(g.minute) : 'LIVE';
-    if (/^\d+$/.test(m)) m += "'";
-    return `<div class="score live">${score}</div><div class="sub live">${esc(m)}</div>`;
+    return `<div class="score live">${score}</div><div class="sub live">${minTag(g)}</div>`;
   }
   if (g.status === 'postponed') return `<div class="score muted strike">${esc(g.time||'')}</div><div class="sub">Reporté</div>`;
   const cd = (typeof g.ts === 'number' && g.ts > Date.now()) ? `<div class="cdown" data-notr data-ts="${g.ts}">${fmtCountdown(g.ts)}</div>` : '';
