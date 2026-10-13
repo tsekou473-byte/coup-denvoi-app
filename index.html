@@ -338,12 +338,13 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .pface img{ width:100%; height:100%; object-fit:cover; }
 .pface.big{ width:96px; height:96px; font-size:1.7rem; margin:0 auto; }
 .postitle{ padding:11px 14px 4px; font-family:'Barlow Condensed',sans-serif; color:var(--accent-ink); letter-spacing:.06em; text-transform:uppercase; font-size:1.05rem; }
-.prow2{ display:grid; grid-template-columns:26px auto 1fr; align-items:center; gap:12px; padding:10px 14px; border-top:1px solid var(--line); cursor:pointer; }
+.prow2{ display:flex; align-items:center; gap:12px; padding:10px 14px; border-top:1px solid var(--line); cursor:pointer; }
 .prow2:first-of-type{ border-top:none; }
 .postitle + .prow2{ border-top:none; }
 .prow2:active{ background:rgba(10,20,40,.035); }
 .pgroup + .pgroup .prow2:first-child{ border-top:1px solid var(--line); }
-.prow2 .pnum{ font-family:'Barlow Condensed',sans-serif; font-weight:600; color:var(--muted); text-align:center; }
+.prow2 .pinfo{ flex:1; min-width:0; }
+.prow2 .pnum{ flex:0 0 26px; font-family:'Barlow Condensed',sans-serif; font-weight:600; color:var(--muted); text-align:center; }
 .prow2 .pinfo b{ display:block; font-weight:500; line-height:1.15; overflow-wrap:anywhere; }
 .prow2 .pinfo small{ display:block; color:var(--muted); font-size:.82rem; margin-top:1px; }
 .tag-cap{ display:inline-block; margin-left:6px; background:var(--accent); color:#1b1305; font-size:.7rem; font-weight:700; border-radius:4px; padding:0 4px; vertical-align:1px; }
@@ -419,7 +420,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v75';
+const VERSION = 'v76';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1772,7 +1773,7 @@ function teamSquadHtml(){
     const label = POS_FR[k] ? POS_FR[k].g : (k || 'Autres joueurs');
     const rows = groups[k].map(p => `
       <div class="prow2" data-id="${esc(playerIdent(p))}">
-        <span class="pnum">${p.number ?? ''}</span>
+        ${p.number != null && p.number !== '' ? `<span class="pnum">${p.number}</span>` : ''}
         ${pfacePlayer(p)}
         <div class="pinfo"><b>${esc(trTeam(p.name))}${p.captain ? '<span class="tag-cap">C</span>' : ''}${isInj(p) ? '<span class="tag-inj">Blessé</span>' : ''}</b>
         <small>${[p.age ? p.age + ' ans' : '', p.country ? trCountry(p.country) : ''].filter(Boolean).join(' · ')}</small></div>
