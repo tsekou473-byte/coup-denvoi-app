@@ -121,9 +121,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .dtab.active{ background:var(--accent); color:#1b1305; font-weight:600; box-shadow:none; }
 .ptr{ position:fixed; left:0; right:0; top:0; z-index:60; display:flex; justify-content:center; pointer-events:none; transform:translateY(-60px); }
 .ptr span{ margin-top:calc(env(safe-area-inset-top) + 8px); background:var(--card); color:var(--text); border:1px solid var(--line); box-shadow:0 2px 8px rgba(20,30,50,.15); border-radius:999px; padding:7px 16px; font-size:.9rem; }
-.swl{ animation:swL .22s ease; } .swr{ animation:swR .22s ease; }
-@keyframes swL{ from{ opacity:.4; transform:translateX(36px); } to{ opacity:1; transform:none; } }
-@keyframes swR{ from{ opacity:.4; transform:translateX(-36px); } to{ opacity:1; transform:none; } }
+body{ overflow-x:hidden; } .detail{ overflow-x:hidden; }
 .langsel{ border:1px solid var(--line); background:var(--card-head); color:var(--text); border-radius:10px; padding:8px 10px; font-size:1rem; font-family:inherit; max-width:46%; }
 [dir=rtl] .chev{ display:inline-block; transform:scaleX(-1); }
 [dir=rtl] .dh .icon-btn svg{ transform:scaleX(-1); }
@@ -382,7 +380,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v45';
+const VERSION = 'v46';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -876,42 +874,81 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
 
 
 
-/* glisser à gauche / à droite : jour suivant ou précédent, onglet suivant ou précédent */
+/* glisser à gauche / à droite : la page suit le doigt, puis la suivante glisse en place (comme une vraie app) */
 (function(){
-  let x0 = 0, y0 = 0, t0 = 0, ok = false;
+  let g = null;
   const scrollableX = el => {
     for (let n = el; n && n !== document.body; n = n.parentElement){
       if (n.scrollWidth > n.clientWidth + 4){ const o = getComputedStyle(n).overflowX; if (o === 'auto' || o === 'scroll') return true; }
     }
     return false;
   };
-  const anim = (el, dir) => { if (!el) return; el.classList.remove('swl','swr'); void el.offsetWidth; el.classList.add(dir > 0 ? 'swl' : 'swr'); setTimeout(() => el.classList.remove('swl','swr'), 300); };
-  document.addEventListener('touchstart', e => {
-    ok = e.touches.length === 1 && !$('drawer').classList.contains('open') && !e.target.closest('input,textarea,select,.dates,.seg') && !scrollableX(e.target);
-    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now();
-  }, { passive:true });
-  document.addEventListener('touchend', e => {
-    if (!ok) return; ok = false;
-    const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
-    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8 || Date.now() - t0 > 700) return;
-    const dir = dx < 0 ? 1 : -1;   // doigt vers la gauche = élément suivant
+  const after = (box, sel) => { const h = box.querySelector(sel); const out = []; for (let n = h && h.nextElementSibling; n; n = n.nextElementSibling) out.push(n); return out; };
+  // contexte du geste : quels éléments bougent, y a-t-il une page avant / après, et comment changer de page
+  function context(){
     if (!$('panel').hidden){
       if (PANEL.kind === 'competition' && !PANEL.sub){
-        const tabs = ['matches','table'], i = tabs.indexOf(PANEL.ctab), n = i + dir;
-        if (n >= 0 && n < tabs.length){ PANEL.ctab = tabs[n]; $('panel').scrollTop = 0; renderPanel(); anim($('panel').lastElementChild, dir); }
+        const tabs = ['matches','table'], i = tabs.indexOf(PANEL.ctab);
+        return { els:() => after($('panel'), '.dtabs'), prev:i > 0, next:i >= 0 && i < tabs.length - 1,
+          go:dir => { PANEL.ctab = tabs[i + dir]; $('panel').scrollTop = 0; renderPanel(); } };
       }
-      return;
+      return null;
     }
     if (!$('detail').hidden){
-      const tabs = ['resume','compos','stats','table'], i = tabs.indexOf(DETAIL.tab), n = i + dir;
-      if (n >= 0 && n < tabs.length){ DETAIL.tab = tabs[n]; renderDetail(); anim($('detail').lastElementChild, dir); }
-      return;
+      const tabs = ['resume','compos','stats','table'], i = tabs.indexOf(DETAIL.tab);
+      return { els:() => after($('detail'), '.dtabs'), prev:i > 0, next:i >= 0 && i < tabs.length - 1,
+        go:dir => { DETAIL.tab = tabs[i + dir]; renderDetail(); } };
     }
     if (state.page === 'matchs'){
-      const btns = [...$('dates').querySelectorAll('.date')], i = btns.findIndex(b => b.classList.contains('active')), n = i + dir;
-      if (i >= 0 && n >= 0 && n < btns.length){ btns[n].click(); window.scrollTo(0, 0); anim($('main'), dir); }
+      const btns = [...$('dates').querySelectorAll('.date')], i = btns.findIndex(b => b.classList.contains('active'));
+      return { els:() => [$('main')], prev:i > 0, next:i >= 0 && i < btns.length - 1,
+        go:dir => { btns[i + dir].click(); window.scrollTo(0, 0); } };
     }
+    return null;
+  }
+  const put = (els, x, o, anim) => els.forEach(el => {
+    el.style.transition = anim ? 'transform .2s cubic-bezier(.2,.8,.2,1), opacity .2s' : 'none';
+    el.style.transform = x ? `translate3d(${x}px,0,0)` : '';
+    el.style.opacity = o < 1 ? String(o) : '';
+  });
+  const clear = els => els.forEach(el => { el.style.transition = ''; el.style.transform = ''; el.style.opacity = ''; });
+  document.addEventListener('touchstart', e => {
+    g = null;
+    if (e.touches.length !== 1 || $('drawer').classList.contains('open') || e.target.closest('input,textarea,select,.dates,.seg') || scrollableX(e.target)) return;
+    const c = context(); if (!c) return;
+    const t = e.touches[0];
+    g = { c, x0:t.clientX, y0:t.clientY, t0:Date.now(), axis:null, els:null, dx:0 };
   }, { passive:true });
+  document.addEventListener('touchmove', e => {
+    if (!g || g.axis === 'y') return;
+    const t = e.touches[0], dx = t.clientX - g.x0, dy = t.clientY - g.y0;
+    if (!g.axis){
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 10) return;
+      if (Math.abs(dx) > Math.abs(dy) * 1.3 && g.x0 > 16){ g.axis = 'x'; g.els = g.c.els(); document.documentElement.style.overflowX = 'hidden'; }
+      else { g.axis = 'y'; return; }
+    }
+    if (e.cancelable) e.preventDefault();
+    const ok = dx < 0 ? g.c.next : g.c.prev;
+    g.dx = ok ? dx : dx * 0.28;   // résistance au bord : pas de page de ce côté
+    put(g.els, g.dx, 1 - Math.min(Math.abs(g.dx) / (window.innerWidth * 1.6), 0.45), false);
+  }, { passive:false });
+  function finish(cancel){
+    const s = g; g = null;
+    if (!s || s.axis !== 'x') return;
+    document.documentElement.style.overflowX = '';
+    const W = window.innerWidth, dx = s.dx, dt = Math.max(1, Date.now() - s.t0), v = Math.abs(dx) / dt;
+    const dir = dx < 0 ? 1 : -1, ok = dir > 0 ? s.c.next : s.c.prev;
+    if (cancel || !ok || (Math.abs(dx) < W * 0.28 && v < 0.5)){ put(s.els, 0, 1, true); setTimeout(() => clear(s.els), 230); return; }
+    put(s.els, -dir * W, 0.2, true);          // la page actuelle sort
+    setTimeout(() => {
+      s.c.go(dir);                             // le nouveau contenu se met en place...
+      const els = s.c.els();
+      put(els, dir * W * 0.5, 0.3, false);     // ...part de l'autre côté
+      requestAnimationFrame(() => requestAnimationFrame(() => { put(els, 0, 1, true); setTimeout(() => clear(els), 230); }));
+    }, 190);
+  }
+  document.addEventListener('touchend', () => finish(false), { passive:true });
+  document.addEventListener('touchcancel', () => finish(true), { passive:true });
 })();
 
 /* tirer l'écran vers le bas pour actualiser */
