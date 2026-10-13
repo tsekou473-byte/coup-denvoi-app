@@ -118,8 +118,8 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .hero .follow.on{ background:var(--accent); color:#1b1305; border-color:var(--accent); }
 .sb{ display:grid; grid-template-columns:1fr auto 1fr; gap:6px; align-items:start; padding:22px 12px 8px; max-width:640px; margin:0 auto; }
 .sbteam{ display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; font-size:1.15rem; font-weight:500; line-height:1.15; }
-.crest.lg{ background:none; box-shadow:none; overflow:visible; }
-.crest.lg img{ background:none; border-radius:0; padding:0; filter:drop-shadow(0 1px 2px rgba(0,0,0,.25)); }
+.crest.cl{ background:none; box-shadow:none; overflow:visible; }
+.crest.cl img{ background:none; border-radius:0; padding:0; filter:drop-shadow(0 1px 2px rgba(0,0,0,.25)); }
 .crest.big{ width:60px; height:60px; font-size:1rem; }
 .sbmid{ text-align:center; padding-top:8px; min-width:108px; }
 .sbmid .score{ font-size:2.5rem; padding:5px 16px; }
@@ -422,7 +422,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v78';
+const VERSION = 'v79';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -790,8 +790,8 @@ function crest(name, logo, cls=''){
   const initials = name.split(' ').filter(w => w.length>2 || /^[A-Z]/.test(w)).slice(0,2).map(w => w[0]).join('').toUpperCase().slice(0,2) || name.slice(0,2).toUpperCase();
   // avec un logo, pas de lettres derrière (elles transparaissent) : elles n'apparaissent que si le logo manque ou ne charge pas
   const has = logo && SETTINGS.logos;
-  const img = has ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('lg');this.parentNode.insertAdjacentText('afterbegin',this.dataset.i);this.remove()" data-i="${esc(initials)}">` : '';
-  return `<span class="crest ${cls}${has ? ' lg' : ''}" style="--c:${CREST_COLORS[h % CREST_COLORS.length]}">${has ? '' : esc(initials)}${img}</span>`;
+  const img = has ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('cl');this.parentNode.insertAdjacentText('afterbegin',this.dataset.i);this.remove()" data-i="${esc(initials)}">` : '';
+  return `<span class="crest ${cls}${has ? ' cl' : ''}" style="--c:${CREST_COLORS[h % CREST_COLORS.length]}">${has ? '' : esc(initials)}${img}</span>`;
 }
 
 /* carton rouge à côté de l'écusson */
