@@ -82,7 +82,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 /* tiroir */
 .scrim{ position:fixed; inset:0; background:rgba(10,15,25,.5); opacity:0; pointer-events:none; transition:opacity .2s; z-index:30; }
 .scrim.open{ opacity:1; pointer-events:auto; }
-.drawer{ position:fixed; top:0; bottom:0; right:0; width:80%; max-width:320px; background:var(--card); border-left:1px solid var(--line); z-index:31; transform:translateX(100%); visibility:hidden; transition:transform .25s, visibility .25s; padding:calc(20px + env(safe-area-inset-top,0px)) 8px 20px; overflow-y:auto; box-shadow:-4px 0 16px rgba(10,20,40,.12); }
+.drawer{ position:fixed; top:0; bottom:calc(-1 * var(--vgap,0px)); right:0; width:80%; max-width:320px; background:var(--card); border-left:1px solid var(--line); z-index:31; transform:translateX(100%); visibility:hidden; transition:transform .25s, visibility .25s; padding:calc(20px + env(safe-area-inset-top,0px)) 8px 20px; overflow-y:auto; box-shadow:-4px 0 16px rgba(10,20,40,.12); }
 .drawer.open{ transform:none; visibility:visible; }
 .drawer h2{ margin:4px 14px 12px; font-family:'Barlow Condensed',sans-serif; font-size:1.5rem; }
 .drawer h3{ margin:18px 14px 6px; font-size:.82rem; letter-spacing:.1em; text-transform:uppercase; color:var(--accent-ink); font-weight:600; }
@@ -92,7 +92,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .d-item.soon{ color:var(--muted); cursor:default; }
 
 /* barre du bas */
-.bottom-nav{ position:fixed; left:0; right:0; bottom:0; z-index:20; background:var(--card); display:flex; padding-bottom:env(safe-area-inset-bottom,0px); border-top:1px solid var(--line); box-shadow:0 -1px 6px rgba(20,30,50,.06); }
+.bottom-nav{ position:fixed; left:0; right:0; bottom:calc(-1 * var(--vgap,0px)); z-index:20; background:var(--card); display:flex; padding-bottom:env(safe-area-inset-bottom,0px); border-top:1px solid var(--line); box-shadow:0 -1px 6px rgba(20,30,50,.06); }
 .nav-item{ flex:1; position:relative; border:none; background:none; padding:10px 2px 8px; display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--muted); cursor:pointer; }
 .nav-item svg{ width:25px; height:25px; }
 .nav-item span{ font-size:.8rem; }
@@ -102,7 +102,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 /* détail d'un match */
 .match{ cursor:pointer; }
 .match:active{ background:rgba(10,20,40,.035); }
-.detail{ position:fixed; inset:0; z-index:40; background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:50px; animation:slideIn .22s ease; }
+.detail{ position:fixed; inset:0; bottom:calc(-1 * var(--vgap,0px)); z-index:40; background:var(--bg); overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:50px; animation:slideIn .22s ease; }
 @keyframes slideIn{ from{ transform:translateX(28px); opacity:0 } to{ transform:none; opacity:1 } }
 .dh{ position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:4px; padding:calc(8px + env(safe-area-inset-top,0px)) 10px 8px 6px; background:linear-gradient(180deg,var(--brand),var(--brand-dark)); color:#fff; }
 .dh .ttl{ flex:1; min-width:0; }
@@ -389,20 +389,16 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v53';
+const VERSION = 'v54';
 const DIAG = () => { try { const v = window.visualViewport, n = document.getElementById('bottomNav'), r = n.getBoundingClientRect(), e = document.elementFromPoint(innerWidth / 2, innerHeight - 6), e2 = document.elementFromPoint(innerWidth / 2, r.bottom + 8); const nm = x => x ? (x.id || x.className || x.tagName) : '-'; return ` · ${innerWidth}x${innerHeight}/${screen.height}/${v ? Math.round(v.height) : ''} nav:${Math.round(r.top)}-${Math.round(r.bottom)} sc:${Math.round(scrollY)} ch:${document.documentElement.clientHeight} bh:${document.body.offsetHeight} pt:${nm(e)} ${nm(e2)}`; } catch (x) { return ' · ' + x.message; } };
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
   function fix(){
-    const standalone = navigator.standalone || matchMedia('(display-mode: standalone)').matches;
-    let diff = 0;
-    if (standalone && innerHeight > innerWidth) {
-      diff = Math.round(screen.height - innerHeight);
-      if (diff < 3 || diff > 120) diff = 0;
-    }
-    nav.style.bottom = diff ? (-diff) + 'px' : '';
-    document.body.style.paddingBottom = '';
+    // iOS : la zone où "fixed" s'ancre (clientHeight) peut être plus courte que la fenêtre (innerHeight)
+    let diff = Math.round(innerHeight - document.documentElement.clientHeight);
+    if (diff < 3 || diff > 140) diff = 0;
+    document.documentElement.style.setProperty('--vgap', diff + 'px');
   }
   fix();
   addEventListener('resize', fix);
