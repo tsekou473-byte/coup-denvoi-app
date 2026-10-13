@@ -109,6 +109,13 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .dh .ttl{ flex:1; min-width:0; }
 .dh .ttl b{ display:block; font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .dh .ttl small{ color:rgba(255,255,255,.78); font-size:.9rem; }
+.hero{ background:linear-gradient(180deg,rgba(8,26,48,.55),rgba(6,18,34,.72)),#0f2a45 url(bg-header.jpg) center/cover no-repeat; color:#fff; padding-bottom:6px; box-shadow:0 2px 10px rgba(0,0,0,.35),inset 0 -1px 0 rgba(255,181,71,.55); margin-bottom:10px; }
+.hero .sbmid .score.muted{ color:rgba(255,255,255,.88); background:rgba(255,255,255,.1); }
+.hero .meta{ color:rgba(255,255,255,.72); }
+.hero .sbmid .score{ box-shadow:0 0 0 1px rgba(255,255,255,.22),0 3px 10px rgba(0,0,0,.4); }
+.hero .sbmid .sub, .hero .sbmid .cdown{ color:rgba(255,255,255,.8); }
+.hero .follow{ background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.3); color:#fff; }
+.hero .follow.on{ background:var(--accent); color:#1b1305; border-color:var(--accent); }
 .sb{ display:grid; grid-template-columns:1fr auto 1fr; gap:6px; align-items:start; padding:22px 12px 8px; max-width:640px; margin:0 auto; }
 .sbteam{ display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; font-size:1.15rem; font-weight:500; line-height:1.15; }
 .crest.big{ width:60px; height:60px; font-size:1rem; }
@@ -412,7 +419,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v71';
+const VERSION = 'v72';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1814,12 +1821,12 @@ function renderDetail(){
       <div class="ttl"><b>${esc(trComp(g.comp))}</b><small>${esc(dayLabel(g.date))}${g.time ? ' · ' + esc(g.time) : ''}</small></div>
       <button class="icon-btn" id="dfav" aria-label="Suivre ce match">${starSvg(isFavMatch(g.id))}</button>
     </div>
-    <div class="sb">
+    <div class="hero"><div class="sb">
       <div class="sbteam"><div class="sbtap" data-side="home">${crestRc(g, 'home', 'big')}<span>${esc(trTeam(g.home))}</span></div>${followBtn(g, 'home')}</div>
       <div class="sbmid">${sbMid(g)}</div>
       <div class="sbteam"><div class="sbtap" data-side="away">${crestRc(g, 'away', 'big')}<span>${esc(trTeam(g.away))}</span></div>${followBtn(g, 'away')}</div>
     </div>
-    ${meta ? `<div class="meta">${meta}</div>` : ''}`;
+    ${meta ? `<div class="meta">${meta}</div>` : ''}</div>`;
   const bodyHtml = `
     <div class="dtabs">${[['resume','Résumé'],['compos','Compos'],['stats','Stats'],['table','Classement']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}`;
