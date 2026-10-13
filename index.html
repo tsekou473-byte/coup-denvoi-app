@@ -119,6 +119,8 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .dtabs{ display:flex; gap:8px; padding:4px 12px 14px; max-width:640px; margin:0 auto; }
 .dtab{ flex:1; border:none; background:var(--card); box-shadow:0 1px 2px rgba(20,30,50,.08); padding:9px 0; border-radius:999px; font-family:'Barlow Condensed',sans-serif; font-size:1.08rem; letter-spacing:.05em; text-transform:uppercase; color:var(--text); cursor:pointer; }
 .dtab.active{ background:var(--accent); color:#1b1305; font-weight:600; box-shadow:none; }
+.ptr{ position:fixed; left:0; right:0; top:0; z-index:60; display:flex; justify-content:center; pointer-events:none; transform:translateY(-60px); }
+.ptr span{ margin-top:calc(env(safe-area-inset-top) + 8px); background:var(--card); color:var(--text); border:1px solid var(--line); box-shadow:0 2px 8px rgba(20,30,50,.15); border-radius:999px; padding:7px 16px; font-size:.9rem; }
 .h2h{ padding:14px 14px 12px; }
 .h2h h4{ margin:0 0 10px; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
 .h2bar{ display:flex; height:10px; border-radius:6px; overflow:hidden; background:var(--card-head); }
@@ -371,7 +373,7 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v42';
+const VERSION = 'v43';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -851,6 +853,51 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
   if (isMatchs){ renderDates(); renderFilterBar(); show(); }
   else { $('filterBar').hidden = true; reqId++; if (state.page === 'explorer') renderExplorer(); else if (state.page === 'favoris') showFavoris(); else if (state.page === 'transferts' || state.page === 'infos') renderNews(state.page); else $('main').innerHTML = `<div class="empty">${STUBS[state.page]}</div>`; }
 });
+
+
+/* tirer l'écran vers le bas pour actualiser */
+(function(){
+  const bar = document.createElement('div'); bar.className = 'ptr'; bar.innerHTML = '<span></span>'; document.body.appendChild(bar);
+  const lbl = bar.firstChild;
+  let y0 = null, dy = 0, busy = false, scroller = null;
+  const activeScroller = () => {
+    if (!$('panel').hidden) return $('panel');
+    if (!$('detail').hidden) return $('detail');
+    return null;   // la page elle-même
+  };
+  const atTop = sc => (sc ? sc.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0)) <= 0;
+  const setBar = (px, text) => { bar.style.transition = 'none'; bar.style.transform = `translateY(${Math.min(px, 90) - 60}px)`; lbl.textContent = text; };
+  const hideBar = () => { bar.style.transition = 'transform .25s'; bar.style.transform = 'translateY(-60px)'; };
+  function doRefresh(){
+    if (!$('panel').hidden){ if (PANEL.kind === 'team' && PANEL.team){ delete TEAM[PANEL.team.leagueId + ':' + PANEL.team.id]; PANEL.squad = null; renderPanel(); loadSquad(); } else if (PANEL.kind === 'competition' && PANEL.comp){ openCompetition(PANEL.comp.id); } return; }
+    if (!$('detail').hidden){ DETAIL.err = null; loadDetail(); return; }
+    if (state.page === 'matchs'){ const iso = state.sel === 'live' ? TODAY : state.sel; delete cache[iso]; show(); }
+    else if (state.page === 'favoris'){ FAVSTATE.dirty = true; showFavoris(); }
+    else if (state.page === 'infos' || state.page === 'transferts') renderNews(state.page);
+  }
+  document.addEventListener('touchstart', e => {
+    if (busy || e.touches.length !== 1 || $('drawer').classList.contains('open')) { y0 = null; return; }
+    scroller = activeScroller();
+    if (!atTop(scroller) || e.target.closest('input,textarea,select')) { y0 = null; return; }
+    y0 = e.touches[0].clientY; dy = 0;
+  }, { passive:true });
+  document.addEventListener('touchmove', e => {
+    if (y0 == null) return;
+    dy = e.touches[0].clientY - y0;
+    if (dy <= 0){ if (!atTop(scroller)) y0 = null; hideBar(); return; }
+    if (!atTop(scroller)){ y0 = null; hideBar(); return; }
+    const pull = dy * 0.5;
+    setBar(pull, pull > 45 ? 'Relâche pour actualiser' : 'Tire pour actualiser');
+  }, { passive:true });
+  document.addEventListener('touchend', () => {
+    if (y0 == null) return;
+    const go = dy * 0.5 > 45; y0 = null; dy = 0;
+    if (!go){ hideBar(); return; }
+    busy = true; setBar(60, 'Actualisation…'); bar.style.transition = 'transform .2s'; bar.style.transform = 'translateY(0)';
+    try { doRefresh(); } catch(e) {}
+    setTimeout(() => { hideBar(); busy = false; }, 1200);
+  }, { passive:true });
+})();
 
 /* rafraîchissement automatique quand des matchs sont en direct */
 setInterval(async () => {
