@@ -389,7 +389,7 @@ body{ overflow-x:hidden; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v47';
+const VERSION = 'v48';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -651,7 +651,6 @@ async function getDay(iso, force){
   const stale = parts.some(p => p.stale);
   cache[iso] = { games: all.map(localize).filter(g => g.date === iso), ts: stale ? 0 : Date.now() };
   cache[iso].games.forEach(g => { GAME_INDEX[g.id] = g; });
-  if (cache[iso].games.some(g => g.status === 'scheduled')) loadPreds(parisDaysOf(iso), () => { if (state.page === 'matchs' && $('detail').hidden) refreshList(); });
   return cache[iso].games;
 }
 function liveCount(){
@@ -757,7 +756,6 @@ function matchRow(g){
         <div class="tn h">${esc(trTeam(g.home))}</div>${crest(trTeam(g.home) || '', g.homeLogo)}
         ${middle(g)}
         ${crest(trTeam(g.away) || '', g.awayLogo)}<div class="tn a">${esc(trTeam(g.away))}</div>
-        ${predRow(g)}
       </div>`;
 }
 
