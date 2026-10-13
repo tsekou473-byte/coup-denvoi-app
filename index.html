@@ -269,6 +269,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .cplist{ padding:14px 10px 30px; max-width:640px; margin:0 auto; }
 .lg{ scroll-margin-top:80px; }
 .dh .ttl small{ display:block; }
+.cdown{ margin-top:6px; font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; font-weight:600; letter-spacing:.03em; color:var(--brand); font-variant-numeric:tabular-nums; white-space:nowrap; }
 
 /* favoris */
 .match.fav{ box-shadow:inset 3px 0 0 var(--accent); }
@@ -389,7 +390,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v57';
+const VERSION = 'v58';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1195,8 +1196,18 @@ function sbMid(g){
     return `<div class="score live">${score}</div><div class="sub live">${esc(m)}</div>`;
   }
   if (g.status === 'postponed') return `<div class="score muted strike">${esc(g.time||'')}</div><div class="sub">Reporté</div>`;
-  return `<div class="score muted">${esc(g.time||'--:--')}</div><div class="sub">${esc(dayLabel(g.date))}</div>`;
+  const cd = (typeof g.ts === 'number' && g.ts > Date.now()) ? `<div class="cdown" data-notr data-ts="${g.ts}">${fmtCountdown(g.ts)}</div>` : '';
+  return `<div class="score muted">${esc(g.time||'--:--')}</div><div class="sub">${esc(dayLabel(g.date))}</div>${cd}`;
 }
+function fmtCountdown(ts){
+  let t = Math.max(0, Math.floor((ts - Date.now()) / 1000));
+  const d = Math.floor(t / 86400); t -= d * 86400;
+  const h = Math.floor(t / 3600); t -= h * 3600;
+  const m = Math.floor(t / 60), sec = t - m * 60;
+  const p = n => String(n).padStart(2, '0');
+  return (d ? d + ' j ' : '') + (d || h ? h + ' h ' : '') + p(m) + ' min ' + p(sec) + ' s';
+}
+setInterval(() => { document.querySelectorAll('.cdown[data-ts]').forEach(el => { el.textContent = fmtCountdown(+el.dataset.ts); }); }, 1000);
 
 function evRow(e){
   const home = e.team === 'home';
