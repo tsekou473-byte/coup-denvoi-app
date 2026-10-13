@@ -48,6 +48,10 @@ header{ position:sticky; top:0; z-index:10; background:linear-gradient(180deg,#1
   color:var(--text); cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:6px;
 }
 .date.active{ background:var(--brand-dark); color:#fff; font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+.icon-btn#liveBtn.has{ color:#ff6b5e; }
+.icon-btn#liveBtn.on{ color:#ff6b5e; }
+.icon-btn#liveBtn.on::after{ content:''; position:absolute; left:10px; right:10px; bottom:3px; height:2px; border-radius:2px; background:#ff6b5e; }
+.icon-btn#liveBtn[data-n]:not([data-n=''])::before{ content:attr(data-n); position:absolute; top:3px; right:1px; min-width:15px; height:15px; padding:0 3px; box-sizing:border-box; border-radius:8px; background:#e5231b; color:#fff; font:700 .62rem/15px system-ui; text-align:center; }
 .dot{ width:7px; height:7px; border-radius:50%; background:var(--live); animation:pulse 1.4s infinite; }
 @keyframes pulse{ 0%,100%{ opacity:1 } 50%{ opacity:.25 } }
 .filterbar{ display:flex; align-items:center; gap:8px; padding:12px 14px 0; font-size:.95rem; color:var(--muted); }
@@ -371,6 +375,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#ffb547"/><path d="M12 6.4 16.5 9.6 14.8 15h-5.6L7.5 9.6Z" fill="#0e1320"/></svg>
     </div>
     <div class="right">
+      <button class="icon-btn" id="liveBtn" aria-label="Matchs en direct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></svg></button>
       <label class="icon-btn cal" aria-label="Choisir une date">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01M16 17h.01" stroke-width="2.4"/></svg>
         <input type="date" id="datePick">
@@ -428,7 +433,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v88';
+const VERSION = 'v89';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -777,12 +782,10 @@ function renderDates(){
   let html = '';
   dateKeys().forEach(iso => {
     html += `<button class="date ${state.sel===iso?'active':''}" data-k="${iso}">${dayLabel(iso)}</button>`;
-    if (iso === TODAY){
-      const n = liveCount();
-      html += `<button class="date ${state.sel==='live'?'active':''}" data-k="live">${n?'<i class="dot"></i>':''}EN DIRECT${n?` (${n})`:''}</button>`;
-    }
   });
   box.innerHTML = html;
+  const lb = $('liveBtn'), n = liveCount();
+  if (lb){ lb.classList.toggle('on', state.sel === 'live'); lb.classList.toggle('has', n > 0); lb.dataset.n = n > 0 ? String(n) : ''; }
   box.querySelectorAll('.date').forEach(b => b.onclick = () => { state.sel = b.dataset.k; renderDates(); show(); });
   const active = box.querySelector('.date.active');
   if (active) box.scrollLeft = active.offsetLeft - box.clientWidth/2 + active.clientWidth/2;
@@ -1025,6 +1028,7 @@ function setLeague(id){
 /* ---------- interactions ---------- */
 function openDrawer(){ $('drawer').classList.add('open'); $('scrim').classList.add('open'); }
 function closeDrawer(){ $('drawer').classList.remove('open'); $('scrim').classList.remove('open'); }
+$('liveBtn').onclick = () => { state.sel = state.sel === 'live' ? TODAY : 'live'; renderDates(); show(); };
 $('burger').onclick = openDrawer;
 $('scrim').onclick = closeDrawer;
 
