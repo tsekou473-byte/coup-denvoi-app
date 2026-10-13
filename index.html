@@ -21,7 +21,7 @@
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 [hidden]{ display:none !important; }
 html{ font-size:14px; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
-html,body{ margin:0; min-height:100%; }
+html,body{ margin:0; min-height:100%; overscroll-behavior-y:none; }
 body{ background:transparent; color:var(--text); font-family:'Barlow Semi Condensed',system-ui,-apple-system,sans-serif; -webkit-font-smoothing:antialiased; }
 button{ font-family:inherit; color:inherit; }
 
@@ -425,7 +425,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v84';
+const VERSION = 'v85';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1136,8 +1136,20 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
     return null;   // la page elle-même
   };
   const atTop = sc => (sc ? sc.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0)) <= 0;
-  const setBar = (px, text) => { bar.style.visibility = 'visible'; bar.style.opacity = '1'; bar.style.transition = 'none'; bar.style.transform = `translateY(${Math.min(px, 90) - 60}px)`; lbl.textContent = text; };
-  const hideBar = () => { bar.style.transition = 'transform .25s, opacity .25s'; bar.style.transform = 'translateY(-160px)'; bar.style.opacity = '0'; setTimeout(() => { if (bar.style.opacity === '0') bar.style.visibility = 'hidden'; }, 280); };
+  // la liste (et seulement elle) descend sous le doigt ; l'en-tête reste en place
+  const target = () => scroller === null ? $('main') : (scroller === $('detail') ? $('dbody') : null);
+  const setBar = (px, text) => {
+    const hd = document.querySelector('header'), page = scroller === null;
+    bar.style.visibility = 'visible'; bar.style.opacity = '1'; bar.style.transition = 'none';
+    bar.style.zIndex = page ? '5' : '60';
+    bar.style.top = page && hd ? hd.getBoundingClientRect().bottom + 'px' : '0px';
+    lbl.style.marginTop = page ? '8px' : '';
+    const p = Math.min(px, 90);
+    bar.style.transform = `translateY(${p - (page ? 50 : 60)}px)`;
+    lbl.textContent = text;
+    const t = target(); if (t){ t.style.transition = 'none'; t.style.transform = `translateY(${p}px)`; }
+  };
+  const hideBar = () => { ['main','dbody'].forEach(id => { const t = $(id); if (t && t.style.transform){ t.style.transition = 'transform .25s'; t.style.transform = ''; } }); bar.style.transition = 'transform .25s, opacity .25s'; bar.style.transform = 'translateY(-160px)'; bar.style.opacity = '0'; setTimeout(() => { if (bar.style.opacity === '0') bar.style.visibility = 'hidden'; }, 280); };
   function doRefresh(){
     if (!$('panel').hidden){ if (PANEL.kind === 'team' && PANEL.team){ delete TEAM[PANEL.team.leagueId + ':' + PANEL.team.id]; PANEL.squad = null; renderPanel(); loadSquad(); } else if (PANEL.kind === 'competition' && PANEL.comp){ openCompetition(PANEL.comp.id); } return; }
     if (!$('detail').hidden){ DETAIL.err = null; loadDetail(); return; }
@@ -1163,7 +1175,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
     if (y0 == null) return;
     const go = dy * 0.5 > 45; y0 = null; dy = 0;
     if (!go){ hideBar(); return; }
-    busy = true; setBar(60, 'Actualisation…'); bar.style.transition = 'transform .2s'; bar.style.transform = 'translateY(0)';
+    busy = true; setBar(60, 'Actualisation…'); bar.style.transition = 'transform .2s'; bar.style.transform = scroller === null ? 'translateY(10px)' : 'translateY(0)';
     try { doRefresh(); } catch(e) {}
     setTimeout(() => { hideBar(); busy = false; }, 1200);
   }, { passive:true });
