@@ -390,7 +390,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v60';
+const VERSION = 'v61';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1181,6 +1181,7 @@ async function loadDetail(silent){
     if (DETAIL.id !== id || (stale && silent)) return;
     localize(data);
     DETAIL.data = data; DETAIL.err = null;
+    if (data.status === 'live' || data.status === 'final') ['home','away'].forEach(sd => { const l = (data.lineups || {})[sd] || {}; (l.starters || []).concat(l.subs || []).forEach(x => { if (x && x.name) PLAYED.add(pkey(x.name)); }); });
     if (data.lineups && (((data.lineups.home || {}).starters || []).length || ((data.lineups.away || {}).starters || []).length)){ preloadSquadPhotos(data); loadLineupPhotos(data); }   // on cherche les photos dès l'ouverture du match, pas seulement sur l'onglet Compos
     Object.assign(GAME_INDEX[id], { status:data.status, minute:data.minute, hs:data.hs, as:data.as });
   } catch (e) {
@@ -1293,6 +1294,8 @@ function lastName(full){
 }
 const norm = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 // "Jayden Bogle" et "J. Bogle" donnent la même clé : j|bogle
+const PLAYED = new Set();   // joueurs vus dans une composition de match en cours / terminé : ils ne sont donc pas blessés
+const isInj = p => !!p.injured && !PLAYED.has(pkey(p.name));
 const pkey = full => { const w = String(full || '').trim().split(/\s+/); return norm((w[0] || '').charAt(0)) + '|' + norm(w[w.length - 1]); };
 
 // Répartit les 11 titulaires en lignes selon la formation (ex. 3-5-2). Renvoie null si impossible.
@@ -1637,7 +1640,7 @@ function teamSquadHtml(){
       <div class="prow2" data-id="${esc(playerIdent(p))}">
         <span class="pnum">${p.number ?? ''}</span>
         ${pfacePlayer(p)}
-        <div class="pinfo"><b>${esc(trTeam(p.name))}${p.captain ? '<span class="tag-cap">C</span>' : ''}${p.injured ? '<span class="tag-inj">Blessé</span>' : ''}</b>
+        <div class="pinfo"><b>${esc(trTeam(p.name))}${p.captain ? '<span class="tag-cap">C</span>' : ''}${isInj(p) ? '<span class="tag-inj">Blessé</span>' : ''}</b>
         <small>${[p.age ? p.age + ' ans' : '', p.country ? trCountry(p.country) : ''].filter(Boolean).join(' · ')}</small></div>
       </div>`).join('');
     return `<div class="pgroup"><div class="postitle">${esc(label)}</div>${rows}</div>`;
@@ -1657,7 +1660,7 @@ function playerProfileHtml(p){
       ${p.age != null ? `<span>${p.age} ans</span>` : ''}
       ${p.birthdate ? `<span>Né le ${esc(formatBirth(p.birthdate))}</span>` : ''}
       ${p.country ? `<span>${esc(trCountry(p.country))}</span>` : ''}
-      ${p.injured ? `<span class="tag-inj">Actuellement blessé</span>` : ''}
+      ${isInj(p) ? `<span class="tag-inj">Actuellement blessé</span>` : ''}
     </div>
     <div class="card2" style="margin-top:16px">${rows || `<div class="noev">Aucune statistique disponible cette saison.</div>`}</div>
     <div class="avail">L'historique des clubs précédents n'est pas fourni par notre source de données.</div>`;
