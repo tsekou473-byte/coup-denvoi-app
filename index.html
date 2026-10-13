@@ -450,7 +450,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v95';
+const VERSION = 'v96';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1884,17 +1884,25 @@ function natLabel(x){ const n = natInfo(x); if (!n) return String(x || ''); cons
 const HIST = {};   // clé -> { loading, data, err }
 function histLoad(key, url, pick){
   if (HIST[key]) return HIST[key];
-  const h = HIST[key] = { loading:true, data:null };
+  const h = HIST[key] = { loading:true, data:null, tries:(HIST['t|' + key] || 0) };
   apiGet(url).then(r => { h.data = pick(r.data) || null; h.paused = !!r.data.paused; })
     .catch(e => { h.err = e.message; })
-    .finally(() => { h.loading = false; if (h.paused || h.err) setTimeout(() => { if (HIST[key] === h) delete HIST[key]; }, 20000); if (!$('panel').hidden) renderPanel(); });
+    .finally(() => {
+      h.loading = false;
+      // source momentanément saturée : on réessaie toute seule (3 fois au plus)
+      if ((h.paused || h.err) && h.tries < 3){
+        HIST['t|' + key] = h.tries + 1;
+        setTimeout(() => { if (HIST[key] === h){ delete HIST[key]; if (!$('panel').hidden) renderPanel(); } }, 12000);
+      }
+      if (!$('panel').hidden) renderPanel();
+    });
   return h;
 }
 function clubHtml(){
   const t = PANEL.team;
   if (!t || !t.name) return '';
   const h = histLoad('club|' + t.name + '|' + I18N.lang, `${BACKEND}/api/club?name=${encodeURIComponent(t.name)}&lang=${I18N.lang}`, d => d.club);
-  if (h.loading) return `<div class="card2 hist"><h4>Histoire du club</h4><div class="none">Chargement de l'histoire…</div></div>`;
+  if (h.loading || ((h.paused || h.err) && h.tries < 3)) return `<div class="card2 hist"><h4>Histoire du club</h4><div class="none">Chargement de l'histoire…</div></div>`;
   const c = h.data;
   if (!c) return '';
   const facts = [
@@ -1912,7 +1920,7 @@ function careerHtml(p){
     `${BACKEND}/api/player-history?name=${encodeURIComponent(p.name)}&full=${encodeURIComponent(p.fullName || '')}&team=${encodeURIComponent((t && t.name) || '')}&lang=${I18N.lang}`, d => d.player);
   if (h.loading) return `<div class="card2 hist"><h4>Carrière</h4><div class="none">Chargement de la carrière…</div></div>`;
   const d = h.data;
-  if (!d) return `<div class="card2 hist"><h4>Carrière</h4><div class="none">Historique indisponible pour le moment.</div></div>`;
+  if (!d) return `<div class="card2 hist"><h4>Carrière</h4><div class="none">${(h.paused || h.err) && h.tries < 3 ? 'Chargement de la carrière…' : 'Historique indisponible pour le moment.'}</div></div>`;
   const kind = x => /loan/i.test(x) ? 'Prêt' : /youth|academy/i.test(x) ? 'Formation' : '';
   const years = x => x.from && x.to && x.from !== x.to ? `${x.from} – ${x.to}` : (x.from || x.to || '');
   const last = d.career.length ? d.career[d.career.length - 1] : null;
