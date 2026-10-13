@@ -368,7 +368,6 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
   <div class="d-item soon">Joueurs</div>
 </nav>
 
-<style>.tb{position:fixed;width:14%;height:14px;z-index:99;color:#fff;font:700 11px/14px sans-serif;text-align:center;pointer-events:none}</style><div class="tb" style="left:0%;bottom:0;background:#e11">A</div><div class="tb" style="left:16%;top:calc(100vh - 14px);background:#1a1">B</div><div class="tb" style="left:32%;top:calc(100dvh - 14px);background:#11e">C</div><div class="tb" style="left:48%;top:calc(100lvh - 14px);background:#e81">D</div><div class="tb" style="left:64%;top:calc(100svh - 14px);background:#a1e">E</div><div class="tb" style="left:80%;top:calc(100% - 14px);background:#0aa">F</div><div class="tb" id="tbG" style="left:96%;background:#000">G</div><script>document.getElementById("tbG").style.top=(screen.height-14)+"px"</script>
 <nav class="bottom-nav" id="bottomNav">
   <button class="nav-item active" data-page="matchs">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18M12 5v14"/><circle cx="12" cy="12" r="2.5"/></svg><span>Matchs</span>
@@ -390,7 +389,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v55';
+const VERSION = 'v56';
 const DIAG = () => { try { const v = window.visualViewport, n = document.getElementById('bottomNav'), r = n.getBoundingClientRect(), e = document.elementFromPoint(innerWidth / 2, innerHeight - 6), e2 = document.elementFromPoint(innerWidth / 2, r.bottom + 8); const nm = x => x ? (x.id || x.className || x.tagName) : '-'; return ` · ${innerWidth}x${innerHeight}/${screen.height}/${v ? Math.round(v.height) : ''} nav:${Math.round(r.top)}-${Math.round(r.bottom)} sc:${Math.round(scrollY)} ch:${document.documentElement.clientHeight} bh:${document.body.offsetHeight} pt:${nm(e)} ${nm(e2)}`; } catch (x) { return ' · ' + x.message; } };
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
