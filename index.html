@@ -390,7 +390,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v62';
+const VERSION = 'v63';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -758,21 +758,24 @@ function crest(name, logo, cls=''){
 }
 
 /* minute en direct : entre deux mises à jour du serveur, on l'avance seul chaque minute */
+const ANCH = {};   // id du match -> { m: minute connue, at: moment où on l'a apprise }
+const estMin = (a, cap) => Math.min(cap, a.m + Math.floor((Date.now() - a.at) / 60000));
 function minTag(g){
   const m = g.minute ? String(g.minute) : 'LIVE';
-  if (/^\d+$/.test(m)){
-    if (!g._at) g._at = Date.now();
-    return `<span class="lmin" data-m="${m}" data-at="${g._at}">${m}'</span>`;
-  }
-  return esc(m);
+  if (!/^\d+$/.test(m)) { delete ANCH[g.id]; return esc(m); }
+  const sv = +m, cap = sv + 4;
+  const a = ANCH[g.id];
+  // on garde notre propre décompte tant que le serveur n'est pas en avance sur lui : la minute avance régulièrement, sans retour en arrière
+  if (!a || sv > estMin(a, 999)) ANCH[g.id] = { m: sv, at: Date.now() };
+  const cur = ANCH[g.id];
+  return `<span class="lmin" data-m="${cur.m}" data-at="${cur.at}" data-cap="${Math.max(cap, cur.m)}">${estMin(cur, Math.max(cap, cur.m))}'</span>`;
 }
 setInterval(() => {
   document.querySelectorAll('.lmin').forEach(el => {
-    const add = Math.min(3, Math.floor((Date.now() - (+el.dataset.at)) / 60000));
-    const t = (+el.dataset.m + Math.max(0, add)) + "'";
+    const t = estMin({ m: +el.dataset.m, at: +el.dataset.at }, +el.dataset.cap) + "'";
     if (el.textContent !== t) el.textContent = t;
   });
-}, 10000);
+}, 5000);
 
 function middle(g){
   const score = `${g.hs ?? 0} - ${g.as ?? 0}`;
