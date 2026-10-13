@@ -390,7 +390,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v59';
+const VERSION = 'v60';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -772,8 +772,8 @@ function middle(g){
 function priority(g){
   const c = g.comp || '', k = g.country || '';
   if (/^caf |africa cup|african nations|qualification africa/i.test(c)) return 8;
-  if (/champions league/i.test(c)) return 0;
-  if (/europa league|conference league/i.test(c)) return 1;
+  if (/^(uefa )?champions league/i.test(c)) return 0;
+  if (/^(uefa )?(europa|conference) league/i.test(c)) return 1;
   if (/^premier league$/i.test(c) && /england/i.test(k)) return 2;
   if (/^la liga$/i.test(c)) return 3;
   if (/^ligue 1$/i.test(c)) return 4;
