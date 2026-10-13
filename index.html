@@ -119,9 +119,9 @@ main{ padding:14px 10px 110px; max-width:640px; margin:0 auto; }
 .dtabs{ display:flex; gap:8px; padding:4px 12px 14px; max-width:640px; margin:0 auto; }
 .dtab{ flex:1; border:none; background:var(--card); box-shadow:0 1px 2px rgba(20,30,50,.08); padding:9px 0; border-radius:999px; font-family:'Barlow Condensed',sans-serif; font-size:1.08rem; letter-spacing:.05em; text-transform:uppercase; color:var(--text); cursor:pointer; }
 .dtab.active{ background:var(--accent); color:#1b1305; font-weight:600; box-shadow:none; }
-.ptr{ position:fixed; left:0; right:0; top:0; z-index:60; display:flex; justify-content:center; pointer-events:none; transform:translateY(-60px); }
+.ptr{ position:fixed; left:0; right:0; top:0; z-index:60; display:flex; justify-content:center; pointer-events:none; transform:translateY(-160px); opacity:0; visibility:hidden; }
 .ptr span{ margin-top:calc(env(safe-area-inset-top) + 8px); background:var(--card); color:var(--text); border:1px solid var(--line); box-shadow:0 2px 8px rgba(20,30,50,.15); border-radius:999px; padding:7px 16px; font-size:.9rem; }
-body{ overflow-x:hidden; } .detail{ overflow-x:hidden; }
+html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .pred{ grid-column:1 / -1; margin-top:2px; }
 .pbar{ display:flex; height:5px; border-radius:3px; overflow:hidden; gap:2px; background:transparent; }
 .pbar i{ display:block; min-width:3px; border-radius:3px; } .pbar .h{ background:var(--accent); } .pbar .d{ background:#b9c2d0; } .pbar .a{ background:#4f7cff; }
@@ -389,7 +389,7 @@ body{ overflow-x:hidden; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v50';
+const VERSION = 'v51';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -1054,8 +1054,8 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
     return null;   // la page elle-même
   };
   const atTop = sc => (sc ? sc.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0)) <= 0;
-  const setBar = (px, text) => { bar.style.transition = 'none'; bar.style.transform = `translateY(${Math.min(px, 90) - 60}px)`; lbl.textContent = text; };
-  const hideBar = () => { bar.style.transition = 'transform .25s'; bar.style.transform = 'translateY(-60px)'; };
+  const setBar = (px, text) => { bar.style.visibility = 'visible'; bar.style.opacity = '1'; bar.style.transition = 'none'; bar.style.transform = `translateY(${Math.min(px, 90) - 60}px)`; lbl.textContent = text; };
+  const hideBar = () => { bar.style.transition = 'transform .25s, opacity .25s'; bar.style.transform = 'translateY(-160px)'; bar.style.opacity = '0'; setTimeout(() => { if (bar.style.opacity === '0') bar.style.visibility = 'hidden'; }, 280); };
   function doRefresh(){
     if (!$('panel').hidden){ if (PANEL.kind === 'team' && PANEL.team){ delete TEAM[PANEL.team.leagueId + ':' + PANEL.team.id]; PANEL.squad = null; renderPanel(); loadSquad(); } else if (PANEL.kind === 'competition' && PANEL.comp){ openCompetition(PANEL.comp.id); } return; }
     if (!$('detail').hidden){ DETAIL.err = null; loadDetail(); return; }
