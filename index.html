@@ -428,7 +428,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v86';
+const VERSION = 'v87';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -919,11 +919,46 @@ function renderGames(list){
   });
   const ordered = Object.values(groups).sort((a,b) => a.p - b.p || (a.country||'').localeCompare(b.country||'') || (a.comp||'').localeCompare(b.comp||''));
 
-  main.innerHTML = ordered.map(gr => {
+  patchMain(ordered.map(gr => {
     const rows = gr.items.sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('');
     const flag = gr.flag ? `<img src="${esc(gr.flag)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : '';
-    return `<section class="group"><div class="lg">${flag}<span class="lgn">${esc(trComp(gr.comp))} <span class="lgc">· ${esc(trCountry(gr.country))}</span></span></div>${rows}</section>`;
-  }).join('') + `<div class="ver">Coup d'Envoi · ${VERSION}</div>`;
+    return `<section class="group" data-key="${esc(gr.country + '|' + gr.comp)}"><div class="lg" data-key="lg">${flag}<span class="lgn">${esc(trComp(gr.comp))} <span class="lgc">· ${esc(trCountry(gr.country))}</span></span></div>${rows}</section>`;
+  }).join('') + `<div class="ver" data-key="ver">Coup d'Envoi · ${VERSION}</div>`);
+}
+
+/* met la liste à jour SANS tout redessiner : seuls les matchs / morceaux qui ont changé sont remplacés,
+   les logos des autres restent en place (plus de clignotement à l'actualisation) */
+function rawOf(el){ return el.__raw !== undefined ? el.__raw : el.outerHTML; }
+function tagRaw(el, depth){ el.__raw = el.outerHTML; if (depth > 0) Array.from(el.children).forEach(c => tagRaw(c, depth - 1)); }
+function keyOf(el){ return el.dataset && (el.dataset.key || el.dataset.id) || el.className || el.tagName; }
+function syncKeyed(oldP, newP, depth){
+  const newKids = Array.from(newP.children), keep = new Set(newKids.map(keyOf));
+  Array.from(oldP.children).forEach(c => { if (!keep.has(keyOf(c))) c.remove(); });
+  const oldMap = new Map(); Array.from(oldP.children).forEach(c => oldMap.set(keyOf(c), c));
+  let cursor = oldP.firstElementChild;
+  newKids.forEach(nk => {
+    const ok = oldMap.get(keyOf(nk));
+    if (ok){
+      if (ok === cursor) cursor = cursor.nextElementSibling; else oldP.insertBefore(ok, cursor);
+      patchEl(ok, nk, depth);
+    } else { tagRaw(nk, 2); oldP.insertBefore(nk, cursor); }
+  });
+}
+function patchEl(ok, nk, depth){
+  if (rawOf(ok) === nk.outerHTML) return;
+  if (ok.tagName !== nk.tagName){ tagRaw(nk, 2); ok.replaceWith(nk); return; }
+  Array.from(ok.attributes).forEach(a => { if (!nk.hasAttribute(a.name)) ok.removeAttribute(a.name); });
+  Array.from(nk.attributes).forEach(a => { if (ok.getAttribute(a.name) !== a.value) ok.setAttribute(a.name, a.value); });
+  if (ok.classList.contains('group') && depth > 0){ syncKeyed(ok, nk, depth - 1); ok.__raw = nk.outerHTML; return; }
+  if (depth <= 0 || ok.children.length !== nk.children.length || !nk.children.length){ ok.innerHTML = nk.innerHTML; tagRaw(ok, 0); ok.__raw = nk.outerHTML; return; }
+  Array.from(nk.children).forEach((c, i) => patchEl(ok.children[i], c, depth - 1));
+  ok.__raw = nk.outerHTML;
+}
+function patchMain(html){
+  const main = $('main');
+  const tmp = document.createElement('div'); tmp.innerHTML = html;
+  if (!main.querySelector('.group') || !tmp.querySelector('.group')){ main.innerHTML = html; Array.from(main.children).forEach(c => tagRaw(c, 2)); return; }
+  syncKeyed(main, tmp, 3);
 }
 
 /* dernière liste connue (gardée sur l'appareil) : affichée tout de suite pendant que le serveur se réveille */
@@ -1158,7 +1193,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
   function doRefresh(){
     if (!$('panel').hidden){ if (PANEL.kind === 'team' && PANEL.team){ delete TEAM[PANEL.team.leagueId + ':' + PANEL.team.id]; PANEL.squad = null; renderPanel(); loadSquad(); } else if (PANEL.kind === 'competition' && PANEL.comp){ openCompetition(PANEL.comp.id); } return; }
     if (!$('detail').hidden){ DETAIL.err = null; loadDetail(); return; }
-    if (state.page === 'matchs'){ const iso = state.sel === 'live' ? TODAY : state.sel; delete cache[iso]; show(); }
+    if (state.page === 'matchs'){ const iso = state.sel === 'live' ? TODAY : state.sel; getDay(iso, true).then(g => { if (state.page === 'matchs' && (state.sel === 'live' ? TODAY : state.sel) === iso){ renderDates(); renderGames(g); } }).catch(() => {}); }
     else if (state.page === 'favoris'){ FAVSTATE.dirty = true; showFavoris(); }
     else if (state.page === 'infos' || state.page === 'transferts') renderNews(state.page);
   }
