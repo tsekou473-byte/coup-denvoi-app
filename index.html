@@ -448,7 +448,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v93';
+const VERSION = 'v94';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1857,7 +1857,7 @@ function teamSquadHtml(){
         ${p.number != null && p.number !== '' ? `<span class="pnum">${p.number}</span>` : ''}
         ${pfacePlayer(p)}
         <div class="pinfo"><b>${esc(trTeam(p.name))}${p.captain ? '<span class="tag-cap">C</span>' : ''}${isInj(p) ? '<span class="tag-inj">Blessé</span>' : ''}</b>
-        <small>${[p.age ? p.age + ' ans' : '', p.country ? trCountry(p.country) : ''].filter(Boolean).join(' · ')}</small></div>
+        <small>${[p.age ? p.age + ' ans' : '', p.country ? natLabel(p.country) : ''].filter(Boolean).join(' · ')}</small></div>
       </div>`).join('');
     return `<div class="pgroup"><div class="postitle">${esc(label)}</div>${rows}</div>`;
   }).join('');
