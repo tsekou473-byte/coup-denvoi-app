@@ -402,7 +402,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v64';
+const VERSION = 'v65';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -477,6 +477,9 @@ async function pushEnable(){
   if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: b64ToU8(key) });
   SETTINGS.push = true; saveSettings();
   await pushSync();
+// l'app ouverte re-synchronise régulièrement : si le serveur a redémarré, il retrouve tout de suite tes favoris
+setInterval(() => { if (!document.hidden) pushSync(); }, 4 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pushSync(); });
 }
 async function pushDisable(){
   SETTINGS.push = false; saveSettings();
