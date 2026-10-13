@@ -389,7 +389,7 @@ body{ overflow-x:hidden; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v48';
+const VERSION = 'v49';
 
 const JOURS = ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'];
 const MOIS = ['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.','OCT.','NOV.','DÉC.'];
@@ -729,25 +729,23 @@ function predRow(g){
   const r = n => Math.round(n);
   return `<div class="pred" aria-label="Probabilité de victoire"><div class="pbar"><i class="h" style="flex:${Math.max(p.h, 1)}"></i><i class="d" style="flex:${Math.max(p.d, 1)}"></i><i class="a" style="flex:${Math.max(p.a, 1)}"></i></div><div class="pnums"><span><b>${r(p.h)}%</b></span><span>${r(p.d)}%</span><span><b>${r(p.a)}%</b></span></div></div>`;
 }
-function loadPreds(parisDays, done){
-  const need = parisDays.filter(d => !PRED_DAYS[d] || Date.now() - PRED_DAYS[d] > 3600000);
-  if (!need.length) return;
-  need.forEach(d => { PRED_DAYS[d] = Date.now(); });
-  Promise.all(need.map(d => apiGet(`${BACKEND}/api/predictions?date=${d}`).then(r => r.data.predictions || {}).catch(() => { delete PRED_DAYS[d]; return null; })))
-    .then(list => {
-      let got = false;
-      list.forEach(m => { if (m) Object.keys(m).forEach(id => { PRED[id] = m[id]; got = true; }); });
-      if (got && done) done();
-    });
+function loadWinProb(d){
+  if (PRED[d.id] !== undefined) return;
+  PRED[d.id] = null;   // en cours
+  const q = `match=${encodeURIComponent(d.id)}&date=${encodeURIComponent(d.pdate || d.date)}&league=${encodeURIComponent(d.leagueId || '')}&home=${encodeURIComponent(d.homeId || '')}&away=${encodeURIComponent(d.awayId || '')}`;
+  apiGet(`${BACKEND}/api/winprob?${q}`).then(r => { PRED[d.id] = r.data && r.data.source ? r.data : false; })
+    .catch(() => { delete PRED[d.id]; })
+    .finally(() => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); });
 }
 function predCard(d){
   const p = PRED[d.id];
   if (!p || d.status !== 'scheduled') return '';
   const r = n => Math.round(n);
+  const note = p.source === 'model' ? 'Estimation Coup d\'Envoi d\'après le classement et les buts marqués et encaissés.' : p.source === 'odds' ? 'Estimation d\'après les cotes du marché, à titre indicatif.' : 'Estimation du fournisseur de données, à titre indicatif.';
   return `<div class="card2 pcard"><h4>Probabilité de victoire</h4>
     <div class="pbar"><i class="h" style="flex:${Math.max(p.h, 1)}"></i><i class="d" style="flex:${Math.max(p.d, 1)}"></i><i class="a" style="flex:${Math.max(p.a, 1)}"></i></div>
     <div class="pnums"><div><b>${r(p.h)}%</b>${esc(trTeam(d.home))}</div><div><b>${r(p.d)}%</b>Nul</div><div><b>${r(p.a)}%</b>${esc(trTeam(d.away))}</div></div>
-    <small class="pn">Estimation du fournisseur de données, à titre indicatif.</small></div>`;
+    <small class="pn">${note}</small></div>`;
 }
 
 function matchRow(g){
@@ -1205,7 +1203,7 @@ function tabResume(d){
   const nb = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
   const hasLu = d.lineups.home.starters.length || d.lineups.away.starters.length;
   const avail = `Données reçues : ${nb(d.goals.length, 'but')} · ${nb(d.cards.length, 'carton')} · ${nb(d.subs.length, 'remplacement')} · compositions ${hasLu ? 'oui' : 'non'} · statistiques ${d.stats.length ? 'oui' : 'non'}`;
-  if (d.status === 'scheduled' && !PRED[d.id]) loadPreds([d.pdate || d.date], () => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); });
+  if (d.status === 'scheduled') loadWinProb(d);
   return `${predCard(d)}<div class="card2">${html}</div>${h2hHtml(d)}<div class="avail">${avail}</div>`;
 }
 
