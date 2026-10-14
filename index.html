@@ -567,7 +567,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v132';
+const VERSION = 'v133';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1069,7 +1069,8 @@ function loadWinProb(d){
 
 /* fil « En direct » : corners, tirs, fautes, cartons, VAR… (seulement pendant le match) */
 const FEED = { goal:['⚽','But'], var_goal:['📺','But annulé par la VAR'], var_pen:['📺','Penalty annulé par la VAR'], var:['📺','Contrôle VAR'], penalty:['🎯','Penalty'], corner:['🚩','Corner'], red:['🟥','Carton rouge'], yellow:['🟨','Carton jaune'], sub:['🔄','Remplacement'], offside:['🚫','Hors-jeu'], shot_on:['🧤','Tir cadré'], shot_block:['🛡️','Tir contré'], shot_off:['💨','Tir non cadré'], foul:['✋','Faute'], freekick:['🦵','Coup franc'], kickoff:['▶️',"Coup d'envoi"], ht:['⏸️','Mi-temps'], ft:['🏁','Fin du match'] };
-const hasFeed = d => !!(d && d.status === 'live' && Array.isArray(d.feed) && d.feed.length);
+const FEED_ON = false;   // onglet « En direct » masqué : les données gratuites ont ~10 min de retard (à réactiver avec une source plus rapide)
+const hasFeed = d => !!(FEED_ON && d && d.status === 'live' && Array.isArray(d.feed) && d.feed.length);
 function detailTabs(d){ return hasFeed(d) ? ['resume','compos','stats','feed','table'] : ['resume','compos','stats','table']; }
 function feedCard(d){
   if (d.status !== 'live' || !Array.isArray(d.feed) || !d.feed.length) return '';
