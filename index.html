@@ -220,6 +220,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .cb .ct{ display:block; font-size:.95rem; line-height:1.3; overflow-wrap:anywhere; }
 .cb small{ display:block; text-align:right; font-size:.66rem; opacity:.6; margin-top:1px; }
 .chatbar{ position:sticky; bottom:0; display:flex; gap:8px; align-items:center; padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px)); background:var(--card); border-top:1px solid var(--line); max-width:none; }
+.reptxt{ width:100%; box-sizing:border-box; border:1px solid var(--line); background:var(--bg,#f1f4f9); color:var(--text); border-radius:14px; padding:12px 14px; font:inherit; font-size:1rem; outline:none; resize:vertical; margin:6px 0 10px; }
 .chatbar input{ flex:1; min-width:0; border:1px solid var(--line); background:var(--bg,#f1f4f9); color:var(--text); border-radius:999px; padding:11px 16px; font-size:1rem; outline:none; }
 .chatbar button{ border:none; background:var(--accent); color:#1b1305; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
 .chatbar button.ok{ width:auto; padding:0 18px; border-radius:999px; font-weight:700; }
@@ -566,7 +567,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v131';
+const VERSION = 'v132';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -2730,6 +2731,9 @@ function renderPanel(){
         <div class="row tap" id="goAccount"><div class="rl"><b>Mon compte</b><small>Facultatif · pour retrouver tes favoris sur tous tes appareils</small></div><span class="chev">›</span></div>
       </div>
       <div class="card2 set">
+        <div class="row tap" id="goReport"><div class="rl"><b>Signaler une erreur</b><small>Un score, un classement, une traduction qui ne va pas ? Dis-le nous</small></div><span class="chev">›</span></div>
+      </div>
+      <div class="card2 set">
         <div class="row tap" id="goPrivacy"><div class="rl"><b>Confidentialité</b><small>Ce que l'app enregistre et envoie</small></div><span class="chev">›</span></div>
         <div class="row"><div class="rl"><b>À propos</b><small>Coup d'Envoi · ${VERSION}</small></div></div>
       </div>`;
@@ -2758,6 +2762,15 @@ function renderPanel(){
     } else {
       html = teamPanelHtml(head);
     }
+  } else if (PANEL.kind === 'report') {
+    const st = PANEL.rep || (PANEL.rep = { text:'', state:'' });
+    html = head('Signaler une erreur') + (st.state === 'ok'
+      ? `<div class="acc"><div class="avatar big has">✓</div><h3>Merci !</h3><p>Ton message est bien arrivé. On va vérifier et corriger.</p><button class="btn primary" id="repDone">Terminer</button></div>`
+      : `<div class="card2 set"><div class="row col"><div class="rl"><b>Qu'est-ce qui ne va pas ?</b><small>Décris l'erreur : quel match, quelle équipe, quel écran. Plus c'est précis, plus on corrige vite.</small></div>
+        <textarea id="repText" maxlength="600" rows="6" class="reptxt" placeholder="Ex : dans le classement de la Ligue des champions, la forme de Fenerbahce montre 5 matchs alors qu'il en a joué 1">${esc(st.text)}</textarea>
+        ${st.state === 'err' ? `<div class="note">Envoi impossible. Vérifie ta connexion et réessaie.</div>` : ''}
+        <button class="btn primary" id="repSend" ${st.state === 'sending' ? 'disabled' : ''}>${st.state === 'sending' ? 'Envoi…' : 'Envoyer'}</button>
+        <small style="color:var(--muted)">La version de l'app et la langue sont jointes automatiquement. Aucune autre donnée personnelle n'est envoyée.</small></div></div>`);
   } else if (PANEL.kind === 'account') {
     const n = PROFILE.name.trim();
     html = head('Mon compte') + `
@@ -2810,6 +2823,7 @@ function renderPanel(){
     $('setFr').onchange = e => { SETTINGS.fr = e.target.checked; saveSettings(); refreshAfterSetting(); };
     $('setAuto').onchange = e => { SETTINGS.auto = e.target.checked; saveSettings(); };
     $('setLogos').onchange = e => { SETTINGS.logos = e.target.checked; saveSettings(); refreshAfterSetting(); };
+    on('goReport', () => { PANEL.kind = 'report'; PANEL.rep = null; renderPanel(); });
     on('goPrivacy', () => { window.open('privacy.html', '_blank'); });
     on('goAccount', () => { PANEL.kind = 'account'; PANEL.msg = false; renderPanel(); });
     on('clearCache', () => { clearCache(); renderPanel(); });
@@ -2817,6 +2831,23 @@ function renderPanel(){
     on('cretry2', () => { PANEL.err = null; PANEL.games = null; renderPanel(); loadCompetitionGames(PANEL.comp.id); });
     on('sretry', () => { PANEL.standErr = null; renderPanel(); });
     box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { PANEL.ctab = b.dataset.ct; box.scrollTop = 0; renderPanel(); });
+  } else if (PANEL.kind === 'report') {
+    const st = PANEL.rep;
+    $('pback').onclick = () => { PANEL.kind = 'settings'; PANEL.rep = null; renderPanel(); };
+    on('repDone', () => { PANEL.kind = 'settings'; PANEL.rep = null; renderPanel(); });
+    if ($('repText')) $('repText').oninput = e => { st.text = e.target.value; };
+    on('repSend', async () => {
+      const text = ($('repText').value || '').trim(); st.text = text;
+      if (text.length < 5){ $('repText').focus(); return; }
+      st.state = 'sending'; renderPanel();
+      let uid = ''; try { uid = localStorage.getItem('ce_uid') || ''; } catch(e) {}
+      try {
+        const r = await fetch(`${BACKEND}/api/feedback`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ text, uid, version: VERSION, lang: SETTINGS.lang || '', page: state.page || '', match: DETAIL.id || '', ua: (navigator.userAgent || '').slice(0, 140) }) });
+        if (!r.ok) throw new Error('http ' + r.status);
+        st.state = 'ok'; st.text = '';
+      } catch(e) { st.state = 'err'; }
+      renderPanel();
+    });
   } else if (PANEL.kind === 'account') {
     on('accLogin', () => { PANEL.msg = true; renderPanel(); });
     on('accSignup', () => { PANEL.msg = true; renderPanel(); });
