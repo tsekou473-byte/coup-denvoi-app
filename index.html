@@ -383,6 +383,22 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .pprofile .ppos{ color:var(--accent-ink); font-size:.95rem; }
 .pmeta{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px 18px; padding:14px 18px 0; color:var(--muted); font-size:.92rem; }
 .fchip-tap{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+
+.thero{ text-align:center; padding:4px 12px 14px; margin-bottom:12px; }
+.thero .crest{ width:84px; height:84px; font-size:1.7rem; margin:2px auto 8px; }
+.thero b{ display:block; font-family:'Barlow Condensed',sans-serif; font-size:1.5rem; letter-spacing:.04em; text-transform:uppercase; }
+.thero small{ color:rgba(255,255,255,.75); font-size:.92rem; }
+.ttabs{ padding-top:2px; gap:6px; }
+.ttabs .dtab{ font-size:.98rem; letter-spacing:.03em; padding:9px 0; }
+.tsec{ margin:0 0 14px; } .cplist .hist{ margin:0 0 14px; }
+.tsec h4{ margin:0; padding:14px 16px 4px; font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; letter-spacing:.05em; text-transform:uppercase; color:var(--accent-ink); }
+.tcomp{ padding:0 16px 4px; font-size:.85rem; color:var(--muted); text-align:center; }
+.tcomp2{ padding:8px 12px 0; font-size:.78rem; color:var(--muted); text-align:center; }
+.form{ display:flex; gap:6px; padding:8px 10px 14px; }
+.fb{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 2px 8px; border-top:4px solid var(--muted); background:rgba(127,127,127,.08); cursor:pointer; }
+.fb.w{ border-color:#2ec27e; } .fb.d{ border-color:#f5c242; } .fb.l{ border-color:#ff5a5f; }
+.fb b{ font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; }
+.fb small{ color:var(--muted); font-size:.72rem; }
 </style>
 </head>
 <body>
@@ -450,7 +466,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v98';
+const VERSION = 'v99';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1823,7 +1839,7 @@ function loadPanelStand(id){
   PANEL.standLoading = true;
   getStandings(id).catch(e => { PANEL.standErr = e.message; }).finally(() => {
     PANEL.standLoading = false;
-    if (PANEL.kind === 'competition' && PANEL.comp && PANEL.comp.id === id) renderPanel();
+    if ((PANEL.kind === 'competition' && PANEL.comp && PANEL.comp.id === id) || PANEL.kind === 'team') renderPanel();
   });
 }
 
@@ -1850,8 +1866,10 @@ function openTeam(teamId, leagueId, name, logo){
     }
     PANEL.team = { id: String(teamId), leagueId: String(leagueId), name: name || '', logo: logo || null };
     PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = null; PANEL.player = null;
+    PANEL.tab = 'info'; PANEL.tgames = null; PANEL.tgErr = null; PANEL.tgLoading = false; PANEL.standErr = null; PANEL.clubOpen = false;
     openPanel('team');
     loadSquad();
+    loadTeamGames();
   } catch (e) {
     alert('Diagnostic — erreur en ouvrant l\'équipe :\n' + (e && e.message ? e.message : e) + '\n\nEnvoie une capture de ce message à Claude.');
   }
@@ -1868,6 +1886,90 @@ function loadSquad(){
     .catch(e => { if (PANEL.team && PANEL.team.id === t.id) PANEL.teamErr = e.message; })
     .finally(() => renderPanel());
 }
+
+/* ---------- fiche équipe : Infos / Matchs / Équipe / Classement ---------- */
+function isTeamGame(g, t){ return String(g.homeId) === t.id || String(g.awayId) === t.id || g.home === t.name || g.away === t.name; }
+async function loadTeamGames(){
+  const t = PANEL.team;
+  if (!t || PANEL.tgLoading) return;
+  PANEL.tgLoading = true;
+  const afr = String(t.leagueId).startsWith('afr:');
+  const url = afr ? `${BACKEND}/api/fixtures?league_id=${encodeURIComponent(t.leagueId)}&from=${addDays(TODAY, -60)}&to=${addDays(TODAY, 60)}`
+                  : `${BACKEND}/api/fixtures?team_id=${encodeURIComponent(t.id)}&from=${addDays(TODAY, -70)}&to=${addDays(TODAY, 70)}`;
+  try {
+    const { data } = await apiGet(url);
+    if (!PANEL.team || PANEL.team.id !== t.id) return;
+    const gs = (data.games || []).map(localize).filter(g => isTeamGame(g, t));
+    gs.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    gs.forEach(g => { GAME_INDEX[g.id] = g; });
+    PANEL.tgames = gs;
+    // championnat « principal » = celui où l'équipe a le plus de matchs (pour le classement)
+    const cnt = {}; gs.forEach(g => { if (g.leagueId) cnt[g.leagueId] = (cnt[g.leagueId] || { n: 0, name: g.comp }); if (g.leagueId) cnt[g.leagueId].n++; });
+    const best = Object.keys(cnt).sort((a, b) => cnt[b].n - cnt[a].n)[0];
+    PANEL.stLeague = best ? { id: String(best), name: cnt[best].name } : { id: String(t.leagueId), name: '' };
+  } catch (e) { if (PANEL.team && PANEL.team.id === t.id) PANEL.tgErr = e.message; }
+  PANEL.tgLoading = false;
+  if (PANEL.kind === 'team') renderPanel();
+}
+function teamResult(g, t){
+  const home = String(g.homeId) === t.id || g.home === t.name;
+  const a = Number(home ? g.hs : g.as), b = Number(home ? g.as : g.hs);
+  if (!isFinite(a) || !isFinite(b)) return 'd';
+  return a > b ? 'w' : a < b ? 'l' : 'd';
+}
+function shortDate(iso){ try { return fromIso(iso).toLocaleDateString(I18N.lang, { day:'numeric', month:'short' }).toUpperCase(); } catch (e) { return iso; } }
+function teamGamesState(){
+  if (PANEL.tgErr) return `<div class="empty">Impossible de charger les matchs.<small>${esc(PANEL.tgErr).slice(0,200)}</small><button class="retry" id="tgretry">Réessayer</button></div>`;
+  if (!PANEL.tgames){ if (!PANEL.tgLoading) loadTeamGames(); return `<div class="empty">Chargement des matchs…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`; }
+  return '';
+}
+function teamInfoHtml(){
+  const t = PANEL.team, st = teamGamesState();
+  let top = '';
+  if (st) top = st;
+  else {
+    const gs = PANEL.tgames, fin = gs.filter(g => g.status === 'final');
+    const last = fin[fin.length - 1], next = gs.find(g => g.status !== 'final');
+    const sec = (title, g) => `<div class="card2 tsec"><h4>${title}</h4><div class="tcomp">${esc(trComp(g.comp))} · ${esc(shortDate(g.date))}</div>${matchRow(g)}</div>`;
+    if (last) top += sec(next && next.status === 'live' ? 'Match en cours' : 'Dernier match', next && next.status === 'live' ? next : last);
+    if (next && next.status !== 'live') top += sec('Prochain match', next);
+    else if (last && next && next.status === 'live') top += sec('Dernier match', last);
+    const form = fin.slice(-5).reverse();
+    if (form.length) top += `<div class="card2 tsec"><h4>Forme lors des derniers matchs</h4><div class="form">${form.map(g => {
+      const home = String(g.homeId) === t.id || g.home === t.name;
+      const opp = home ? g.away : g.home, logo = home ? g.awayLogo : g.homeLogo;
+      return `<div class="fb ${teamResult(g, t)}" data-id="${esc(g.id)}">${crest(opp, logo)}<b>${esc(g.hs)}-${esc(g.as)}</b><small>${esc(shortDate(g.date))}</small></div>`;
+    }).join('')}</div></div>`;
+    if (!last && !next) top = `<div class="empty">Aucun match récent ou à venir pour cette équipe.</div>`;
+  }
+  return top + clubHtml();
+}
+function teamMatchesHtml(){
+  const st = teamGamesState(); if (st) return st;
+  const gs = PANEL.tgames;
+  if (!gs.length) return `<div class="empty">Aucun match récent ou à venir pour cette équipe.</div>`;
+  const byDate = {};
+  gs.forEach(g => { (byDate[g.date] = byDate[g.date] || []).push(g); });
+  return Object.keys(byDate).sort().map(d => `<section class="group" data-d="${d}"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${byDate[d].map(g => `<div class="tcomp2">${esc(trComp(g.comp))}</div>${matchRow(g)}`).join('')}</section>`).join('');
+}
+function teamTableHtml(){
+  if (!PANEL.tgames) return teamGamesState();
+  const L = PANEL.stLeague || { id: PANEL.team.leagueId };
+  if (PANEL.standErr) return `<div class="empty">Impossible de charger le classement.<small>${esc(PANEL.standErr).slice(0,200)}</small><button class="retry" id="sretry">Réessayer</button></div>`;
+  const S = STAND[L.id];
+  if (!S){ loadPanelStand(L.id); return `<div class="empty">Chargement du classement…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`; }
+  if (!S.rows.length) return `<div class="card2" style="margin:0 0 14px">${noTable(S.note)}</div>`;
+  return (L.name ? `<div class="tcomp" style="padding:0 4px 8px">${esc(trComp(L.name))}</div>` : '') + `<div class="card2" style="margin:0 0 14px">${standingsHtml(S.rows, { favs:true, leagueId:L.id, ids:[PANEL.team.id], names:[PANEL.team.name] })}</div>${zoneLegend(S.rows)}`;
+}
+function teamPanelHtml(head){
+  const t = PANEL.team, tab = PANEL.tab || 'info';
+  const tabs = [['info','Aperçu'],['matches','Matchs'],['squad','Équipe'],['table','Classement']];
+  const body = tab === 'matches' ? teamMatchesHtml() : tab === 'squad' ? teamSquadHtml() : tab === 'table' ? teamTableHtml() : teamInfoHtml();
+  const sub = (PANEL.stLeague && PANEL.stLeague.name) ? esc(trComp(PANEL.stLeague.name)) : '';
+  return head(esc(trTeam(t.name)), '') + `<div class="hero thero">${crest(t.name, t.logo, 'xl')}<b>${esc(trTeam(t.name))}</b>${sub ? `<small>${sub}</small>` : ''}</div>` +
+    `<div class="dtabs ttabs">${tabs.map(([k, l]) => `<button class="dtab ${tab === k ? 'active' : ''}" data-tt="${k}">${l}</button>`).join('')}</div><div class="cplist">${body}</div>`;
+}
+
 function playerIdent(p){ return p.id || pkey(p.name); }
 function pfacePlayer(p, cls=''){
   const initials = String(p.name || '').split(' ').filter(w => w.length > 1).slice(-2).map(w => w[0]).join('').toUpperCase() || '?';
@@ -2153,7 +2255,7 @@ function renderPanel(){
     if (PANEL.sub === 'player' && PANEL.player) {
       html = head(esc(trTeam(PANEL.player.name)), esc(trTeam(t.name))) + `<div class="cplist">${playerProfileHtml(PANEL.player)}</div>`;
     } else {
-      html = head(esc(trTeam(t.name)), 'Effectif') + `<div class="cplist">${clubHtml()}${teamSquadHtml()}</div>`;
+      html = teamPanelHtml(head);
     }
   } else if (PANEL.kind === 'account') {
     const n = PROFILE.name.trim();
@@ -2212,6 +2314,10 @@ function renderPanel(){
     } else {
       on('clubMore', () => { PANEL.clubOpen = !PANEL.clubOpen; renderPanel(); });
       on('tretry', () => { PANEL.teamErr = null; renderPanel(); loadSquad(); });
+      on('tgretry', () => { PANEL.tgErr = null; PANEL.tgames = null; renderPanel(); loadTeamGames(); });
+      on('sretry', () => { PANEL.standErr = null; renderPanel(); });
+      box.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { PANEL.tab = b.dataset.tt; box.scrollTop = 0; renderPanel(); });
+      box.querySelectorAll('.fb[data-id]').forEach(b => b.onclick = () => openMatch(b.dataset.id));
       box.querySelectorAll('.prow2').forEach(el => el.onclick = () => {
         const p = PANEL.squad.find(x => playerIdent(x) === el.dataset.id);
         if (p) { PANEL.sub = 'player'; PANEL.player = p; renderPanel(); }
