@@ -567,7 +567,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v134';
+const VERSION = 'v135';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1009,7 +1009,7 @@ const ANCH = {};   // id du match -> { m: minute connue, at: moment où on l'a a
 const estMin = (a, cap) => Math.min(cap, a.m + Math.floor((Date.now() - a.at) / 60000));
 function minTag(g){
   const m = g.minute ? String(g.minute) : 'LIVE';
-  if (!/^\d+$/.test(m)) { delete ANCH[g.id]; return esc(m); }
+  if (!/^\d+$/.test(m)) { delete ANCH[g.id]; return esc(m) + (/^\d+\+\d+$/.test(m) ? "'" : ''); }
   const sv = +m, cap = sv + 4;
   const a = ANCH[g.id];
   // on garde notre propre décompte tant que le serveur n'est pas en avance sur lui : la minute avance régulièrement, sans retour en arrière
