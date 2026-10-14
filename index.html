@@ -320,6 +320,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .nm{ display:flex; gap:10px; margin-top:12px; }
 .nm input{ flex:1; min-width:0; border:1px solid var(--line); border-radius:12px; background:var(--bg); color:var(--text); padding:10px 12px; font-size:1.05rem; font-family:inherit; outline:none; }
 .pill{ font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); padding:2px 8px; border-radius:999px; align-self:center; }
+.dtabs.t5{ gap:4px; } .dtabs.t5 .dtab{ font-size:.82rem; letter-spacing:0; padding-left:2px; padding-right:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .dtab.dim{ opacity:.5; }
 .avail{ text-align:center; color:var(--muted); font-size:.82rem; padding:0 22px 6px; line-height:1.4; max-width:620px; margin:0 auto; }
 .chev{ color:var(--muted); font-size:1.4rem; line-height:1; }
@@ -556,7 +557,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v124';
+const VERSION = 'v125';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1058,6 +1059,8 @@ function loadWinProb(d){
 
 /* fil « En direct » : corners, tirs, fautes, cartons, VAR… (seulement pendant le match) */
 const FEED = { goal:['⚽','But'], var_goal:['📺','But annulé par la VAR'], var_pen:['📺','Penalty annulé par la VAR'], var:['📺','Contrôle VAR'], penalty:['🎯','Penalty'], corner:['🚩','Corner'], red:['🟥','Carton rouge'], yellow:['🟨','Carton jaune'], sub:['🔄','Remplacement'], offside:['🚫','Hors-jeu'], shot_on:['🧤','Tir cadré'], shot_block:['🛡️','Tir contré'], shot_off:['💨','Tir non cadré'], foul:['✋','Faute'], freekick:['🦵','Coup franc'], kickoff:['▶️',"Coup d'envoi"], ht:['⏸️','Mi-temps'], ft:['🏁','Fin du match'] };
+const hasFeed = d => !!(d && d.status === 'live' && Array.isArray(d.feed) && d.feed.length);
+function detailTabs(d){ return hasFeed(d) ? ['resume','compos','stats','feed','table'] : ['resume','compos','stats','table']; }
 function feedCard(d){
   if (d.status !== 'live' || !Array.isArray(d.feed) || !d.feed.length) return '';
   const rows = d.feed.slice(0, 40).map(e => {
@@ -1302,7 +1305,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
       return null;
     }
     if (!$('detail').hidden){
-      const tabs = ['resume','compos','stats','table'], i = tabs.indexOf(DETAIL.tab);
+      const tabs = detailTabs(DETAIL.data), i = tabs.indexOf(DETAIL.tab);
       return { els:() => after($('detail'), '.dtabs'), prev:i > 0, next:i >= 0 && i < tabs.length - 1,
         go:dir => { DETAIL.userTab = true; DETAIL.tab = tabs[i + dir]; renderDetail(); } };
     }
@@ -1684,7 +1687,7 @@ function tabResume(d){
   const hasLu = d.lineups.home.starters.length || d.lineups.away.starters.length;
   const avail = `Données reçues : ${nb(d.goals.length, 'but')} · ${nb(d.cards.length, 'carton')} · ${nb(d.subs.length, 'remplacement')} · compositions ${hasLu ? 'oui' : 'non'} · statistiques ${d.stats.length ? 'oui' : 'non'}`;
   if (d.status === 'scheduled') loadWinProb(d);
-  return `${predCard(d)}${feedCard(d)}${html}${h2hHtml(d)}`;
+  return `${predCard(d)}${html}${h2hHtml(d)}`;
 }
 
 const PARTICLES = new Set(['de','da','do','dos','das','van','von','der','den','di','del','le','la','el','al','bin','ter','ten']);
@@ -2555,12 +2558,13 @@ function renderDetail(){
   if (DETAIL.tab === 'chat' && document.activeElement && document.activeElement.id === 'chatin') return;   // on ne touche à rien pendant la frappe
   const top = box.scrollTop;
   const d = DETAIL.data, g = d || GAME_INDEX[DETAIL.id];
+  if (DETAIL.tab === 'feed' && !hasFeed(d)) DETAIL.tab = 'resume';   // le match n'est plus en direct
   const meta = [d && d.stadium, d && d.referee ? 'Arbitre : ' + d.referee : '', d && d.round ? trRound(d.round) : ''].filter(Boolean).map(esc).join(' · ');
   let body;
   if (DETAIL.tab === 'chat') body = tabChat();
   else if (DETAIL.err && !d) body = `<div class="empty">Impossible de charger le détail.<small>${esc(DETAIL.err).slice(0,200)}</small><button class="retry" id="dretry">Réessayer</button></div>`;
   else if (!d) body = `<div class="empty">Chargement du match…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
-  else body = DETAIL.tab === 'resume' ? tabResume(d) : DETAIL.tab === 'compos' ? tabCompos(d) : DETAIL.tab === 'stats' ? tabStats(d) : tabTable(d);
+  else body = DETAIL.tab === 'resume' ? tabResume(d) : DETAIL.tab === 'compos' ? tabCompos(d) : DETAIL.tab === 'stats' ? tabStats(d) : DETAIL.tab === 'feed' ? feedCard(d) : tabTable(d);
 
   const headHtml = `
     <div class="dh">
@@ -2576,7 +2580,7 @@ function renderDetail(){
     </div>
     ${meta ? `<div class="meta">${meta}</div>` : ''}</div>`;
   const bodyHtml = `
-    <div class="dtabs">${[['resume', g.status === 'scheduled' ? 'Avant-match' : 'Résumé'],['compos','Compos'],['stats','Stats'],['table','Classement']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
+    <div class="dtabs${hasFeed(d) ? ' t5' : ''}">${[['resume', g.status === 'scheduled' ? 'Avant-match' : 'Résumé'],['compos','Compos'],['stats','Stats'],...(hasFeed(d) ? [['feed','En direct']] : []),['table','Classement']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}`;
   // l'en-tête (écussons, score) n'est redessiné que s'il a changé : changer d'onglet ne fait plus clignoter les images
   const sig = DETAIL.id + '§' + headHtml + '§' + I18N.lang;
