@@ -263,10 +263,16 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .pl-top{ display:flex; justify-content:space-between; align-items:baseline; padding:11px 14px; background:var(--card-head); font-size:1.05rem; }
 .pl-top b{ font-weight:600; }
 .pl-top span{ color:var(--accent-ink); font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; letter-spacing:.06em; }
-.pitch{ position:relative; display:flex; flex-direction:column; gap:16px; padding:18px 6px 18px; background:linear-gradient(180deg,#14335e,#0f2a4d 50%,#14335e); }
+.pitch{ position:relative; display:flex; flex-direction:column; gap:16px; padding:30px 10px 30px; background:repeating-linear-gradient(180deg,#1f6e37 0,#1f6e37 38px,#1a6431 38px,#1a6431 76px); }
+.pitch::before{ content:''; position:absolute; inset:10px 8px; border:2px solid rgba(255,255,255,.82); pointer-events:none; }
+.pf{ position:absolute; left:50%; border:2px solid rgba(255,255,255,.82); pointer-events:none; transform:translateX(-50%); }
+.pf.pb{ width:62%; height:15%; } .pf.gb{ width:30%; height:6%; }
+.pf.t{ top:10px; border-top:none; } .pf.b{ bottom:10px; border-bottom:none; }
+.pf.arc{ width:84px; height:30px; border-radius:0 0 42px 42px; border-top:none; } .pf.arc.t{ top:calc(10px + 15%); } .pf.arc.b{ bottom:calc(10px + 15%); border-radius:42px 42px 0 0; border-bottom:none; border-top:2px solid rgba(255,255,255,.82); }
+.pf.spot{ width:5px; height:5px; border:none; border-radius:50%; background:rgba(255,255,255,.9); } .pf.spot.t{ top:calc(10px + 10.5%); } .pf.spot.b{ bottom:calc(10px + 10.5%); }
 .prow{ display:flex; justify-content:space-around; align-items:flex-start; position:relative; z-index:1; }
-.half{ position:relative; height:2px; background:rgba(255,255,255,.22); margin:4px 8px; }
-.half::after{ content:''; position:absolute; left:50%; top:50%; width:64px; height:64px; margin:-32px 0 0 -32px; border:2px solid rgba(255,255,255,.22); border-radius:50%; }
+.half{ position:relative; height:2px; background:rgba(255,255,255,.82); margin:4px 8px; z-index:0; }
+.half::after{ content:''; position:absolute; left:50%; top:50%; width:64px; height:64px; margin:-32px 0 0 -32px; border:2px solid rgba(255,255,255,.82); border-radius:50%; }
 .pp{ width:58px; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
 .pp:active .pn, .subtap:active{ opacity:.7; }
 .pn{ position:relative; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.15rem; box-shadow:0 2px 6px rgba(0,0,0,.35); }
@@ -482,7 +488,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v108';
+const VERSION = 'v109';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1749,7 +1755,7 @@ function tabCompos(d){
     return `
       <div class="card2 pitchwrap">
         <div class="pl-top"><b>${esc(trTeam(d.home))}</b><span>${esc(d.homeSystem)}</span></div>
-        <div class="pitch">${homeRows}<div class="half"></div>${awayRows}</div>
+        <div class="pitch"><i class="pf pb t"></i><i class="pf gb t"></i><i class="pf spot t"></i><i class="pf arc t"></i><i class="pf pb b"></i><i class="pf gb b"></i><i class="pf spot b"></i><i class="pf arc b"></i>${homeRows}<div class="half"></div>${awayRows}</div>
         <div class="pl-top"><b>${esc(trTeam(d.away))}</b><span>${esc(d.awaySystem)}</span></div>
       </div>
       <div class="legend">🟨 carton · ↓ remplacé</div>
