@@ -163,6 +163,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .h2nums{ display:flex; justify-content:space-between; margin-top:8px; font-size:.92rem; }
 .h2nums b{ font-size:1.25rem; } .h2nums small{ display:block; color:var(--muted); font-size:.72rem; }
 .h2nums div:nth-child(2){ text-align:center; } .h2nums div:nth-child(3){ text-align:right; }
+.probabs{ margin:0 16px 10px; padding:10px 14px; background:rgba(255,181,71,.12); border-radius:12px; font-size:.84rem; line-height:1.5; } .probabs b{ color:var(--accent-ink); }
 .probnote{ margin:4px 16px 24px; color:var(--muted); font-size:.8rem; line-height:1.45; text-align:center; }
 .h2row.tap{ cursor:pointer; } .h2row.tap .sc{ text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px; }
 .h2row{ display:flex; gap:8px; align-items:center; padding:8px 0; border-top:1px solid var(--line); font-size:.88rem; }
@@ -481,7 +482,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v106';
+const VERSION = 'v107';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1688,7 +1689,7 @@ function probableOf(d){
   let P = PROB[d.id];
   if (!P){
     P = PROB[d.id] = { loading:true };
-    apiGet(`${BACKEND}/api/probable?home=${encodeURIComponent(d.homeId)}&away=${encodeURIComponent(d.awayId)}&date=${encodeURIComponent(d.pdate || d.date)}`)
+    apiGet(`${BACKEND}/api/probable?lid=${encodeURIComponent(d.leagueId || '')}&home=${encodeURIComponent(d.homeId)}&away=${encodeURIComponent(d.awayId)}&date=${encodeURIComponent(d.pdate || d.date)}`)
       .then(r => { PROB[d.id] = r.data.probable ? { data:r.data.probable } : { none:true }; })
       .catch(() => { PROB[d.id] = { err:true }; })
       .finally(() => { if (DETAIL.id === d.id && DETAIL.tab === 'compos') renderDetail(); });
@@ -1703,8 +1704,10 @@ function tabCompos(d){
     if (P && P.data){
       const pr = P.data, b = pr.basedOn || {};
       const note = [['home', d.home], ['away', d.away]].map(([sd, nm]) => b[sd] ? `${esc(trTeam(nm))} : d'après le match du ${esc(shortDate(b[sd].date))} contre ${esc(trTeam(b[sd].opponent))}` : '').filter(Boolean).join('<br>');
+      const ab = [['home', d.home], ['away', d.away]].map(([sd, nm]) => ((pr.absent || {})[sd] || []).map(x => `${esc(x.name)} (${x.reason === 'suspended' ? 'suspendu' : 'blessé'})${x.repl ? ' → ' + esc(x.repl) : ''}`)).flat();
+      const absNote = ab.length ? `<div class="probabs"><b>Absents pris en compte</b><br>${ab.join('<br>')}</div>` : '';
       const inner = tabCompos(Object.assign({}, d, { lineups: pr.lineups, homeSystem: pr.homeSystem, awaySystem: pr.awaySystem, status: 'upcoming', cards: [], subs: [], id: d.id + '~p', _prob: true }));
-      return `<div class="livetag" style="color:var(--muted)">Composition probable · non officielle</div>${inner}<div class="probnote">${note}<br>La composition officielle remplacera celle-ci environ 1 h avant le coup d'envoi.</div>`;
+      return `<div class="livetag" style="color:var(--muted)">Composition probable · non officielle</div>${inner}${absNote}<div class="probnote">${note}<br>La composition officielle remplacera celle-ci environ 1 h avant le coup d'envoi.</div>`;
     }
   }
   preloadSquadPhotos(d);
