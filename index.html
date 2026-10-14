@@ -480,7 +480,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v104';
+const VERSION = 'v105';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1376,6 +1376,7 @@ $('detail').addEventListener('click', e => {
       home, away, homeId, awayId, homeLogo:null, awayLogo:null, hs, as, comp, leagueId, country:'', countryLogo:null, rcH:0, rcA:0 };
     GAME_INDEX[id] = localize(g);
   }
+  GAME_INDEX[id].hist = true;   // match ancien : son classement est celui de l'époque
   openMatch(id, true);
 });
 
@@ -1851,8 +1852,26 @@ function liveRows(rows, leagueId, cur){
   });
   return { rows: out, live: games.some(g => !isFin.has(g)), prov:true };
 }
+const STANDAT = {};   // "ligue|date" -> { rows } | { loading } | { err }
+function tabTableAt(d, g){
+  const date = g.pdate || g.date, key = d.leagueId + '|' + date;
+  let A = STANDAT[key];
+  if (!A){
+    A = STANDAT[key] = { loading:true };
+    apiGet(`${BACKEND}/api/standings-at?league_id=${encodeURIComponent(d.leagueId)}&date=${encodeURIComponent(date)}`)
+      .then(r => { STANDAT[key] = { rows:r.data.rows || [], note:r.data.note || '' }; })
+      .catch(e => { STANDAT[key] = { err:e.message }; })
+      .finally(() => { if (DETAIL.id === d.id && DETAIL.tab === 'table') renderDetail(); });
+  }
+  if (A.loading) return `<div class="card2"><div class="noev">Chargement du classement de l'époque…</div></div>`;
+  if (A.err) return `<div class="card2"><div class="noev">Classement de l'époque indisponible.<br><small style="opacity:.8">${esc(A.err).slice(0,160)}</small></div></div>`;
+  if (!A.rows.length) return `<div class="card2"><div class="noev">${esc(A.note || "Classement de l'époque indisponible pour ce match.")}</div></div>`;
+  return `<div class="livetag" style="color:var(--muted)">Classement avant ce match · ${esc(dayLabelLong(date))}</div><div class="card2">${standingsHtml(A.rows, { ids:[d.homeId, d.awayId], names:[d.home, d.away], leagueId:d.leagueId })}</div>`;
+}
+function dayLabelLong(iso){ const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; }
 function tabTable(d){
   if (!d.leagueId) return `<div class="card2">${NO_TABLE}</div>`;
+  { const g = GAME_INDEX[d.id]; if (g && g.hist) return tabTableAt(d, g); }
   if (DETAIL.standErr) return `<div class="card2"><div class="noev">Impossible de charger le classement.<br><small style="opacity:.8">${esc(DETAIL.standErr).slice(0,200)}</small><br><button class="retry" id="sretry">Réessayer</button></div></div>`;
   const S = STAND[d.leagueId];
   if (!S){ loadDetailStand(d.leagueId); return `<div class="card2"><div class="noev">Chargement du classement…</div></div>`; }
