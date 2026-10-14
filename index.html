@@ -163,6 +163,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .h2nums{ display:flex; justify-content:space-between; margin-top:8px; font-size:.92rem; }
 .h2nums b{ font-size:1.25rem; } .h2nums small{ display:block; color:var(--muted); font-size:.72rem; }
 .h2nums div:nth-child(2){ text-align:center; } .h2nums div:nth-child(3){ text-align:right; }
+.probnote{ margin:4px 16px 24px; color:var(--muted); font-size:.8rem; line-height:1.45; text-align:center; }
 .h2row.tap{ cursor:pointer; } .h2row.tap .sc{ text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px; }
 .h2row{ display:flex; gap:8px; align-items:center; padding:8px 0; border-top:1px solid var(--line); font-size:.88rem; }
 .h2row .dt{ color:var(--muted); width:74px; flex:none; font-size:.76rem; }
@@ -480,7 +481,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v105';
+const VERSION = 'v106';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1643,7 +1644,7 @@ function loadLineupPhotos(d){
   // les noms complets (« Joe Willock ») viennent de l'effectif : on l'attend s'il est en cours de chargement
   st.t0 = st.t0 || Date.now();
   if (Date.now() - st.t0 < 20000 && !String(d.leagueId || '').startsWith('afr:') && [d.homeId, d.awayId].some(id => id && d.leagueId && TEAM[teamKey(d.leagueId, id) + ':loading'])) {
-    setTimeout(() => { if (DETAIL.id === d.id) loadLineupPhotos(DETAIL.data || d); }, 4000);   // l'effectif tarde : on réessaie, et au bout de 20 s on cherche sans lui
+    setTimeout(() => { if (DETAIL.id === String(d.id).replace(/~p$/, '')) loadLineupPhotos(d._prob ? d : (DETAIL.data || d)); }, 4000);   // l'effectif tarde : on réessaie, et au bout de 20 s on cherche sans lui
     return;
   }
   st.busy = true; st.tries++;
@@ -1673,15 +1674,39 @@ function loadLineupPhotos(d){
     if (r.every(b => b.none)){ st.tries--; return; }   // pas encore de compositions : rien à chercher, on ne se déclare pas « terminé »
     const left = r.reduce((a, b) => a + b.left, 0);
     const paused = r.some(b => b.paused);
-    if (DETAIL.id === d.id && (DETAIL.tab === 'compos' || DETAIL.tab === 'resume')) renderDetail();
+    if (DETAIL.id === String(d.id).replace(/~p$/, '') && (DETAIL.tab === 'compos' || DETAIL.tab === 'resume')) renderDetail();
     const wait = paused ? 20000 : (r.some(b => b.err) ? 6000 : 3000);
     if (left > 0) st.nextAt = Date.now() + wait;
-    if (left > 0) setTimeout(() => { if (DETAIL.id === d.id) loadLineupPhotos(DETAIL.data || d); }, wait + 300);
+    if (left > 0) setTimeout(() => { if (DETAIL.id === String(d.id).replace(/~p$/, '')) loadLineupPhotos(d._prob ? d : (DETAIL.data || d)); }, wait + 300);
     else st.done = true;
   });
 }
 
+const PROB = {};   // id du match -> { loading } | { data } | { none } | { err }
+function probableOf(d){
+  if (!d || !d.homeId || !d.awayId || d.status === 'live' || d.status === 'final') return null;
+  let P = PROB[d.id];
+  if (!P){
+    P = PROB[d.id] = { loading:true };
+    apiGet(`${BACKEND}/api/probable?home=${encodeURIComponent(d.homeId)}&away=${encodeURIComponent(d.awayId)}&date=${encodeURIComponent(d.pdate || d.date)}`)
+      .then(r => { PROB[d.id] = r.data.probable ? { data:r.data.probable } : { none:true }; })
+      .catch(() => { PROB[d.id] = { err:true }; })
+      .finally(() => { if (DETAIL.id === d.id && DETAIL.tab === 'compos') renderDetail(); });
+  }
+  return P;
+}
 function tabCompos(d){
+  const noLu = !((d.lineups && d.lineups.home && d.lineups.home.starters || []).length || (d.lineups && d.lineups.away && d.lineups.away.starters || []).length);
+  if (noLu){
+    const P = probableOf(d);
+    if (P && P.loading) return `<div class="card2"><div class="noev">Composition probable en préparation…</div></div>`;
+    if (P && P.data){
+      const pr = P.data, b = pr.basedOn || {};
+      const note = [['home', d.home], ['away', d.away]].map(([sd, nm]) => b[sd] ? `${esc(trTeam(nm))} : d'après le match du ${esc(shortDate(b[sd].date))} contre ${esc(trTeam(b[sd].opponent))}` : '').filter(Boolean).join('<br>');
+      const inner = tabCompos(Object.assign({}, d, { lineups: pr.lineups, homeSystem: pr.homeSystem, awaySystem: pr.awaySystem, status: 'upcoming', cards: [], subs: [], id: d.id + '~p', _prob: true }));
+      return `<div class="livetag" style="color:var(--muted)">Composition probable · non officielle</div>${inner}<div class="probnote">${note}<br>La composition officielle remplacera celle-ci environ 1 h avant le coup d'envoi.</div>`;
+    }
+  }
   preloadSquadPhotos(d);
   loadLineupPhotos(d); // charge l'effectif en arrière-plan pour que les fiches joueurs s'ouvrent complètes
   const L = d.lineups;
