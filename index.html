@@ -450,7 +450,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v96';
+const VERSION = 'v97';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1436,6 +1436,7 @@ function secCard(key, title, list, d, extraHead){
   return `<div class="card2 sec"><button class="sech" data-sec="${key}" aria-expanded="${open}"><b>${esc(title)}</b><span class="secx">${extraHead || ''}</span><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(${open ? 180 : 0}deg)"><path d="m6 9 6 6 6-6"/></svg></button>${open ? list.map(e => evRow2(d, e)).join('') : ''}</div>`;
 }
 function tabResume(d){
+  preloadSquadPhotos(d);
   const mk = (k, arr) => arr.map(x => ({ k, ...x })).sort((a,b) => minOf(a.time) - minOf(b.time));
   const goals = mk('goal', d.goals), cards = mk('card', d.cards), subs = mk('sub', d.subs);
   if (goals.length || cards.length || subs.length) loadLineupPhotos(d);
@@ -1502,7 +1503,7 @@ function preloadSquadPhotos(d){
     TEAM[key + ':loading'] = true;
     getTeam(d.leagueId, teamId)
       .catch(() => {})
-      .finally(() => { delete TEAM[key + ':loading']; if (DETAIL.id === d.id && DETAIL.tab === 'compos') renderDetail(); });
+      .finally(() => { delete TEAM[key + ':loading']; if (DETAIL.id === d.id && (DETAIL.tab === 'compos' || DETAIL.tab === 'resume')) renderDetail(); });
   });
 }
 
@@ -1544,9 +1545,23 @@ function savePhotos(){
 }
 const PHSTATE = {};       // identifiant du match -> { tries, busy }
 function phKey(teamName, name){ return norm(teamName) + '|' + pkey(name); }
+// photo prise dans l'effectif du club (celle qu'on voit dans la liste des joueurs), quand le joueur y est reconnu
+function squadPhoto(d, side, name){
+  const teamId = side === 'home' ? d.homeId : d.awayId;
+  const c = teamId && d.leagueId && TEAM[teamKey(d.leagueId, teamId)];
+  const list = c && c.data && c.data.players;
+  if (!list || !name) return '';
+  const k = pkey(name), last = norm(String(name).trim().split(/\s+/).pop());
+  let p = list.find(x => x.photo && (pkey(x.name) === k || (x.fullName && pkey(x.fullName) === k)));
+  if (!p){
+    const same = list.filter(x => x.photo && [x.name, x.fullName].some(n => n && norm(String(n).trim().split(/\s+/).pop()) === last));
+    if (same.length === 1) p = same[0];
+  }
+  return p ? p.photo : '';
+}
 function phUrl(d, side, name){
   if (!SETTINGS.logos) return '';
-  return PH[phKey(side === 'home' ? d.home : d.away, name)] || '';
+  return PH[phKey(side === 'home' ? d.home : d.away, name)] || squadPhoto(d, side, name);
 }
 function loadLineupPhotos(d){
   if (!d || !d.lineups) return;
@@ -1565,7 +1580,7 @@ function loadLineupPhotos(d){
     const l = d.lineups[side] || {};
     const teamId = side === 'home' ? d.homeId : d.awayId;
     const names = [...(l.starters || []), ...(l.subs || [])].map(p => p.name).filter(Boolean);
-    const need = names.filter(n => !PH[phKey(teamName, n)] && !(PH[phKey(teamName, n) + '#miss']));
+    const need = names.filter(n => !PH[phKey(teamName, n)] && !(PH[phKey(teamName, n) + '#miss']) && !squadPhoto(d, side, n));
     if (!names.length) return { left: 0, paused: false, none: true };
     if (!teamName || !need.length) return { left: 0, paused: false };
     const fullOf = n => { const f = findSquadPlayer(d.leagueId, teamId, n); return f && f.fullName && f.fullName !== n ? f.fullName : ''; };
