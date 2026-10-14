@@ -553,7 +553,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v121';
+const VERSION = 'v122';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1416,7 +1416,7 @@ function openMatch(id, fromDetail){
   if (!g) return;
   if (fromDetail && DETAIL.id && DETAIL.id !== id){ DETAIL.stack = DETAIL.stack || []; DETAIL.stack.push(DETAIL.id); } else DETAIL.stack = [];
   clearInterval(DETAIL.timer);
-  DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.userTab = false; DETAIL.data = null; DETAIL.err = null; DETAIL.standErr = null; DETAIL.standLoading = false;
+  DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.userTab = false; DETAIL.autoDone = false; DETAIL.data = null; DETAIL.err = null; DETAIL.standErr = null; DETAIL.standLoading = false;
   const box = $('detail');
   box.hidden = false; box.scrollTop = 0; bringToFront(box);
   document.body.style.overflow = 'hidden';
@@ -1457,7 +1457,7 @@ $('main').addEventListener('click', e => {
 function showPrevMatch(id){
   if (!GAME_INDEX[id]) { hideDetail(); return; }
   clearInterval(DETAIL.timer);
-  DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.userTab = false; DETAIL.data = null; DETAIL.err = null; DETAIL.standErr = null; DETAIL.standLoading = false;
+  DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.userTab = false; DETAIL.autoDone = false; DETAIL.data = null; DETAIL.err = null; DETAIL.standErr = null; DETAIL.standLoading = false;
   $('detail').scrollTop = 0;
   renderDetail(); loadDetail();
 }
@@ -1475,10 +1475,24 @@ $('detail').addEventListener('click', e => {
   openMatch(id, true);
 });
 
+/* changement d'onglet « comme un glissement du doigt » : seul le contenu sous les onglets bouge, l'en-tête et les onglets restent en place */
+function slideTab(tab){
+  const els = () => { const t = $('dbody') && $('dbody').querySelector('.dtabs'); const out = []; for (let n = t && t.nextElementSibling; n; n = n.nextElementSibling) out.push(n); return out; };
+  const put = (arr, x, o, anim) => arr.forEach(el => { el.style.transition = anim ? 'transform .26s cubic-bezier(.2,.8,.2,1), opacity .26s' : 'none'; el.style.transform = x ? `translate3d(${x}px,0,0)` : ''; el.style.opacity = o < 1 ? String(o) : ''; });
+  const W = window.innerWidth, box = $('detail');
+  box.style.overflowX = 'hidden';
+  put(els(), -W, 0.2, true);
+  setTimeout(() => {
+    DETAIL.tab = tab; renderDetail();
+    const e2 = els(); put(e2, W * 0.5, 0.3, false);
+    requestAnimationFrame(() => requestAnimationFrame(() => { put(e2, 0, 1, true); setTimeout(() => { put(e2, 0, 1, false); e2.forEach(el => { el.style.transition = ''; }); box.style.overflowX = ''; }, 280); }));
+  }, 200);
+}
 async function loadDetail(silent){
   const id = DETAIL.id;
   if (!id) return;
   const g = GAME_INDEX[id];
+  let auto = false;
   try {
     const { data, stale } = await apiGet(`${BACKEND}/api/match?id=${encodeURIComponent(id)}&date=${encodeURIComponent(g.pdate || g.date)}`);
     if (DETAIL.id !== id || (stale && silent)) return;
@@ -1488,12 +1502,13 @@ async function loadDetail(silent){
     if (data.lineups && (((data.lineups.home || {}).starters || []).length || ((data.lineups.away || {}).starters || []).length)){ preloadSquadPhotos(data); loadLineupPhotos(data); }   // on cherche les photos dès l'ouverture du match, pas seulement sur l'onglet Compos
     Object.assign(GAME_INDEX[id], { status:data.status, minute:data.minute, hs:data.hs, as:data.as });
     // compos officielles sorties avant le match : on ouvre directement l'onglet Compos (sinon on reste sur « Avant-match »)
-    if (!DETAIL.userTab && DETAIL.tab === 'resume' && data.status === 'scheduled' && data.lineups && ((data.lineups.home || {}).starters || []).length >= 11 && ((data.lineups.away || {}).starters || []).length >= 11) DETAIL.tab = 'compos';
+    if (!DETAIL.userTab && !DETAIL.autoDone && DETAIL.tab === 'resume' && data.status === 'scheduled' && data.lineups && ((data.lineups.home || {}).starters || []).length >= 11 && ((data.lineups.away || {}).starters || []).length >= 11){ auto = true; DETAIL.autoDone = true; }
   } catch (e) {
     if (DETAIL.id !== id || silent) return;
     DETAIL.err = e.message;
   }
   renderDetail();
+  if (auto && DETAIL.id === id) slideTab('compos');
 }
 
 function sbMid(g){
