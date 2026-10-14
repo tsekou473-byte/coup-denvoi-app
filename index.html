@@ -174,6 +174,29 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .vtag{ font-size:.7rem; font-weight:700; letter-spacing:.06em; padding:3px 7px; border-radius:6px; background:#8f9ab3; color:#fff; }
 .vtag.goal,.vtag.penalty{ background:#ff5a5f; }
 .vtx b{ display:block; font-weight:600; } .vtx small{ color:var(--muted); font-size:.82rem; }
+.dtabs{ gap:5px; padding-left:8px; padding-right:8px; } .dtab{ font-size:.95rem; letter-spacing:.02em; padding:9px 0; }
+.chatnote{ margin:0 14px 8px; color:var(--muted); font-size:.78rem; line-height:1.4; text-align:center; }
+.chatlist{ display:flex; flex-direction:column; gap:6px; padding:4px 12px 14px; min-height:calc(100vh - 380px); max-width:640px; margin:0 auto; }
+.chatempty{ margin:auto; color:var(--muted); text-align:center; font-size:.92rem; padding:30px 0; }
+.cmsg{ display:flex; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
+.cmsg.me{ justify-content:flex-end; }
+.cb{ max-width:82%; background:var(--card); border:1px solid var(--line); border-radius:16px 16px 16px 4px; padding:7px 12px 5px; box-shadow:0 1px 2px rgba(20,30,50,.05); }
+.cmsg.me .cb{ background:var(--accent); border-color:transparent; color:#1b1305; border-radius:16px 16px 4px 16px; }
+.cb b{ display:block; font-size:.78rem; margin-bottom:1px; }
+.cb .ct{ display:block; font-size:.95rem; line-height:1.3; overflow-wrap:anywhere; }
+.cb small{ display:block; text-align:right; font-size:.66rem; opacity:.6; margin-top:1px; }
+.chatbar{ position:sticky; bottom:0; display:flex; gap:8px; align-items:center; padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px)); background:var(--card); border-top:1px solid var(--line); max-width:none; }
+.chatbar input{ flex:1; min-width:0; border:1px solid var(--line); background:var(--bg,#f1f4f9); color:var(--text); border-radius:999px; padding:11px 16px; font-size:1rem; outline:none; }
+.chatbar button{ border:none; background:var(--accent); color:#1b1305; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
+.chatbar button.ok{ width:auto; padding:0 18px; border-radius:999px; font-weight:700; }
+#toastMsg{ position:fixed; left:50%; bottom:calc(90px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%) translateY(20px); background:rgba(20,28,44,.94); color:#fff; padding:10px 18px; border-radius:999px; font-size:.9rem; opacity:0; pointer-events:none; transition:.25s; z-index:9999; max-width:86vw; text-align:center; }
+#toastMsg.on{ opacity:1; transform:translateX(-50%) translateY(0); }
+#chatSheet{ position:fixed; inset:0; z-index:9998; display:flex; align-items:flex-end; }
+#chatSheet .cs-back{ position:absolute; inset:0; background:rgba(0,0,0,.45); }
+#chatSheet .cs-box{ position:relative; width:100%; background:var(--card); border-radius:18px 18px 0 0; padding:16px 14px calc(16px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:8px; }
+#chatSheet .cs-msg{ color:var(--muted); font-size:.9rem; padding:0 4px 6px; overflow-wrap:anywhere; max-height:30vh; overflow:hidden; }
+#chatSheet button{ border:none; border-radius:12px; padding:14px; font-size:1rem; font-weight:600; background:var(--bg,#eef1f6); color:var(--text); cursor:pointer; }
+#chatSheet .cs-rep{ background:#ff5a5f; color:#fff; }
 .probnote{ margin:4px 16px 24px; color:var(--muted); font-size:.8rem; line-height:1.45; text-align:center; }
 .h2row.tap{ cursor:pointer; } .h2row.tap .sc{ text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px; }
 .h2row{ display:flex; gap:8px; align-items:center; padding:8px 0; border-top:1px solid var(--line); font-size:.88rem; }
@@ -498,7 +521,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v111';
+const VERSION = 'v112';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1176,7 +1199,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
       return null;
     }
     if (!$('detail').hidden){
-      const tabs = ['resume','compos','stats','table'], i = tabs.indexOf(DETAIL.tab);
+      const tabs = ['resume','compos','stats','table','chat'], i = tabs.indexOf(DETAIL.tab);
       return { els:() => after($('detail'), '.dtabs'), prev:i > 0, next:i >= 0 && i < tabs.length - 1,
         go:dir => { DETAIL.tab = tabs[i + dir]; renderDetail(); } };
     }
@@ -2276,14 +2299,145 @@ function followBtn(g, side){
   return `<button class="follow ${on ? 'on' : ''}" data-side="${side}">${on ? '★ Suivie' : '☆ Suivre'}</button>`;
 }
 
+/* ---------- chat en direct d'un match ---------- */
+const CHAT = { rooms:{}, uid:'', myUh:'', draft:'', busy:false, timer:null };
+try {
+  CHAT.uid = localStorage.getItem('ce_uid') || '';
+  if (!/^[a-zA-Z0-9-]{12,64}$/.test(CHAT.uid)){ CHAT.uid = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12))).replace(/[^a-zA-Z0-9-]/g, ''); localStorage.setItem('ce_uid', CHAT.uid); }
+  CHAT.myUh = localStorage.getItem('ce_uh') || '';
+} catch (e) { if (!CHAT.uid) CHAT.uid = 'anon' + Math.random().toString(36).slice(2, 14) + Date.now().toString(36); }
+const chatRoom = id => { const k = String(id); return CHAT.rooms[k] = CHAT.rooms[k] || { msgs:[], last:0, loaded:false, err:false, reported:new Set() }; };
+function toastMsg(t){
+  let el = $('toastMsg');
+  if (!el){ el = document.createElement('div'); el.id = 'toastMsg'; document.body.appendChild(el); }
+  el.textContent = I18N.tr(t); el.classList.add('on');
+  clearTimeout(toastMsg.t); toastMsg.t = setTimeout(() => el.classList.remove('on'), 2600);
+}
+function chatHue(name){ let h = 0; for (const c of String(name)) h = (h * 31 + c.charCodeAt(0)) % 360; return h; }
+function chatMsgHtml(m){
+  const mine = CHAT.myUh && m.uh === CHAT.myUh;
+  const t = new Date(m.ts).toLocaleTimeString(I18N.lang === 'fr' ? 'fr-FR' : undefined, { hour:'2-digit', minute:'2-digit' });
+  return `<div class="cmsg ${mine ? 'me' : ''}" data-id="${m.id}" data-uh="${esc(m.uh)}"><div class="cb">${mine ? '' : `<b style="color:hsl(${chatHue(m.name)},55%,38%)">${esc(m.name)}</b>`}<span class="ct">${esc(m.text)}</span><small>${esc(t)}</small></div></div>`;
+}
+function tabChat(){
+  const R = chatRoom(DETAIL.id);
+  const list = R.msgs.filter(m => !R.reported.has(m.id)).map(chatMsgHtml).join('');
+  const empty = R.loaded && !list ? `<div class="chatempty">Aucun message pour l'instant. Lance la discussion !</div>` : '';
+  const load = !R.loaded ? `<div class="chatempty">${R.err ? 'Chat indisponible pour le moment.' : 'Chargement du chat…'}</div>` : '';
+  const bar = PROFILE.name.trim()
+    ? `<form class="chatbar" id="chatform" autocomplete="off"><input id="chatin" maxlength="280" placeholder="${esc(I18N.tr('Écris un message…'))}" enterkeyhint="send" value="${esc(CHAT.draft)}"><button type="submit" id="chatsend" aria-label="Envoyer"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg></button></form>`
+    : `<form class="chatbar nm" id="chatname" autocomplete="off"><input id="chatnm" maxlength="20" placeholder="${esc(I18N.tr('Choisis un pseudo pour écrire'))}"><button type="submit" class="ok">OK</button></form>`;
+  return `<div class="chatnote">Sois respectueux : insultes, haine et spam sont interdits. Appui long sur un message pour le signaler.</div><div class="chatlist" id="chatlist">${load}${empty}${list}</div>${bar}`;
+}
+function chatScrollBottom(force){
+  const box = $('detail'); if (!box) return;
+  if (force || box.scrollHeight - box.scrollTop - box.clientHeight < 160) box.scrollTop = box.scrollHeight;
+}
+async function chatPoll(first){
+  const id = DETAIL.id; if (!id) return;
+  const R = chatRoom(id);
+  try {
+    const res = await fetch(`${BACKEND}/api/chat/messages?room=${encodeURIComponent(id)}&since=${R.last}`);
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.error || 'erreur');
+    const wasEmpty = !R.loaded;
+    R.loaded = true; R.err = false;
+    (j.gone || []).forEach(g => { R.msgs = R.msgs.filter(m => m.id !== g); const el = document.querySelector(`.cmsg[data-id="${g}"]`); if (el) el.remove(); });
+    const fresh = (j.messages || []).filter(m => !R.msgs.some(x => x.id === m.id));
+    fresh.forEach(m => { R.msgs.push(m); R.last = Math.max(R.last, m.id); });
+    if (DETAIL.id !== id || DETAIL.tab !== 'chat') return;
+    if (wasEmpty || first){ renderDetail(); chatScrollBottom(true); }
+    else if (fresh.length){
+      const l = $('chatlist'); if (l){ const near = $('detail').scrollHeight - $('detail').scrollTop - $('detail').clientHeight < 160; l.querySelectorAll('.chatempty').forEach(e => e.remove()); l.insertAdjacentHTML('beforeend', fresh.filter(m => !R.reported.has(m.id)).map(chatMsgHtml).join('')); if (near) chatScrollBottom(true); }
+    }
+  } catch (e) {
+    if (!R.loaded){ R.err = true; if (DETAIL.id === id && DETAIL.tab === 'chat') renderDetail(); }
+  }
+}
+function chatStartPolling(){
+  const R = chatRoom(DETAIL.id);
+  if (!R.loaded && !R.loading){ R.loading = true; chatPoll(true).finally(() => { R.loading = false; }); }
+  if (CHAT.timer) return;
+  CHAT.timer = setInterval(() => {
+    if (!DETAIL.id || DETAIL.tab !== 'chat' || $('detail').hidden){ clearInterval(CHAT.timer); CHAT.timer = null; return; }
+    if (!document.hidden) chatPoll(false);
+  }, 4000);
+}
+async function chatSend(text){
+  if (CHAT.busy) return;
+  const id = DETAIL.id, R = chatRoom(id);
+  CHAT.busy = true;
+  try {
+    const res = await fetch(`${BACKEND}/api/chat/send`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ room:String(id), uid:CHAT.uid, name:PROFILE.name.trim(), text }) });
+    const j = await res.json();
+    if (!res.ok) { toastMsg(j.error || 'Message non envoyé.'); return false; }
+    const m = j.message;
+    CHAT.myUh = m.uh; try { localStorage.setItem('ce_uh', m.uh); } catch (e) {}
+    if (!R.msgs.some(x => x.id === m.id)) { R.msgs.push(m); R.last = Math.max(R.last, m.id); }
+    const l = $('chatlist'); if (l && DETAIL.id === id){ l.querySelectorAll('.chatempty').forEach(e => e.remove()); l.insertAdjacentHTML('beforeend', chatMsgHtml(m)); chatScrollBottom(true); }
+    return true;
+  } catch (e) { toastMsg('Message non envoyé.'); return false; }
+  finally { CHAT.busy = false; }
+}
+function chatMount(){
+  const f = $('chatform'), inp = $('chatin');
+  if (f){
+    inp.oninput = () => { CHAT.draft = inp.value; };
+    f.onsubmit = async ev => {
+      ev.preventDefault();
+      const t = inp.value.trim(); if (!t) return;
+      inp.disabled = true;
+      const ok = await chatSend(t);
+      inp.disabled = false;
+      if (ok){ inp.value = ''; CHAT.draft = ''; }
+      inp.focus();
+    };
+  }
+  const nf = $('chatname');
+  if (nf) nf.onsubmit = ev => { ev.preventDefault(); const n = $('chatnm').value.trim(); if (n.length < 2) { toastMsg('Choisis un pseudo (2 lettres minimum).'); return; } PROFILE.name = n; saveProfile(); updateAccIcon(); renderDetail(); chatScrollBottom(true); };
+  chatStartPolling();
+}
+/* appui long sur un message : signaler */
+(function(){
+  let timer = null, sx = 0, sy = 0;
+  const sheet = (m) => {
+    const old = $('chatSheet'); if (old) old.remove();
+    const el = document.createElement('div'); el.id = 'chatSheet';
+    el.innerHTML = `<div class="cs-back"></div><div class="cs-box"><div class="cs-msg">${esc(m.text)}</div><button class="cs-rep">${esc(I18N.tr('Signaler ce message'))}</button><button class="cs-no">${esc(I18N.tr('Annuler'))}</button></div>`;
+    document.body.appendChild(el);
+    const close = () => el.remove();
+    el.querySelector('.cs-back').onclick = close; el.querySelector('.cs-no').onclick = close;
+    el.querySelector('.cs-rep').onclick = async () => {
+      close();
+      const R = chatRoom(DETAIL.id);
+      R.reported.add(m.id);
+      const node = document.querySelector(`.cmsg[data-id="${m.id}"]`); if (node) node.remove();
+      try { await fetch(`${BACKEND}/api/chat/report`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ room:String(DETAIL.id), id:m.id, uid:CHAT.uid }) }); } catch (e) {}
+      toastMsg('Merci, ce message a été signalé.');
+    };
+  };
+  const find = t => {
+    const n = t.closest && t.closest('.cmsg'); if (!n || n.classList.contains('me')) return null;
+    const R = chatRoom(DETAIL.id), id = Number(n.dataset.id);
+    return R.msgs.find(x => x.id === id) || null;
+  };
+  const d = $('detail');
+  d.addEventListener('touchstart', e => { const m = find(e.target); if (!m) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; timer = setTimeout(() => { timer = null; if (navigator.vibrate) try { navigator.vibrate(20); } catch (x) {} sheet(m); }, 500); }, { passive:true });
+  d.addEventListener('touchmove', e => { if (timer && (Math.abs(e.touches[0].clientX - sx) > 10 || Math.abs(e.touches[0].clientY - sy) > 10)){ clearTimeout(timer); timer = null; } }, { passive:true });
+  ['touchend', 'touchcancel'].forEach(ev => d.addEventListener(ev, () => { clearTimeout(timer); timer = null; }, { passive:true }));
+  d.addEventListener('contextmenu', e => { const m = find(e.target); if (m){ e.preventDefault(); sheet(m); } });
+})();
+
 function renderDetail(){
   const box = $('detail');
   if (box.hidden || !DETAIL.id) return;
+  if (DETAIL.tab === 'chat' && document.activeElement && document.activeElement.id === 'chatin') return;   // on ne touche à rien pendant la frappe
   const top = box.scrollTop;
   const d = DETAIL.data, g = d || GAME_INDEX[DETAIL.id];
   const meta = [d && d.stadium, d && d.referee ? 'Arbitre : ' + d.referee : '', d && d.round ? trRound(d.round) : ''].filter(Boolean).map(esc).join(' · ');
   let body;
-  if (DETAIL.err && !d) body = `<div class="empty">Impossible de charger le détail.<small>${esc(DETAIL.err).slice(0,200)}</small><button class="retry" id="dretry">Réessayer</button></div>`;
+  if (DETAIL.tab === 'chat') body = tabChat();
+  else if (DETAIL.err && !d) body = `<div class="empty">Impossible de charger le détail.<small>${esc(DETAIL.err).slice(0,200)}</small><button class="retry" id="dretry">Réessayer</button></div>`;
   else if (!d) body = `<div class="empty">Chargement du match…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
   else body = DETAIL.tab === 'resume' ? tabResume(d) : DETAIL.tab === 'compos' ? tabCompos(d) : DETAIL.tab === 'stats' ? tabStats(d) : tabTable(d);
 
@@ -2300,7 +2454,7 @@ function renderDetail(){
     </div>
     ${meta ? `<div class="meta">${meta}</div>` : ''}</div>`;
   const bodyHtml = `
-    <div class="dtabs">${[['resume','Résumé'],['compos','Compos'],['stats','Stats'],['table','Classement']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
+    <div class="dtabs">${[['resume','Résumé'],['compos','Compos'],['stats','Stats'],['table','Classement'],['chat','Chat']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}`;
   // l'en-tête (écussons, score) n'est redessiné que s'il a changé : changer d'onglet ne fait plus clignoter les images
   const sig = DETAIL.id + '§' + headHtml + '§' + I18N.lang;
@@ -2311,6 +2465,7 @@ function renderDetail(){
   }
   if (DETAIL.headSig !== sig){ hd.innerHTML = headHtml; DETAIL.headSig = sig; }
   bd.innerHTML = bodyHtml;
+  if (DETAIL.tab === 'chat') chatMount();
 
   $('dback').onclick = backFromDetail;
   // on met à jour le bouton et l'étoile sur place (sans tout redessiner) : les écussons ne clignotent plus
