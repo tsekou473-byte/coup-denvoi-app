@@ -479,7 +479,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v100';
+const VERSION = 'v101';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -2298,7 +2298,20 @@ function renderPanel(){
       </div>
       <div class="card2 set"><div class="row tap" id="goSettings"><div class="rl"><b>Réglages</b><small>Taille du texte, langue, actualisation</small></div><span class="chev">›</span></div></div>`;
   }
-  box.innerHTML = html;
+  // fiche équipe : on ne remplace que les parties qui ont changé (les logos de l'en-tête ne clignotent plus)
+  const teamMode = PANEL.kind === 'team' && !PANEL.sub && PANEL.team ? 'team:' + PANEL.team.id : '';
+  let patched = false;
+  if (teamMode && box.dataset.mode === teamMode){
+    const tpl = document.createElement('template'); tpl.innerHTML = html;
+    const sels = ['.thero', '.ttabs', '.cplist'];
+    if (sels.every(q => box.querySelector(q) && tpl.content.querySelector(q))){
+      sels.forEach(q => { const a = box.querySelector(q), b = tpl.content.querySelector(q); if (a.outerHTML !== b.outerHTML) a.replaceWith(b); });
+      patched = true;
+    }
+  }
+  if (!patched) box.innerHTML = html;
+  box.dataset.mode = teamMode;
+  box.querySelectorAll('img[loading="lazy"]').forEach(i => { i.loading = 'eager'; });
   $('pback').onclick = backFromPanel;
   const on = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
 
