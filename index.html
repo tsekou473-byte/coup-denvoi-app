@@ -177,6 +177,12 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .pcard{ padding:14px 14px 12px; } .pcard h4{ margin:0 0 10px; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
 .pcard .pbar{ height:10px; border-radius:6px; } .pcard .pnums{ font-size:.92rem; margin-top:8px; } .pcard .pnums b{ font-size:1.25rem; display:block; }
 .pcard .pnums div:nth-child(2){ text-align:center; } .pcard .pnums div:nth-child(3){ text-align:right; }
+.fdcard{ padding:12px 14px 6px; } .fdcard .livetag{ margin:0 0 8px; }
+.fdr{ display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--line); } .fdr:first-of-type{ border-top:none; }
+.fdm{ width:46px; flex:none; font-family:'Barlow Condensed',sans-serif; font-size:1.02rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+.fdi{ font-style:normal; width:22px; flex:none; text-align:center; font-size:1.05rem; }
+.fdt{ min-width:0; } .fdt b{ display:block; font-weight:600; font-size:.98rem; } .fdt small{ display:block; color:var(--muted); font-size:.8rem; }
+.fdr.goal .fdt b, .fdr.red .fdt b, .fdr.var_goal .fdt b{ color:var(--live); }
 .pcard small.pnote{ display:block; margin-top:8px; color:var(--muted); font-size:.72rem; }
 .langsel{ border:1px solid var(--line); background:var(--card-head); color:var(--text); border-radius:10px; padding:8px 10px; font-size:1rem; font-family:inherit; max-width:46%; }
 [dir=rtl] .chev{ display:inline-block; transform:scaleX(-1); }
@@ -550,7 +556,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v123';
+const VERSION = 'v124';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1048,6 +1054,20 @@ function loadWinProb(d){
   apiGet(`${BACKEND}/api/winprob?${q}`).then(r => { PRED[d.id] = r.data && r.data.source ? r.data : false; })
     .catch(() => { delete PRED[d.id]; })
     .finally(() => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); });
+}
+
+/* fil « En direct » : corners, tirs, fautes, cartons, VAR… (seulement pendant le match) */
+const FEED = { goal:['⚽','But'], var_goal:['📺','But annulé par la VAR'], var_pen:['📺','Penalty annulé par la VAR'], var:['📺','Contrôle VAR'], penalty:['🎯','Penalty'], corner:['🚩','Corner'], red:['🟥','Carton rouge'], yellow:['🟨','Carton jaune'], sub:['🔄','Remplacement'], offside:['🚫','Hors-jeu'], shot_on:['🧤','Tir cadré'], shot_block:['🛡️','Tir contré'], shot_off:['💨','Tir non cadré'], foul:['✋','Faute'], freekick:['🦵','Coup franc'], kickoff:['▶️',"Coup d'envoi"], ht:['⏸️','Mi-temps'], ft:['🏁','Fin du match'] };
+function feedCard(d){
+  if (d.status !== 'live' || !Array.isArray(d.feed) || !d.feed.length) return '';
+  const rows = d.feed.slice(0, 40).map(e => {
+    const f = FEED[e.kind]; if (!f) return '';
+    const tm = e.team === 'home' ? trTeam(d.home) : e.team === 'away' ? trTeam(d.away) : '';
+    const sub = [tm, e.player].filter(Boolean).map(esc).join(' · ');
+    const t = String(e.time || '').replace(/^(\d+)\+(\d+)$/, "$1'+$2") ;
+    return `<div class="fdr ${esc(e.kind)}"><span class="fdm">${esc(/'/.test(t) || !t ? t : t + "'")}</span><i class="fdi">${f[0]}</i><div class="fdt"><b>${f[1]}</b>${sub ? `<small>${sub}</small>` : ''}</div></div>`;
+  }).join('');
+  return `<div class="card2 fdcard"><div class="livetag">En direct</div>${rows}</div>`;
 }
 function predCard(d){
   const p = PRED[d.id];
@@ -1664,7 +1684,7 @@ function tabResume(d){
   const hasLu = d.lineups.home.starters.length || d.lineups.away.starters.length;
   const avail = `Données reçues : ${nb(d.goals.length, 'but')} · ${nb(d.cards.length, 'carton')} · ${nb(d.subs.length, 'remplacement')} · compositions ${hasLu ? 'oui' : 'non'} · statistiques ${d.stats.length ? 'oui' : 'non'}`;
   if (d.status === 'scheduled') loadWinProb(d);
-  return `${predCard(d)}${html}${h2hHtml(d)}<div class="avail">${avail}</div>`;
+  return `${predCard(d)}${feedCard(d)}${html}${h2hHtml(d)}`;
 }
 
 const PARTICLES = new Set(['de','da','do','dos','das','van','von','der','den','di','del','le','la','el','al','bin','ter','ten']);
