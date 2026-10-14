@@ -170,6 +170,8 @@ const ROWS = [
  ['Faute','Foul','Falta','Falta','مخالفة','Foul','Fallo','Faul'],
  ['Ligue des Champions','Champions League','Liga de Campeones','Liga dos Campeões','دوري أبطال أوروبا','Champions League','Champions League','Şampiyonlar Ligi'],
  ['Contre son camp','Own goal','En propia puerta','Autogolo','هدف عكسي','Eigentor','Autogol','Kendi kalesine'],
+ ['Actus du club','Club news','Noticias del club','Notícias do clube','أخبار النادي','Vereinsnews','Notizie del club','Kulüp haberleri'],
+ ['Blessé','Injured','Lesionado','Lesionado','مصاب','Verletzt','Infortunato','Sakat'],
  ['Chat','Chat','Chat','Chat','الدردشة','Chat','Chat','Sohbet'],
  ['Écris un message…','Write a message…','Escribe un mensaje…','Escreva uma mensagem…','اكتب رسالة…','Nachricht schreiben…','Scrivi un messaggio…','Mesaj yaz…'],
  ['Choisis un pseudo pour écrire','Choose a nickname to write','Elige un apodo para escribir','Escolha um apelido para escrever','اختر اسماً مستعاراً للكتابة','Wähle einen Nicknamen zum Schreiben','Scegli un nickname per scrivere','Yazmak için bir takma ad seç'],

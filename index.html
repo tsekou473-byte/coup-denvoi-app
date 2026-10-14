@@ -177,6 +177,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .pcard{ padding:14px 14px 12px; } .pcard h4{ margin:0 0 10px; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
 .pcard .pbar{ height:10px; border-radius:6px; } .pcard .pnums{ font-size:.92rem; margin-top:8px; } .pcard .pnums b{ font-size:1.25rem; display:block; }
 .pcard .pnums div:nth-child(2){ text-align:center; } .pcard .pnums div:nth-child(3){ text-align:right; }
+.cnews{ padding:12px 14px 4px; } .cnews .tk{ margin-bottom:6px; } .cnews .news{ margin:0 0 10px; }
 .fdcard{ padding:12px 14px 6px; } .fdcard .livetag{ margin:0 0 8px; }
 .fdr{ display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--line); } .fdr:first-of-type{ border-top:none; }
 .fdm{ width:46px; flex:none; font-family:'Barlow Condensed',sans-serif; font-size:1.02rem; color:var(--muted); font-variant-numeric:tabular-nums; }
@@ -359,6 +360,8 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .cd{ position:absolute; top:-4px; right:-6px; width:9px; height:12px; border-radius:2px; box-shadow:0 0 0 1px rgba(0,0,0,.35); }
 .cd.y{ background:#ffd43b; }
 .cd.r{ background:#ff4d4f; }
+.inj{ display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; margin-left:5px; border-radius:4px; background:#e5231b; color:#fff; font-size:.62rem; font-weight:900; font-style:normal; line-height:1; vertical-align:middle; box-shadow:0 0 0 1.5px var(--card); }
+.pn .inj{ position:absolute; bottom:-5px; left:-6px; margin:0; box-shadow:0 0 0 1.5px #000; }
 .so{ position:absolute; bottom:-5px; right:-7px; font-size:.8rem; font-style:normal; color:#ff7b7f; font-weight:700; text-shadow:0 0 3px #000; }
 .legend{ text-align:center; color:var(--muted); font-size:.82rem; padding:0 16px 10px; }
 
@@ -557,7 +560,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v125';
+const VERSION = 'v126';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1596,7 +1599,7 @@ function evRow(e){
     tx = `<b>${esc(e.player)}</b>`;
   } else {
     ic = '🔁';
-    tx = `<b class="in">▲ ${esc(e.in)}</b><small class="out">▼ ${esc(e.out)}</small>`;
+    tx = `<b class="in">▲ ${esc(e.in)}</b><small class="out">▼ ${esc(e.out)}${injTag(d, e.team, e.out)}</small>`;
   }
   const cell = `<div class="${home?'l':'r'}">${home ? `<div class="tx">${tx}</div><span class="ic">${ic}</span>` : `<span class="ic">${ic}</span><div class="tx">${tx}</div>`}</div>`;
   return `<div class="ev">${home ? cell : '<div></div>'}<div class="min">${esc(e.time)}'</div>${home ? '<div></div>' : cell}</div>`;
@@ -1648,7 +1651,7 @@ function evRow2(d, e){
     tx = `<b>${esc(e.player)}</b>${why ? `<small>${esc(why)}</small>` : ''}`;
   } else {
     ic = ''; who = e.in;
-    tx = `<b class="in">▲ ${esc(e.in)}</b><small class="out">▼ ${esc(e.out)}</small>`;
+    tx = `<b class="in">▲ ${esc(e.in)}</b><small class="out">▼ ${esc(e.out)}${injTag(d, e.team, e.out)}</small>`;
   }
   const av = evAvatar(d, { ...e, player: who });
   const cell = `<div class="${home?'l':'r'}">${home ? `<div class="tx">${tx}</div>${ic ? `<span class="ic">${ic}</span>` : ''}${av}` : `${av}${ic ? `<span class="ic">${ic}</span>` : ''}<div class="tx">${tx}</div>`}</div>`;
@@ -1700,6 +1703,8 @@ function lastName(full){
 const norm = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 // "Jayden Bogle" et "J. Bogle" donnent la même clé : j|bogle
 const PLAYED = new Set();   // joueurs vus dans une composition de match en cours / terminé : ils ne sont donc pas blessés
+const injOut = (d, team, name) => !!(d && Array.isArray(d.injuries) && d.injuries.some(x => (!x.team || !team || x.team === team) && pkey(x.player) === pkey(name)));
+const injTag = (d, team, name) => injOut(d, team, name) ? '<i class="inj" title="Blessé">✚</i>' : '';
 const isInj = p => !!p.injured && !PLAYED.has(pkey(p.name));
 const pkey = full => { const w = String(full || '').trim().split(/\s+/); return norm((w[0] || '').charAt(0)) + '|' + norm(w[w.length - 1]); };
 
@@ -1944,7 +1949,7 @@ function tabCompos(d){
   const tok = (p, side) => {
     const k = side + ':' + pkey(p.name);
     const cd = cards[k] ? `<i class="cd ${cards[k] === 'red' ? 'r' : 'y'}"></i>` : '';
-    const so = out[k] ? '<i class="so">↓</i>' : '';
+    const so = out[k] ? '<i class="so">↓</i>' + injTag(d, side, p.name) : '';
     const ph = phUrl(d, side, p.name, p.n);
     const pn = ph ? `<span class="pn"><span class="pph"><img src="${esc(ph)}" alt="" referrerpolicy="no-referrer" onerror="phBad(this)"></span><span class="pnum">${esc(p.n)}</span><i class="pnbadge">${esc(p.n)}</i>${ratingTag(R, side, p.name, 'on')}${cd}${so}</span>`
                   : `<span class="pn">${esc(p.n)}${ratingTag(R, side, p.name, 'on')}${cd}${so}</span>`;
@@ -1954,8 +1959,8 @@ function tabCompos(d){
 
   const H = formationRows(d.homeSystem, L.home.starters);
   const A = formationRows(d.awaySystem, L.away.starters);
-  const pl = (p, sd) => `<div class="pl"><b>${esc(p.n)}</b><span>${esc(p.name)}</span>${ratingTag(R, sd, p.name)}</div>`;
-  const plTap = (p, side) => `<div class="pl subtap" data-side="${side}" data-name="${esc(p.name)}" data-n="${esc(p.n)}"><b>${esc(p.n)}</b><span>${esc(p.name)}</span>${ratingTag(R, side, p.name)}</div>`;
+  const pl = (p, sd) => `<div class="pl"><b>${esc(p.n)}</b><span>${esc(p.name)}</span>${injTag(d, sd, p.name)}${ratingTag(R, sd, p.name)}</div>`;
+  const plTap = (p, side) => `<div class="pl subtap" data-side="${side}" data-name="${esc(p.name)}" data-n="${esc(p.n)}"><b>${esc(p.n)}</b><span>${esc(p.name)}</span>${injTag(d, side, p.name)}${ratingTag(R, side, p.name)}</div>`;
 
   // Terrain : équipe à domicile en haut, extérieur en bas
   if (H && A){
@@ -2239,6 +2244,21 @@ function teamRankRow(){
   const i = rows.findIndex(r => (r.teamId && String(r.teamId) === t.id) || norm(r.team) === norm(t.name));
   return i < 0 ? null : { rows, i, row: rows[i] };
 }
+
+/* actus du club : articles du fil « Infos » qui parlent de ce club */
+const CNEWS = {};
+function clubNewsHtml(){
+  const t = PANEL.team; if (!t || !t.name) return '';
+  const key = t.name; let c = CNEWS[key];
+  if (!c){
+    CNEWS[key] = { loading:true };
+    apiGet(`${BACKEND}/api/news?club=${encodeURIComponent(key)}`).then(r => { CNEWS[key] = { items:(r.data && r.data.items) || [] }; }).catch(() => { CNEWS[key] = { items:[] }; })
+      .finally(() => { if (!$('panel').hidden && PANEL.kind === 'team' && PANEL.team && PANEL.team.name === key) renderPanel(); });
+    return '';
+  }
+  if (!c.items || !c.items.length) return '';
+  return `<div class="card2 cnews"><div class="tk">Actus du club</div><div class="cnl">${c.items.map(i => `<a class="news" href="${esc(i.link)}" target="_blank" rel="noopener">${i.image ? `<img src="${esc(i.image)}" loading="lazy" alt="" onerror="this.remove()">` : ''}<div><div class="nt">${esc(i.title)}</div><div class="nm">${esc(i.source)} · ${agoFr(i.ts)}</div></div></a>`).join('')}</div></div>`;
+}
 function teamInfoHtml(){
   const t = PANEL.team, st = teamGamesState();
   let top = '';
@@ -2259,7 +2279,7 @@ function teamInfoHtml(){
       top += `<div class="card2 tmini"><div class="tk">Classement<span>${esc(trComp(L.name || ''))}</span></div>${standingsHtml(part, { favs:true, leagueId:L.id, ids:[t.id], names:[t.name] })}<button class="more" id="goTable">Voir le classement complet</button></div>`;
     }
   }
-  return top + clubHtml();
+  return top + clubNewsHtml() + clubHtml();
 }
 function teamMatchesHtml(){
   const st = teamGamesState(); if (st) return st;
