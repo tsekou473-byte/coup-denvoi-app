@@ -477,7 +477,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .fm i{ font-style:normal; width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:.74rem; font-weight:700; color:#10202f; }
 .fm i.w,.rs.w{ background:#35d08a; } .fm i.d,.rs.d{ background:#f5c242; } .fm i.l,.rs.l{ background:#ff6b6f; }
 .ttabs{ display:flex; position:sticky; top:0; z-index:1; background:var(--card); border-bottom:1px solid var(--line); padding:0 6px; }
-.ttabs button{ flex:1; border:none; background:none; padding:13px 0 11px; font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); border-bottom:3px solid transparent; cursor:pointer; }
+.ttabs button{ flex:1; min-width:0; white-space:nowrap; border:none; background:none; padding:13px 0 11px; font-family:'Barlow Condensed',sans-serif; font-size:.98rem; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); border-bottom:3px solid transparent; cursor:pointer; }
 .ttabs button.active{ color:var(--text); border-bottom-color:var(--accent); font-weight:600; }
 .tk{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px 2px; font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-ink); }
 .tk span{ font-size:.85rem; color:var(--muted); letter-spacing:.03em; }
@@ -560,7 +560,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v126';
+const VERSION = 'v127';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1481,12 +1481,14 @@ function openMatch(id, fromDetail){
   clearInterval(DETAIL.timer);
   DETAIL.timer = setInterval(() => {
     const cur = DETAIL.data || GAME_INDEX[DETAIL.id];
-    if (!SETTINGS.auto || document.hidden || !cur) return;
+    if (document.hidden || !cur) return;
     const soon = typeof cur.ts === 'number' && cur.status !== 'live' && cur.status !== 'final' && cur.ts - Date.now() < 100 * 60000;   // compos attendues ~1 h avant le coup d'envoi
     const noLu = !(cur.lineups && ((cur.lineups.home || {}).starters || []).length);
-    if (cur.status === 'live' || (soon && noLu)) loadDetail(true);
-  }, 30000);
+    const started = typeof cur.ts === 'number' && cur.status !== 'final' && cur.status !== 'postponed' && cur.ts <= Date.now() && Date.now() - cur.ts < 3.5 * 3600000;   // commencé : on rafraîchit même si le statut n'a pas encore basculé
+    if (cur.status === 'live' || started || (soon && noLu)) loadDetail(true);
+  }, 20000);
 }
+document.addEventListener('visibilitychange', () => { if (!document.hidden && DETAIL.id && !$('detail').hidden){ const c = DETAIL.data || GAME_INDEX[DETAIL.id]; if (c && c.status !== 'final') loadDetail(true); } });
 function hideDetail(){
   $('detail').hidden = true;
   document.body.style.overflow = ($('panel').hidden ? '' : 'hidden');
@@ -1551,6 +1553,7 @@ async function loadDetail(silent){
   try {
     const { data, stale } = await apiGet(`${BACKEND}/api/match?id=${encodeURIComponent(id)}&date=${encodeURIComponent(g.pdate || g.date)}`);
     if (DETAIL.id !== id || (stale && silent)) return;
+    DETAIL.upd = Date.now();
     localize(data);
     DETAIL.data = data; DETAIL.err = null;
     if (data.status === 'live' || data.status === 'final') ['home','away'].forEach(sd => { const l = (data.lineups || {})[sd] || {}; (l.starters || []).concat(l.subs || []).forEach(x => { if (x && x.name) PLAYED.add(pkey(x.name)); }); });
@@ -2254,9 +2257,10 @@ function clubNewsHtml(){
     CNEWS[key] = { loading:true };
     apiGet(`${BACKEND}/api/news?club=${encodeURIComponent(key)}`).then(r => { CNEWS[key] = { items:(r.data && r.data.items) || [] }; }).catch(() => { CNEWS[key] = { items:[] }; })
       .finally(() => { if (!$('panel').hidden && PANEL.kind === 'team' && PANEL.team && PANEL.team.name === key) renderPanel(); });
-    return '';
+    return `<div class="empty">Chargement des actus…</div>`;
   }
-  if (!c.items || !c.items.length) return '';
+  if (c.loading) return `<div class="empty">Chargement des actus…</div>`;
+  if (!c.items || !c.items.length) return `<div class="empty">Aucune actu pour ce club pour le moment.</div>`;
   return `<div class="card2 cnews"><div class="tk">Actus du club</div><div class="cnl">${c.items.map(i => `<a class="news" href="${esc(i.link)}" target="_blank" rel="noopener">${i.image ? `<img src="${esc(i.image)}" loading="lazy" alt="" onerror="this.remove()">` : ''}<div><div class="nt">${esc(i.title)}</div><div class="nm">${esc(i.source)} · ${agoFr(i.ts)}</div></div></a>`).join('')}</div></div>`;
 }
 function teamInfoHtml(){
@@ -2279,7 +2283,7 @@ function teamInfoHtml(){
       top += `<div class="card2 tmini"><div class="tk">Classement<span>${esc(trComp(L.name || ''))}</span></div>${standingsHtml(part, { favs:true, leagueId:L.id, ids:[t.id], names:[t.name] })}<button class="more" id="goTable">Voir le classement complet</button></div>`;
     }
   }
-  return top + clubNewsHtml() + clubHtml();
+  return top + clubHtml();
 }
 function teamMatchesHtml(){
   const st = teamGamesState(); if (st) return st;
@@ -2300,8 +2304,8 @@ function teamTableHtml(){
 }
 function teamPanelHtml(head){
   const t = PANEL.team, tab = PANEL.tab || 'info';
-  const tabs = [['info','Aperçu'],['matches','Matchs'],['squad','Équipe'],['table','Classement']];
-  const body = tab === 'matches' ? teamMatchesHtml() : tab === 'squad' ? teamSquadHtml() : tab === 'table' ? teamTableHtml() : teamInfoHtml();
+  const tabs = [['info','Aperçu'],['matches','Matchs'],['squad','Équipe'],['table','Classement'],['news','Actus']];
+  const body = tab === 'news' ? clubNewsHtml() : tab === 'matches' ? teamMatchesHtml() : tab === 'squad' ? teamSquadHtml() : tab === 'table' ? teamTableHtml() : teamInfoHtml();
   const sub = (PANEL.stLeague && PANEL.stLeague.name) ? esc(trComp(PANEL.stLeague.name)) : '';
   const rk = teamRankRow();
   const fin = (PANEL.tgames || []).filter(g => g.status === 'final').slice(-5);
