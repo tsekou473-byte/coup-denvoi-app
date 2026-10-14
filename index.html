@@ -567,7 +567,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v133';
+const VERSION = 'v134';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1976,7 +1976,7 @@ function tabCompos(d){
   // Terrain : équipe à domicile en haut, extérieur en bas
   if (H && A){
     const homeRows = H.map(r => rowHtml(r, 'home')).join('');
-    const awayRows = [...A].reverse().map(r => rowHtml(r, 'away')).join('');
+    const awayRows = [...A].reverse().map(r => rowHtml([...r].reverse(), 'away')).join('');   // l'équipe du bas attaque vers le haut : sa droite est à droite de l'écran (inversé par rapport à l'équipe du haut)
     const bench = (k) => {
       const l = L[k];
       return `<div class="lucol">${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(p => plTap(p, k)).join('')}` : ''}</div>`;
