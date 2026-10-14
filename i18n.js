@@ -141,6 +141,8 @@ const ROWS = [
  ['Clair, sombre, ou comme ton téléphone','Light, dark, or same as your phone','Claro, oscuro o como tu teléfono','Claro, escuro ou como o telemóvel','فاتح أو داكن أو مثل هاتفك','Hell, dunkel oder wie dein Handy','Chiaro, scuro o come il telefono','Açık, koyu veya telefonunla aynı'],
  ['Clair','Light','Claro','Claro','فاتح','Hell','Chiaro','Açık'],
  ['Sombre','Dark','Oscuro','Escuro','داكن','Dunkel','Scuro','Koyu'],
+ ['Avant-match','Pre-match','Previa','Pré-jogo','قبل المباراة','Vorschau','Pre-partita','Maç öncesi'],
+ ['Cotes moyennes du marché, à titre indicatif.','Average market odds, for information only.','Cuotas medias del mercado, a título informativo.','Odds médias do mercado, a título indicativo.','متوسط أسعار السوق، للعلم فقط.','Durchschnittliche Marktquoten, nur zur Information.','Quote medie di mercato, a titolo indicativo.','Ortalama piyasa oranları, yalnızca bilgi amaçlıdır.'],
  ['Chat','Chat','Chat','Chat','الدردشة','Chat','Chat','Sohbet'],
  ['Écris un message…','Write a message…','Escribe un mensaje…','Escreva uma mensagem…','اكتب رسالة…','Nachricht schreiben…','Scrivi un messaggio…','Mesaj yaz…'],
  ['Choisis un pseudo pour écrire','Choose a nickname to write','Elige un apodo para escribir','Escolha um apelido para escrever','اختر اسماً مستعاراً للكتابة','Wähle einen Nicknamen zum Schreiben','Scegli un nickname per scrivere','Yazmak için bir takma ad seç'],

@@ -177,7 +177,12 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .pcard{ padding:14px 14px 12px; } .pcard h4{ margin:0 0 10px; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
 .pcard .pbar{ height:10px; border-radius:6px; } .pcard .pnums{ font-size:.92rem; margin-top:8px; } .pcard .pnums b{ font-size:1.25rem; display:block; }
 .pcard .pnums div:nth-child(2){ text-align:center; } .pcard .pnums div:nth-child(3){ text-align:right; }
-.pcard small.pn{ display:block; margin-top:8px; color:var(--muted); font-size:.72rem; }
+.oddsrow{ display:flex; justify-content:space-between; gap:8px; margin:2px 0 4px; }
+.oddsrow div{ flex:1; background:var(--card-head); border-radius:10px; padding:8px 6px; text-align:center; min-width:0; }
+.oddsrow b{ display:block; font-size:1.25rem; font-weight:600; color:var(--accent-ink); font-variant-numeric:tabular-nums; }
+.oddsrow small{ display:block; font-size:.72rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.oddsnote{ display:block; margin:0 0 10px; color:var(--muted); font-size:.72rem; }
+.pcard small.pnote{ display:block; margin-top:8px; color:var(--muted); font-size:.72rem; }
 .langsel{ border:1px solid var(--line); background:var(--card-head); color:var(--text); border-radius:10px; padding:8px 10px; font-size:1rem; font-family:inherit; max-width:46%; }
 [dir=rtl] .chev{ display:inline-block; transform:scaleX(-1); }
 [dir=rtl] .dh .icon-btn svg{ transform:scaleX(-1); }
@@ -548,7 +553,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v120';
+const VERSION = 'v121';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -984,6 +989,7 @@ function priority(g){
 
 
 /* probabilités de victoire (avant le match) */
+const ODDS = {};            // id du match -> { o1, ox, o2 } | false
 const PRED = {};            // id du match -> { h, d, a } en %
 const PRED_DAYS = {};       // jour (Paris) -> heure du dernier chargement
 function predRow(g){
@@ -1000,6 +1006,20 @@ function loadWinProb(d){
     .catch(() => { delete PRED[d.id]; })
     .finally(() => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); });
 }
+function loadOdds(d){
+  if (ODDS[d.id] !== undefined) return;
+  ODDS[d.id] = null;
+  apiGet(`${BACKEND}/api/odds?match=${encodeURIComponent(d.id)}&date=${encodeURIComponent(d.pdate || d.date)}`)
+    .then(r => { ODDS[d.id] = r.data && r.data.o1 ? r.data : false; })
+    .catch(() => { delete ODDS[d.id]; })
+    .finally(() => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); });
+}
+const fmtOdd = n => (Math.round(n * 100) / 100).toFixed(2).replace('.', ',');
+function oddsHtml(d){
+  const o = ODDS[d.id];
+  if (!o || d.status !== 'scheduled') return '';
+  return `<div class="oddsrow"><div><b>${fmtOdd(o.o1)}</b><small>${esc(trTeam(d.home))}</small></div><div><b>${fmtOdd(o.ox)}</b><small>Nul</small></div><div><b>${fmtOdd(o.o2)}</b><small>${esc(trTeam(d.away))}</small></div></div><small class="oddsnote">Cotes moyennes du marché, à titre indicatif.</small>`;
+}
 function predCard(d){
   const p = PRED[d.id];
   if (!p || d.status !== 'scheduled') return '';
@@ -1008,7 +1028,7 @@ function predCard(d){
   return `<div class="card2 pcard"><h4>Probabilité de victoire</h4>
     <div class="pbar"><i class="h" style="flex:${Math.max(p.h, 1)}"></i><i class="d" style="flex:${Math.max(p.d, 1)}"></i><i class="a" style="flex:${Math.max(p.a, 1)}"></i></div>
     <div class="pnums"><div><b>${r(p.h)}%</b>${esc(trTeam(d.home))}</div><div><b>${r(p.d)}%</b>Nul</div><div><b>${r(p.a)}%</b>${esc(trTeam(d.away))}</div></div>
-    <small class="pn">${note}</small></div>`;
+    <small class="pnote">${note}</small></div>`;
 }
 
 function matchRow(g){
@@ -1235,7 +1255,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
     if (!$('detail').hidden){
       const tabs = ['resume','compos','stats','table'], i = tabs.indexOf(DETAIL.tab);
       return { els:() => after($('detail'), '.dtabs'), prev:i > 0, next:i >= 0 && i < tabs.length - 1,
-        go:dir => { DETAIL.tab = tabs[i + dir]; renderDetail(); } };
+        go:dir => { DETAIL.userTab = true; DETAIL.tab = tabs[i + dir]; renderDetail(); } };
     }
     if (state.page === 'matchs'){
       const btns = [...$('dates').querySelectorAll('.date')], i = btns.findIndex(b => b.classList.contains('active'));
@@ -1396,7 +1416,7 @@ function openMatch(id, fromDetail){
   if (!g) return;
   if (fromDetail && DETAIL.id && DETAIL.id !== id){ DETAIL.stack = DETAIL.stack || []; DETAIL.stack.push(DETAIL.id); } else DETAIL.stack = [];
   clearInterval(DETAIL.timer);
-  DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.data = null; DETAIL.err = null; DETAIL.standErr = null; DETAIL.standLoading = false;
+  DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.userTab = false; DETAIL.data = null; DETAIL.err = null; DETAIL.standErr = null; DETAIL.standLoading = false;
   const box = $('detail');
   box.hidden = false; box.scrollTop = 0; bringToFront(box);
   document.body.style.overflow = 'hidden';
@@ -1437,7 +1457,7 @@ $('main').addEventListener('click', e => {
 function showPrevMatch(id){
   if (!GAME_INDEX[id]) { hideDetail(); return; }
   clearInterval(DETAIL.timer);
-  DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.data = null; DETAIL.err = null; DETAIL.standErr = null; DETAIL.standLoading = false;
+  DETAIL.id = id; DETAIL.tab = 'resume'; DETAIL.userTab = false; DETAIL.data = null; DETAIL.err = null; DETAIL.standErr = null; DETAIL.standLoading = false;
   $('detail').scrollTop = 0;
   renderDetail(); loadDetail();
 }
@@ -1467,6 +1487,8 @@ async function loadDetail(silent){
     if (data.status === 'live' || data.status === 'final') ['home','away'].forEach(sd => { const l = (data.lineups || {})[sd] || {}; (l.starters || []).concat(l.subs || []).forEach(x => { if (x && x.name) PLAYED.add(pkey(x.name)); }); });
     if (data.lineups && (((data.lineups.home || {}).starters || []).length || ((data.lineups.away || {}).starters || []).length)){ preloadSquadPhotos(data); loadLineupPhotos(data); }   // on cherche les photos dès l'ouverture du match, pas seulement sur l'onglet Compos
     Object.assign(GAME_INDEX[id], { status:data.status, minute:data.minute, hs:data.hs, as:data.as });
+    // compos officielles sorties avant le match : on ouvre directement l'onglet Compos (sinon on reste sur « Avant-match »)
+    if (!DETAIL.userTab && DETAIL.tab === 'resume' && data.status === 'scheduled' && data.lineups && ((data.lineups.home || {}).starters || []).length >= 11 && ((data.lineups.away || {}).starters || []).length >= 11) DETAIL.tab = 'compos';
   } catch (e) {
     if (DETAIL.id !== id || silent) return;
     DETAIL.err = e.message;
@@ -1528,7 +1550,8 @@ function h2hHtml(d){
   const k = h2hKey(d); if (!k) return '';
   if (!H2H[k]) loadH2H(d);
   const h = H2H[k] || { loading:true };
-  const wrap = inner => `<div class="card2 h2h"><h4>Face-à-face</h4>${inner}</div>`;
+  if (d.status === 'scheduled') loadOdds(d);
+  const wrap = inner => `<div class="card2 h2h"><h4>Face-à-face</h4>${oddsHtml(d)}${inner}</div>`;
   if (h.loading) return wrap('<div class="noev" style="padding:6px 0">Chargement de l\'historique…</div>');
   if (h.err) return wrap('<div class="noev" style="padding:6px 0">Historique indisponible pour le moment.</div>');
   const sm = h.data && h.data.summary;
@@ -2489,7 +2512,7 @@ function renderDetail(){
     </div>
     ${meta ? `<div class="meta">${meta}</div>` : ''}</div>`;
   const bodyHtml = `
-    <div class="dtabs">${[['resume','Résumé'],['compos','Compos'],['stats','Stats'],['table','Classement']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
+    <div class="dtabs">${[['resume', g.status === 'scheduled' ? 'Avant-match' : 'Résumé'],['compos','Compos'],['stats','Stats'],['table','Classement']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}`;
   // l'en-tête (écussons, score) n'est redessiné que s'il a changé : changer d'onglet ne fait plus clignoter les images
   const sig = DETAIL.id + '§' + headHtml + '§' + I18N.lang;
@@ -2504,7 +2527,7 @@ function renderDetail(){
 
   $('dback').onclick = backFromDetail;
   $('dchat').classList.toggle('on', DETAIL.tab === 'chat');
-  $('dchat').onclick = () => { DETAIL.tab = DETAIL.tab === 'chat' ? 'resume' : 'chat'; renderDetail(); };
+  $('dchat').onclick = () => { DETAIL.userTab = true; DETAIL.tab = DETAIL.tab === 'chat' ? 'resume' : 'chat'; renderDetail(); };
   // on met à jour le bouton et l'étoile sur place (sans tout redessiner) : les écussons ne clignotent plus
   const syncFollow = () => {
     box.querySelectorAll('.follow').forEach(b => { const id = b.dataset.side === 'home' ? g.homeId : g.awayId; const on = isFavTeam(id); b.classList.toggle('on', on); b.textContent = on ? '★ Suivie' : '☆ Suivre'; });
@@ -2525,7 +2548,7 @@ function renderDetail(){
     if (!ok) alert(I18N.tr('Tu peux suivre 15 équipes au maximum.'));
     syncFollow(); refreshList();
   });
-  box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { DETAIL.tab = b.dataset.t; renderDetail(); });
+  box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { DETAIL.userTab = true; DETAIL.tab = b.dataset.t; renderDetail(); });
   const r = $('dretry');
   if (r) r.onclick = () => { DETAIL.err = null; renderDetail(); loadDetail(); };
   const sr = $('sretry');
