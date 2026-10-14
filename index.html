@@ -18,6 +18,19 @@
   --text:#182233; --muted:#69758a; --accent:#ffb547; --accent-ink:#a8670a; --live:#e0432b;
   --brand:#1f5fa8; --brand-dark:#123a66;
 }
+
+/* thème sombre : réglé dans Réglages (auto = suit le téléphone) */
+:root[data-theme=dark]{ color-scheme:dark; --bg:#0d131c; --card:#171f2c; --card-head:#1e2838; --line:#2a3647; --text:#e8edf5; --muted:#93a0b5; --accent-ink:#ffb547; }
+:root[data-theme=dark] .date{ background:var(--card); box-shadow:0 1px 3px rgba(0,0,0,.5); }
+:root[data-theme=dark] .date.active{ background:var(--brand); color:#fff; }
+:root[data-theme=dark] .search input{ background:rgba(23,31,44,.96); border-color:rgba(255,255,255,.15); }
+:root[data-theme=dark] .netbar{ background:#3a2f12; color:#ffd98a; border-top-color:#54441a; }
+:root[data-theme=dark] .sw i{ background:#3a465a; }
+:root[data-theme=dark] .score{ background:#0a0f16; }
+:root[data-theme=dark] .rt.on{ box-shadow:0 0 0 1.5px var(--card); }
+:root[data-theme=dark] .ptr svg{ color:#8fb8ee; }
+:root[data-theme=dark] .tag-inj, :root[data-theme=dark] .tx small.out{ color:#ff7b7f; }
+:root[data-theme=dark] input, :root[data-theme=dark] select, :root[data-theme=dark] textarea{ color-scheme:dark; }
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 [hidden]{ display:none !important; }
 html{ font-size:14px; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
@@ -523,7 +536,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v113';
+const VERSION = 'v114';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -544,7 +557,7 @@ const bringToFront = el => { el.style.zIndex = String(++Z.top); };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ---------- réglages et profil (enregistrés sur l'appareil) ---------- */
-const SETTINGS = { size:'small', fr:true, auto:true, logos:true };
+const SETTINGS = { size:'small', fr:true, auto:true, logos:true, theme:'auto' };
 const PROFILE = { name:'' };
 let HAD_SETTINGS = false;
 try { HAD_SETTINGS = !!localStorage.getItem('ce_settings'); Object.assign(SETTINGS, JSON.parse(localStorage.getItem('ce_settings') || '{}')); } catch(e) {}
@@ -557,6 +570,13 @@ const saveProfile = () => { try { localStorage.setItem('ce_profile', JSON.string
 const SIZES = { small:'12.5px', normal:'14px', large:'16px' };
 function applySize(){ document.documentElement.style.fontSize = SIZES[SETTINGS.size] || SIZES.normal; }
 applySize();
+const darkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+function applyTheme(){
+  const dark = SETTINGS.theme === 'dark' || (SETTINGS.theme !== 'light' && darkMQ && darkMQ.matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+}
+applyTheme();
+if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', () => { if (SETTINGS.theme === 'auto') applyTheme(); });
 
 /* ---------- favoris (enregistrés sur l'appareil) ---------- */
 const FAV = { teams:[], matches:[] };
@@ -2549,6 +2569,7 @@ function renderPanel(){
     html = head('Réglages') + `
       <div class="card2 set" style="margin-top:16px">
         <div class="row"><div class="rl"><b>Taille du texte</b><small>« Petit » est le réglage par défaut</small></div><div class="seg" id="segSize">${seg}</div></div>
+        <div class="row"><div class="rl"><b>Thème</b><small>Clair, sombre, ou comme ton téléphone</small></div><div class="seg" id="segTheme">${[['auto','Auto'],['light','Clair'],['dark','Sombre']].map(([v,l]) => `<button data-v="${v}" class="${SETTINGS.theme===v?'on':''}">${l}</button>`).join('')}</div></div>
         <div class="row"><div class="rl"><b>Langue</b><small>Langue de l'application</small></div><select class="langsel" id="setLang" data-notr>${I18N.LANGS.map(l => `<option value="${l.code}" ${SETTINGS.lang===l.code?'selected':''}>${l.name}</option>`).join('')}</select></div>
         <div class="row"><div class="rl"><b>Noms en français</b><small>Pays, sélections et compétitions</small></div><label class="sw"><input type="checkbox" id="setFr" ${SETTINGS.fr ? 'checked' : ''}><i></i></label></div>
         <div class="row"><div class="rl"><b>Logos des équipes et des compétitions</b><small>Désactive-les pour n'afficher que les initiales</small></div><label class="sw"><input type="checkbox" id="setLogos" ${SETTINGS.logos ? 'checked' : ''}><i></i></label></div>
@@ -2625,6 +2646,7 @@ function renderPanel(){
   const on = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
 
   if (PANEL.kind === 'settings'){
+    box.querySelectorAll('#segTheme button').forEach(b => b.onclick = () => { SETTINGS.theme = b.dataset.v; saveSettings(); applyTheme(); renderPanel(); });
     box.querySelectorAll('#segSize button').forEach(b => b.onclick = () => { SETTINGS.size = b.dataset.v; saveSettings(); applySize(); renderPanel(); });
     if ($('setPush')) $('setPush').onchange = async e => {
       const el = e.target;
