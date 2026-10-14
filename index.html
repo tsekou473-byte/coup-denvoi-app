@@ -479,7 +479,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v102';
+const VERSION = 'v103';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1930,7 +1930,7 @@ function teamResult(g, t){
   if (!isFinite(a) || !isFinite(b)) return 'd';
   return a > b ? 'w' : a < b ? 'l' : 'd';
 }
-function shortDate(iso){ try { return fromIso(iso).toLocaleDateString(I18N.lang, { day:'numeric', month:'short' }).toUpperCase(); } catch (e) { return iso; } }
+function teamDate(iso){ try { return fromIso(iso).toLocaleDateString(I18N.lang, { day:'numeric', month:'short' }).toUpperCase(); } catch (e) { return iso; } }
 function teamGamesState(){
   if (PANEL.tgErr) return `<div class="empty">Impossible de charger les matchs.<small>${esc(PANEL.tgErr).slice(0,200)}</small><button class="retry" id="tgretry">Réessayer</button></div>`;
   if (!PANEL.tgames){ if (!PANEL.tgLoading) loadTeamGames(); return `<div class="empty">Chargement des matchs…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`; }
@@ -1951,8 +1951,8 @@ function teamInfoHtml(){
     const gs = PANEL.tgames, fin = gs.filter(g => g.status === 'final');
     const last = fin[fin.length - 1], next = gs.find(g => g.status !== 'final');
     const live = next && next.status === 'live';
-    if (next) top += `<div class="card2 tnext"><div class="tk">${live ? 'Match en cours' : 'À suivre'}<span>${esc(live ? '' : dayLabel(next.date))}</span></div><div class="tcomp">${esc(trComp(next.comp))} · ${esc(shortDate(next.date))}</div>${matchRow(next)}</div>`;
-    if (last) top += `<div class="card2 tlast"><div class="tk">Dernier résultat<span class="rs ${teamResult(last, t)}">${{w:'V',d:'N',l:'D'}[teamResult(last, t)]}</span></div><div class="tcomp">${esc(trComp(last.comp))} · ${esc(shortDate(last.date))}</div>${matchRow(last)}</div>`;
+    if (next) top += `<div class="card2 tnext"><div class="tk">${live ? 'Match en cours' : 'À suivre'}<span>${esc(live ? '' : dayLabel(next.date))}</span></div><div class="tcomp">${esc(trComp(next.comp))} · ${esc(teamDate(next.date))}</div>${matchRow(next)}</div>`;
+    if (last) top += `<div class="card2 tlast"><div class="tk">Dernier résultat<span class="rs ${teamResult(last, t)}">${{w:'V',d:'N',l:'D'}[teamResult(last, t)]}</span></div><div class="tcomp">${esc(trComp(last.comp))} · ${esc(teamDate(last.date))}</div>${matchRow(last)}</div>`;
     if (!last && !next) top = `<div class="empty">Aucun match récent ou à venir pour cette équipe.</div>`;
     // classement autour de l'équipe
     const L = PANEL.stLeague;
