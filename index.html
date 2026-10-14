@@ -450,7 +450,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v97';
+const VERSION = 'v98';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1546,22 +1546,35 @@ function savePhotos(){
 const PHSTATE = {};       // identifiant du match -> { tries, busy }
 function phKey(teamName, name){ return norm(teamName) + '|' + pkey(name); }
 // photo prise dans l'effectif du club (celle qu'on voit dans la liste des joueurs), quand le joueur y est reconnu
-function squadPhoto(d, side, name){
+const PHBAD = {};   // photos d'effectif qui ne se chargent pas -> on passe à l'autre source
+function phBad(img){
+  const pn = img.closest('.pn'); if (pn) pn.classList.add('nophoto');
+  const u = img.getAttribute('src'); if (!u || PHBAD[u]) return;
+  PHBAD[u] = 1;
+  if (DETAIL && DETAIL.data){ const st = PHSTATE[DETAIL.data.id]; if (st){ st.done = false; st.tries = Math.min(st.tries, 15); st.nextAt = 0; } loadLineupPhotos(DETAIL.data); }
+}
+function squadPhoto(d, side, name, num){
   const teamId = side === 'home' ? d.homeId : d.awayId;
   const c = teamId && d.leagueId && TEAM[teamKey(d.leagueId, teamId)];
-  const list = c && c.data && c.data.players;
+  const list = c && c.data && c.data.players && c.data.players.filter(x => x.photo && !PHBAD[x.photo]);
   if (!list || !name) return '';
+  const words = s => norm(String(s || '')).split(/[^a-z0-9]+/).filter(w => w.length > 2);
   const k = pkey(name), last = norm(String(name).trim().split(/\s+/).pop());
-  let p = list.find(x => x.photo && (pkey(x.name) === k || (x.fullName && pkey(x.fullName) === k)));
+  let p = list.find(x => pkey(x.name) === k || (x.fullName && pkey(x.fullName) === k));
   if (!p){
-    const same = list.filter(x => x.photo && [x.name, x.fullName].some(n => n && norm(String(n).trim().split(/\s+/).pop()) === last));
+    const same = list.filter(x => [x.name, x.fullName].some(n => n && norm(String(n).trim().split(/\s+/).pop()) === last));
     if (same.length === 1) p = same[0];
+  }
+  if (!p && num){   // même numéro de maillot + au moins un mot du nom en commun
+    const w = words(name);
+    const byN = list.filter(x => String(x.number) === String(num) && [x.name, x.fullName].some(n => words(n).some(t => w.includes(t))));
+    if (byN.length === 1) p = byN[0];
   }
   return p ? p.photo : '';
 }
-function phUrl(d, side, name){
+function phUrl(d, side, name, num){
   if (!SETTINGS.logos) return '';
-  return PH[phKey(side === 'home' ? d.home : d.away, name)] || squadPhoto(d, side, name);
+  return PH[phKey(side === 'home' ? d.home : d.away, name)] || squadPhoto(d, side, name, num);
 }
 function loadLineupPhotos(d){
   if (!d || !d.lineups) return;
@@ -1579,8 +1592,9 @@ function loadLineupPhotos(d){
     const teamName = side === 'home' ? d.home : d.away;
     const l = d.lineups[side] || {};
     const teamId = side === 'home' ? d.homeId : d.awayId;
-    const names = [...(l.starters || []), ...(l.subs || [])].map(p => p.name).filter(Boolean);
-    const need = names.filter(n => !PH[phKey(teamName, n)] && !(PH[phKey(teamName, n) + '#miss']) && !squadPhoto(d, side, n));
+    const plist = [...(l.starters || []), ...(l.subs || [])].filter(p => p.name);
+    const names = plist.map(p => p.name);
+    const need = plist.filter(p => !PH[phKey(teamName, p.name)] && !(PH[phKey(teamName, p.name) + '#miss']) && !squadPhoto(d, side, p.name, p.n)).map(p => p.name);
     if (!names.length) return { left: 0, paused: false, none: true };
     if (!teamName || !need.length) return { left: 0, paused: false };
     const fullOf = n => { const f = findSquadPlayer(d.leagueId, teamId, n); return f && f.fullName && f.fullName !== n ? f.fullName : ''; };
@@ -1624,8 +1638,8 @@ function tabCompos(d){
     const k = side + ':' + pkey(p.name);
     const cd = cards[k] ? `<i class="cd ${cards[k] === 'red' ? 'r' : 'y'}"></i>` : '';
     const so = out[k] ? '<i class="so">↓</i>' : '';
-    const ph = phUrl(d, side, p.name);
-    const pn = ph ? `<span class="pn"><span class="pph"><img src="${esc(ph)}" alt="" referrerpolicy="no-referrer" onerror="this.closest('.pn').classList.add('nophoto')"></span><span class="pnum">${esc(p.n)}</span><i class="pnbadge">${esc(p.n)}</i>${cd}${so}</span>`
+    const ph = phUrl(d, side, p.name, p.n);
+    const pn = ph ? `<span class="pn"><span class="pph"><img src="${esc(ph)}" alt="" referrerpolicy="no-referrer" onerror="phBad(this)"></span><span class="pnum">${esc(p.n)}</span><i class="pnbadge">${esc(p.n)}</i>${cd}${so}</span>`
                   : `<span class="pn">${esc(p.n)}${cd}${so}</span>`;
     return `<div class="pp ${side === 'home' ? 'h' : 'a'}" data-side="${side}" data-name="${esc(p.name)}" data-n="${esc(p.n)}">${pn}<span class="pnm">${esc(lastName(p.name))}</span></div>`;
   };
