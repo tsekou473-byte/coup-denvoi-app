@@ -567,7 +567,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v129';
+const VERSION = 'v130';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -2153,7 +2153,7 @@ function tabTable(d){
   if (!S){ loadDetailStand(d.leagueId); return `<div class="card2"><div class="noev">Chargement du classement…</div></div>`; }
   if (!S.rows.length) return `<div class="card2">${noTable(S.note)}</div>`;
   const L = liveRows(S.rows, d.leagueId, d);
-  return `${L.live ? '<div class="livetag">Classement en direct · provisoire</div>' : L.prov ? '<div class="livetag" style="color:var(--muted)">Classement mis à jour · provisoire</div>' : ''}<div class="card2">${standingsHtml(L.rows, { ids:[d.homeId, d.awayId], names:[d.home, d.away], favs:true, leagueId:d.leagueId })}</div>${zoneLegend(L.rows)}`;
+  return `${L.live ? '<div class="livetag">Classement en direct · provisoire</div>' : L.prov ? '<div class="livetag" style="color:var(--muted)">Classement mis à jour · provisoire</div>' : ''}<div class="card2">${standingsHtml(withLiveForm(L.rows, d.leagueId), { ids:[d.homeId, d.awayId], names:[d.home, d.away], favs:true, form:true, leagueId:d.leagueId })}</div>${zoneLegend(L.rows)}`;
 }
 function loadDetailStand(id){
   if (DETAIL.standLoading) return;
