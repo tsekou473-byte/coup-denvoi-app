@@ -177,11 +177,6 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .pcard{ padding:14px 14px 12px; } .pcard h4{ margin:0 0 10px; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
 .pcard .pbar{ height:10px; border-radius:6px; } .pcard .pnums{ font-size:.92rem; margin-top:8px; } .pcard .pnums b{ font-size:1.25rem; display:block; }
 .pcard .pnums div:nth-child(2){ text-align:center; } .pcard .pnums div:nth-child(3){ text-align:right; }
-.oddsrow{ display:flex; justify-content:space-between; gap:8px; margin:2px 0 4px; }
-.oddsrow div{ flex:1; background:var(--card-head); border-radius:10px; padding:8px 6px; text-align:center; min-width:0; }
-.oddsrow b{ display:block; font-size:1.25rem; font-weight:600; color:var(--accent-ink); font-variant-numeric:tabular-nums; }
-.oddsrow small{ display:block; font-size:.72rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.oddsnote{ display:block; margin:0 0 10px; color:var(--muted); font-size:.72rem; }
 .pcard small.pnote{ display:block; margin-top:8px; color:var(--muted); font-size:.72rem; }
 .langsel{ border:1px solid var(--line); background:var(--card-head); color:var(--text); border-radius:10px; padding:8px 10px; font-size:1rem; font-family:inherit; max-width:46%; }
 [dir=rtl] .chev{ display:inline-block; transform:scaleX(-1); }
@@ -327,7 +322,9 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .pitchwrap{ overflow:hidden; }
 .pl-top{ display:flex; justify-content:space-between; align-items:baseline; padding:11px 14px; background:var(--card-head); font-size:1.05rem; }
 .pl-top b{ font-weight:600; }
-.pl-top span{ color:var(--accent-ink); font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; letter-spacing:.06em; }
+.coachline{ color:var(--muted); font-size:.82rem; margin:-4px 0 8px; }
+.pl-top .coach{ flex:1; min-width:0; margin:0 10px; text-align:center; color:var(--muted); font-family:inherit; font-size:.82rem; letter-spacing:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pl-top span.sys{ color:var(--accent-ink); font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; letter-spacing:.06em; }
 .pitch{ position:relative; display:flex; flex-direction:column; gap:16px; padding:30px 10px 30px; background:repeating-linear-gradient(180deg,#1f6e37 0,#1f6e37 38px,#1a6431 38px,#1a6431 76px); }
 .pitch::before{ content:''; position:absolute; inset:10px 8px; border:2px solid rgba(255,255,255,.82); pointer-events:none; }
 .pf{ position:absolute; left:50%; border:2px solid rgba(255,255,255,.82); pointer-events:none; transform:translateX(-50%); }
@@ -553,7 +550,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v122';
+const VERSION = 'v123';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -927,8 +924,55 @@ function crest(name, logo, cls=''){
   // avec un logo, pas de lettres derrière (elles transparaissent) : elles n'apparaissent que si le logo manque ou ne charge pas
   const has = logo && SETTINGS.logos;
   const img = has ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove('cl');this.parentNode.insertAdjacentText('afterbegin',this.dataset.i);this.remove()" data-i="${esc(initials)}">` : '';
-  return `<span class="crest ${cls}${has ? ' cl' : ''}" style="--c:${CREST_COLORS[h % CREST_COLORS.length]}">${has ? '' : esc(initials)}${img}</span>`;
+  return `<span class="crest ${cls}${has ? ' cl' : ''}" data-nm="${esc(name)}" style="--c:${CREST_COLORS[h % CREST_COLORS.length]}">${has ? '' : esc(initials)}${img}</span>`;
 }
+
+
+/* écussons manquants : le serveur cherche le logo par nom, puis on le met en place (mémorisé sur le téléphone) */
+const LOGOS = (() => { try { return JSON.parse(localStorage.getItem('ce_logos') || '{}'); } catch (e) { return {}; } })();
+const LOGO_TRY = {};   // nom -> moment du dernier essai (échec)
+function saveLogos(){ try { const k = Object.keys(LOGOS); if (k.length > 600) k.slice(0, k.length - 600).forEach(x => delete LOGOS[x]); localStorage.setItem('ce_logos', JSON.stringify(LOGOS)); } catch (e) {} }
+function putLogo(el, url){
+  if (!el.isConnected || el.classList.contains('cl')) return;
+  const ini = el.textContent;
+  el.textContent = ''; el.classList.add('cl');
+  const im = document.createElement('img'); im.alt = ''; im.referrerPolicy = 'no-referrer'; im.src = url;
+  im.onerror = () => { el.classList.remove('cl'); el.textContent = ini; im.remove(); };
+  el.appendChild(im);
+}
+let logoBusy = false;
+async function fillLogos(){
+  if (logoBusy || !SETTINGS.logos) return;
+  const els = [...document.querySelectorAll('.crest[data-nm]:not(.cl)')];
+  if (!els.length) return;
+  logoBusy = true;
+  try {
+    const byName = new Map();
+    els.forEach(el => { const n = el.dataset.nm; if (!n) return; if (!byName.has(n)) byName.set(n, []); byName.get(n).push(el); });
+    let calls = 0;
+    for (const [name, list] of byName){
+      let url = LOGOS[name];
+      if (url === undefined){
+        if (LOGO_TRY[name] && Date.now() - LOGO_TRY[name] < 10 * 60 * 1000) continue;
+        if (calls++ >= 6) break;
+        try {
+          const r = await apiGet(`${BACKEND}/api/logo?name=${encodeURIComponent(name)}`);
+          url = r.data && r.data.logo ? r.data.logo : null;
+          if (r.data && r.data.paused){ LOGO_TRY[name] = Date.now(); continue; }
+          LOGOS[name] = url; saveLogos();
+        } catch (e) { LOGO_TRY[name] = Date.now(); continue; }
+        if (!url) LOGO_TRY[name] = Date.now();
+      }
+      if (url) list.forEach(el => putLogo(el, url));
+    }
+  } finally { logoBusy = false; }
+}
+(function(){
+  let t = null;
+  const kick = () => { clearTimeout(t); t = setTimeout(fillLogos, 700); };
+  new MutationObserver(kick).observe(document.body, { childList:true, subtree:true });
+  kick();
+})();
 
 /* carton rouge à côté de l'écusson */
 function redCount(g, side){
@@ -989,7 +1033,6 @@ function priority(g){
 
 
 /* probabilités de victoire (avant le match) */
-const ODDS = {};            // id du match -> { o1, ox, o2 } | false
 const PRED = {};            // id du match -> { h, d, a } en %
 const PRED_DAYS = {};       // jour (Paris) -> heure du dernier chargement
 function predRow(g){
@@ -1005,20 +1048,6 @@ function loadWinProb(d){
   apiGet(`${BACKEND}/api/winprob?${q}`).then(r => { PRED[d.id] = r.data && r.data.source ? r.data : false; })
     .catch(() => { delete PRED[d.id]; })
     .finally(() => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); });
-}
-function loadOdds(d){
-  if (ODDS[d.id] !== undefined) return;
-  ODDS[d.id] = null;
-  apiGet(`${BACKEND}/api/odds?match=${encodeURIComponent(d.id)}&date=${encodeURIComponent(d.pdate || d.date)}`)
-    .then(r => { ODDS[d.id] = r.data && r.data.o1 ? r.data : false; })
-    .catch(() => { delete ODDS[d.id]; })
-    .finally(() => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); });
-}
-const fmtOdd = n => (Math.round(n * 100) / 100).toFixed(2).replace('.', ',');
-function oddsHtml(d){
-  const o = ODDS[d.id];
-  if (!o || d.status !== 'scheduled') return '';
-  return `<div class="oddsrow"><div><b>${fmtOdd(o.o1)}</b><small>${esc(trTeam(d.home))}</small></div><div><b>${fmtOdd(o.ox)}</b><small>Nul</small></div><div><b>${fmtOdd(o.o2)}</b><small>${esc(trTeam(d.away))}</small></div></div><small class="oddsnote">Cotes moyennes du marché, à titre indicatif.</small>`;
 }
 function predCard(d){
   const p = PRED[d.id];
@@ -1565,8 +1594,7 @@ function h2hHtml(d){
   const k = h2hKey(d); if (!k) return '';
   if (!H2H[k]) loadH2H(d);
   const h = H2H[k] || { loading:true };
-  if (d.status === 'scheduled') loadOdds(d);
-  const wrap = inner => `<div class="card2 h2h"><h4>Face-à-face</h4>${oddsHtml(d)}${inner}</div>`;
+  const wrap = inner => `<div class="card2 h2h"><h4>Face-à-face</h4>${inner}</div>`;
   if (h.loading) return wrap('<div class="noev" style="padding:6px 0">Chargement de l\'historique…</div>');
   if (h.err) return wrap('<div class="noev" style="padding:6px 0">Historique indisponible pour le moment.</div>');
   const sm = h.data && h.data.summary;
@@ -1884,6 +1912,7 @@ function tabCompos(d){
   if (!L.home.starters.length && !L.away.starters.length)
     return `<div class="card2"><div class="noev">Pas de compositions pour ce match.<br><small style="opacity:.8">Le fournisseur de données ne les envoie pas pour toutes les compétitions, ni avant le coup d'envoi.</small></div></div>`;
 
+  const coachTag = l => l && l.coach ? `<span class="coach">${esc(I18N.tr('Entraîneur'))} : ${esc(l.coach)}</span>` : '';
   const R = computeRatings(d);
   const cards = {}, out = {};
   d.cards.forEach(c => { const k = c.team + ':' + pkey(c.player); if (cards[k] !== 'red') cards[k] = c.card; });
@@ -1911,13 +1940,13 @@ function tabCompos(d){
     const awayRows = [...A].reverse().map(r => rowHtml(r, 'away')).join('');
     const bench = (k) => {
       const l = L[k];
-      return `<div class="lucol">${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(p => plTap(p, k)).join('')}` : ''}${l.coach ? `<h5>Entraîneur</h5><div class="pl"><span>${esc(l.coach)}</span></div>` : ''}</div>`;
+      return `<div class="lucol">${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(p => plTap(p, k)).join('')}` : ''}</div>`;
     };
     return `
       <div class="card2 pitchwrap">
-        <div class="pl-top"><b>${esc(trTeam(d.home))}</b><span>${esc(d.homeSystem)}</span></div>
+        <div class="pl-top"><b>${esc(trTeam(d.home))}</b>${coachTag(L.home)}<span class="sys">${esc(d.homeSystem)}</span></div>
         <div class="pitch"><i class="pf pb t"></i><i class="pf gb t"></i><i class="pf spot t"></i><i class="pf arc t"></i><i class="pf pb b"></i><i class="pf gb b"></i><i class="pf spot b"></i><i class="pf arc b"></i>${homeRows}<div class="half"></div>${awayRows}</div>
-        <div class="pl-top"><b>${esc(trTeam(d.away))}</b><span>${esc(d.awaySystem)}</span></div>
+        <div class="pl-top"><b>${esc(trTeam(d.away))}</b>${coachTag(L.away)}<span class="sys">${esc(d.awaySystem)}</span></div>
       </div>
       <div class="legend">🟨 carton · ↓ remplacé</div>${R ? '<div class="ratenote">Notes calculées par l\'app (buts, passes, cartons, résultat, minutes jouées) — ce ne sont pas des notes officielles.</div>' : ''}
       <div class="card2"><div class="lu">
@@ -1930,9 +1959,9 @@ function tabCompos(d){
   const col = (k, name, system) => {
     const l = L[k];
     return `<div class="lucol"><h4>${esc(name)}${system ? ` <small>${esc(system)}</small>` : ''}</h4>
+      ${l.coach ? `<div class="coachline">${esc(I18N.tr('Entraîneur'))} : ${esc(l.coach)}</div>` : ''}
       ${l.starters.map(p => pl(p, k)).join('')}
-      ${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(p => pl(p, k)).join('')}` : ''}
-      ${l.coach ? `<h5>Entraîneur</h5><div class="pl"><span>${esc(l.coach)}</span></div>` : ''}</div>`;
+      ${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(p => pl(p, k)).join('')}` : ''}</div>`;
   };
   return `<div class="card2"><div class="lu">${col('home', trTeam(d.home), d.homeSystem)}${col('away', trTeam(d.away), d.awaySystem)}</div></div>`;
 }
