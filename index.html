@@ -164,6 +164,10 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .h2nums b{ font-size:1.25rem; } .h2nums small{ display:block; color:var(--muted); font-size:.72rem; }
 .h2nums div:nth-child(2){ text-align:center; } .h2nums div:nth-child(3){ text-align:right; }
 .probabs{ margin:0 16px 10px; padding:10px 14px; background:rgba(255,181,71,.12); border-radius:12px; font-size:.84rem; line-height:1.5; } .probabs b{ color:var(--accent-ink); }
+.rt{ font-style:normal; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:.78rem; line-height:1; padding:2px 5px; border-radius:6px; color:#10202f; margin-left:auto; }
+.rt.on{ position:absolute; top:-5px; left:-9px; margin:0; box-shadow:0 0 0 1.5px #fff; }
+.rt.rb{ background:#4da3ff; } .rt.rg{ background:#35d08a; } .rt.ro{ background:#f5c242; } .rt.rr{ background:#ff6b6f; }
+.ratenote{ margin:2px 16px 18px; color:var(--muted); font-size:.78rem; text-align:center; line-height:1.4; }
 .probnote{ margin:4px 16px 24px; color:var(--muted); font-size:.8rem; line-height:1.45; text-align:center; }
 .h2row.tap{ cursor:pointer; } .h2row.tap .sc{ text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px; }
 .h2row{ display:flex; gap:8px; align-items:center; padding:8px 0; border-top:1px solid var(--line); font-size:.88rem; }
@@ -488,7 +492,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v109';
+const VERSION = 'v110';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1689,6 +1693,54 @@ function loadLineupPhotos(d){
   });
 }
 
+/* ---------- note du joueur après le match (calculée par l'app) ---------- */
+function rtMin(t){ const m = String(t == null ? '' : t).match(/\d+/); return m ? Number(m[0]) : null; }
+function computeRatings(d){
+  if (!d || d.status !== 'final' || !d.lineups) return null;
+  const out = {};
+  const sides = ['home', 'away'];
+  const goalsFor = { home: Number(d.hs) || 0, away: Number(d.as) || 0 };
+  sides.forEach(sd => {
+    const l = d.lineups[sd] || {};
+    const starters = l.starters || [], subs = l.subs || [];
+    if (starters.length < 11) return;
+    const conceded = sd === 'home' ? goalsFor.away : goalsFor.home, scored = goalsFor[sd];
+    const mg = Math.abs(scored - conceded), res = scored > conceded ? 0.4 + Math.min(0.3, 0.1 * (mg - 1)) : scored < conceded ? -(0.4 + Math.min(0.3, 0.1 * (mg - 1))) : 0;
+    const defN = (parseInt(String(sd === 'home' ? d.homeSystem : d.awaySystem).split('-')[0], 10)) || 4;
+    const end = {}, start = {};
+    starters.forEach(p => { start[pkey(p.name)] = 0; end[pkey(p.name)] = 90; });
+    (d.subs || []).filter(x => x.team === sd).forEach(x => {
+      const t = rtMin(x.time) ?? 60;
+      if (end[pkey(x.out)] !== undefined) end[pkey(x.out)] = t;
+      const k = pkey(x.in); start[k] = t; end[k] = 90;
+    });
+    const ev = {};
+    const bump = (name, f) => { const k = pkey(name); ev[k] = ev[k] || { g:0, a:0, y:0, r:0, og:0 }; f(ev[k]); };
+    (d.goals || []).filter(g => g.team === sd).forEach(g => {
+      if (/own/i.test(g.info || '')) bump(g.player, e => e.og++); else { bump(g.player, e => e.g++); if (g.assist) bump(g.assist, e => e.a++); }
+    });
+    (d.cards || []).filter(c => c.team === sd).forEach(c => bump(c.player, e => { if (c.card === 'red') e.r++; else e.y++; }));
+    [...starters, ...subs].forEach(p => {
+      const k = pkey(p.name);
+      if (start[k] === undefined) return;               // sur le banc, n'est pas entré
+      const mins = (end[k] ?? 90) - start[k];
+      if (mins < 15) return;                            // trop peu de temps de jeu : pas de note
+      const e = ev[k] || { g:0, a:0, y:0, r:0, og:0 };
+      const isGk = starters.some(s => pkey(s.name) === k && String(s.pos) === '1');
+      const isDef = starters.some(s => pkey(s.name) === k && Number(s.pos) >= 2 && Number(s.pos) <= 1 + defN);
+      let r = 6.0 + res + 0.9 * e.g + 0.6 * e.a - 0.3 * e.y - 1.6 * e.r - 1.0 * e.og;
+      const share = Math.min(1, mins / 90);
+      if (isGk || isDef){ r += conceded === 0 ? (isGk ? 0.9 : 0.5) * share : -Math.min(1.2, conceded * (isGk ? 0.25 : 0.2)) * share; }
+      else if (!e.g && !e.a) r += 0;
+      if (mins < 60) r = 6 + (r - 6) * 0.7;
+      out[sd + ':' + k] = Math.max(3, Math.min(10, Math.round(r * 10) / 10));
+    });
+  });
+  return Object.keys(out).length ? out : null;
+}
+function ratingCls(r){ return r >= 8 ? 'rb' : r >= 7 ? 'rg' : r >= 6 ? 'ro' : 'rr'; }
+function ratingTag(R, side, name, cls){ const r = R && R[side + ':' + pkey(name)]; return r == null ? '' : `<i class="rt ${ratingCls(r)} ${cls || ''}">${r.toFixed(1)}</i>`; }
+
 const PROB = {};   // id du match -> { loading } | { data } | { none } | { err }
 function probableOf(d){
   if (!d || !d.homeId || !d.awayId || d.status === 'live' || d.status === 'final') return null;
@@ -1724,6 +1776,7 @@ function tabCompos(d){
   if (!L.home.starters.length && !L.away.starters.length)
     return `<div class="card2"><div class="noev">Pas de compositions pour ce match.<br><small style="opacity:.8">Le fournisseur de données ne les envoie pas pour toutes les compétitions, ni avant le coup d'envoi.</small></div></div>`;
 
+  const R = computeRatings(d);
   const cards = {}, out = {};
   d.cards.forEach(c => { const k = c.team + ':' + pkey(c.player); if (cards[k] !== 'red') cards[k] = c.card; });
   d.subs.forEach(x => { out[x.team + ':' + pkey(x.out)] = true; });
@@ -1733,16 +1786,16 @@ function tabCompos(d){
     const cd = cards[k] ? `<i class="cd ${cards[k] === 'red' ? 'r' : 'y'}"></i>` : '';
     const so = out[k] ? '<i class="so">↓</i>' : '';
     const ph = phUrl(d, side, p.name, p.n);
-    const pn = ph ? `<span class="pn"><span class="pph"><img src="${esc(ph)}" alt="" referrerpolicy="no-referrer" onerror="phBad(this)"></span><span class="pnum">${esc(p.n)}</span><i class="pnbadge">${esc(p.n)}</i>${cd}${so}</span>`
-                  : `<span class="pn">${esc(p.n)}${cd}${so}</span>`;
+    const pn = ph ? `<span class="pn"><span class="pph"><img src="${esc(ph)}" alt="" referrerpolicy="no-referrer" onerror="phBad(this)"></span><span class="pnum">${esc(p.n)}</span><i class="pnbadge">${esc(p.n)}</i>${ratingTag(R, side, p.name, 'on')}${cd}${so}</span>`
+                  : `<span class="pn">${esc(p.n)}${ratingTag(R, side, p.name, 'on')}${cd}${so}</span>`;
     return `<div class="pp ${side === 'home' ? 'h' : 'a'}" data-side="${side}" data-name="${esc(p.name)}" data-n="${esc(p.n)}">${pn}<span class="pnm">${esc(lastName(p.name))}</span></div>`;
   };
   const rowHtml = (row, side) => `<div class="prow">${row.map(p => tok(p, side)).join('')}</div>`;
 
   const H = formationRows(d.homeSystem, L.home.starters);
   const A = formationRows(d.awaySystem, L.away.starters);
-  const pl = p => `<div class="pl"><b>${esc(p.n)}</b><span>${esc(p.name)}</span></div>`;
-  const plTap = (p, side) => `<div class="pl subtap" data-side="${side}" data-name="${esc(p.name)}" data-n="${esc(p.n)}"><b>${esc(p.n)}</b><span>${esc(p.name)}</span></div>`;
+  const pl = (p, sd) => `<div class="pl"><b>${esc(p.n)}</b><span>${esc(p.name)}</span>${ratingTag(R, sd, p.name)}</div>`;
+  const plTap = (p, side) => `<div class="pl subtap" data-side="${side}" data-name="${esc(p.name)}" data-n="${esc(p.n)}"><b>${esc(p.n)}</b><span>${esc(p.name)}</span>${ratingTag(R, side, p.name)}</div>`;
 
   // Terrain : équipe à domicile en haut, extérieur en bas
   if (H && A){
@@ -1758,7 +1811,7 @@ function tabCompos(d){
         <div class="pitch"><i class="pf pb t"></i><i class="pf gb t"></i><i class="pf spot t"></i><i class="pf arc t"></i><i class="pf pb b"></i><i class="pf gb b"></i><i class="pf spot b"></i><i class="pf arc b"></i>${homeRows}<div class="half"></div>${awayRows}</div>
         <div class="pl-top"><b>${esc(trTeam(d.away))}</b><span>${esc(d.awaySystem)}</span></div>
       </div>
-      <div class="legend">🟨 carton · ↓ remplacé</div>
+      <div class="legend">🟨 carton · ↓ remplacé</div>${R ? '<div class="ratenote">Notes calculées par l\'app (buts, passes, cartons, résultat, minutes jouées) — ce ne sont pas des notes officielles.</div>' : ''}
       <div class="card2"><div class="lu">
         <div class="lucol" style="padding-bottom:0"><h4>${esc(trTeam(d.home))}</h4></div><div class="lucol" style="padding-bottom:0"><h4>${esc(trTeam(d.away))}</h4></div>
         ${bench('home')}${bench('away')}
@@ -1769,8 +1822,8 @@ function tabCompos(d){
   const col = (k, name, system) => {
     const l = L[k];
     return `<div class="lucol"><h4>${esc(name)}${system ? ` <small>${esc(system)}</small>` : ''}</h4>
-      ${l.starters.map(pl).join('')}
-      ${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(pl).join('')}` : ''}
+      ${l.starters.map(p => pl(p, k)).join('')}
+      ${l.subs.length ? `<h5>Remplaçants</h5>${l.subs.map(p => pl(p, k)).join('')}` : ''}
       ${l.coach ? `<h5>Entraîneur</h5><div class="pl"><span>${esc(l.coach)}</span></div>` : ''}</div>`;
   };
   return `<div class="card2"><div class="lu">${col('home', trTeam(d.home), d.homeSystem)}${col('away', trTeam(d.away), d.awaySystem)}</div></div>`;
