@@ -406,10 +406,9 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 /* classements */
 .tbl{ font-size:.95rem; }
 .tr{ display:grid; grid-template-columns:30px 1fr 26px 26px 26px 26px 34px 34px; align-items:center; gap:2px; padding:8px 8px 8px 0; border-top:1px solid var(--line); text-align:center; }
-.tbl.wf .tr{ grid-template-columns:28px minmax(0,1fr) 22px 22px 22px 22px 32px 30px 58px; font-size:.95rem; }
-.tbl.wf .tr .tm{ gap:6px; }
-.frm{ display:flex; gap:2px; justify-content:center; }
-.frm i{ font-style:normal; width:10px; height:10px; border-radius:3px; font-size:0; display:block; }
+.tr .tn{ display:flex; flex-direction:column; align-items:flex-start; gap:3px; min-width:0; }
+.frm{ display:flex; gap:2px; }
+.frm i{ font-style:normal; width:12px; height:5px; border-radius:3px; font-size:0; display:block; }
 .frm i.p{ animation:frmp 1.2s ease-in-out infinite; }
 @keyframes frmp{ 50%{ opacity:.35; } }
 .frm i.w{ background:#35d08a; } .frm i.d{ background:#f5c242; } .frm i.l{ background:#ff6b6f; }
@@ -567,7 +566,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v130';
+const VERSION = 'v131';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -2051,7 +2050,7 @@ function standingsHtml(rows, opt = {}){
   rows.forEach(r => { (groups[r.stage || ''] = groups[r.stage || ''] || []).push(r); });
   const keys = Object.keys(groups).sort();
   const multi = keys.length > 1;
-  const th = `<div class="tr th"><span>#</span><span class="tm">Équipe</span><span>J</span><span>V</span><span>N</span><span>D</span><span>+/-</span><span>Pts</span>${opt.form ? '<span>Forme</span>' : ''}</div>`;
+  const th = `<div class="tr th"><span>#</span><span class="tm">Équipe</span><span>J</span><span>V</span><span>N</span><span>D</span><span>+/-</span><span>Pts</span></div>`;
   return keys.map(k => {
     const list = groups[k].slice().sort((a,b) => (a.pos ?? 999) - (b.pos ?? 999));
     const body = list.map(r => {
@@ -2059,10 +2058,10 @@ function standingsHtml(rows, opt = {}){
       const fav = opt.favs && isFavTeam(r.teamId);
       const zk = zoneKey(r.zone);
       const diff = (r.gf != null && r.ga != null) ? r.gf - r.ga : null;
-      return `<div class="tr${hl ? ' hl' : ''}${fav ? ' fv' : ''}${r.lv ? ' lv' : ''}" data-tid="${esc(r.teamId||'')}" data-lid="${esc(opt.leagueId||'')}" data-name="${esc(r.team||'')}" data-logo="${esc(r.badge||'')}"><span class="ps" style="box-shadow:inset 3px 0 0 ${zk ? ZONES[zk].c : 'transparent'}">${r.pos ?? ''}${r.mv ? `<i class="mv ${r.mv > 0 ? 'up' : 'dn'}">${r.mv > 0 ? '▲' : '▼'}</i>` : ''}</span><span class="tm">${crest(trTeam(r.team) || '', r.badge, 'sm')}<b>${esc(trTeam(r.team))}</b></span><span>${r.played ?? ''}</span><span>${r.w ?? ''}</span><span>${r.d ?? ''}</span><span>${r.l ?? ''}</span><span>${diff == null ? '' : (diff > 0 ? '+' + diff : diff)}</span><span class="pt">${r.pts ?? ''}</span>${opt.form ? `<span class="frm">${(r.form || []).map(x => `<i class="${x}">${{w:'V',d:'N',l:'D'}[x[0]]}</i>`).join('')}</span>` : ''}</div>`;
+      return `<div class="tr${hl ? ' hl' : ''}${fav ? ' fv' : ''}${r.lv ? ' lv' : ''}" data-tid="${esc(r.teamId||'')}" data-lid="${esc(opt.leagueId||'')}" data-name="${esc(r.team||'')}" data-logo="${esc(r.badge||'')}"><span class="ps" style="box-shadow:inset 3px 0 0 ${zk ? ZONES[zk].c : 'transparent'}">${r.pos ?? ''}${r.mv ? `<i class="mv ${r.mv > 0 ? 'up' : 'dn'}">${r.mv > 0 ? '▲' : '▼'}</i>` : ''}</span><span class="tm">${crest(trTeam(r.team) || '', r.badge, 'sm')}<span class="tn"><b>${esc(trTeam(r.team))}</b>${opt.form && (r.form || []).length ? `<span class="frm">${r.form.map(x => `<i class="${x}">${{w:'V',d:'N',l:'D'}[x[0]]}</i>`).join('')}</span>` : ''}</span></span><span>${r.played ?? ''}</span><span>${r.w ?? ''}</span><span>${r.d ?? ''}</span><span>${r.l ?? ''}</span><span>${diff == null ? '' : (diff > 0 ? '+' + diff : diff)}</span><span class="pt">${r.pts ?? ''}</span></div>`;
     }).join('');
     const title = multi ? `<div class="stg">${esc(String(k).replace(/^Group /, 'Groupe '))}</div>` : '';
-    return title + `<div class="tbl${opt.form ? ' wf' : ''}">${th}${body}</div>`;
+    return title + `<div class="tbl">${th}${body}</div>`;
   }).join('');
 }
 const NO_TABLE = `<div class="noev">Pas de classement pour cette compétition.<br><small style="opacity:.8">Les coupes et les phases à élimination directe n'en ont pas, ou le fournisseur de données ne l'envoie pas.</small></div>`;
