@@ -168,6 +168,12 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .rt.on{ position:absolute; top:-5px; left:-9px; margin:0; box-shadow:0 0 0 1.5px #fff; }
 .rt.rb{ background:#4da3ff; } .rt.rg{ background:#35d08a; } .rt.ro{ background:#f5c242; } .rt.rr{ background:#ff6b6f; }
 .ratenote{ margin:2px 16px 18px; color:var(--muted); font-size:.78rem; text-align:center; line-height:1.4; }
+.varcard{ margin-bottom:14px; }
+.varrow{ display:flex; align-items:center; gap:10px; padding:10px 16px; border-top:1px solid var(--line); }
+.vmin{ width:34px; color:var(--muted); font-size:.85rem; }
+.vtag{ font-size:.7rem; font-weight:700; letter-spacing:.06em; padding:3px 7px; border-radius:6px; background:#8f9ab3; color:#fff; }
+.vtag.goal,.vtag.penalty{ background:#ff5a5f; }
+.vtx b{ display:block; font-weight:600; } .vtx small{ color:var(--muted); font-size:.82rem; }
 .probnote{ margin:4px 16px 24px; color:var(--muted); font-size:.8rem; line-height:1.45; text-align:center; }
 .h2row.tap{ cursor:pointer; } .h2row.tap .sc{ text-decoration:underline; text-decoration-color:var(--accent); text-underline-offset:3px; }
 .h2row{ display:flex; gap:8px; align-items:center; padding:8px 0; border-top:1px solid var(--line); font-size:.88rem; }
@@ -492,7 +498,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v110';
+const VERSION = 'v111';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1507,6 +1513,13 @@ function secCard(key, title, list, d, extraHead){
   const open = (DETAIL.sec || {})[key] !== undefined ? DETAIL.sec[key] : key !== 'subs';
   return `<div class="card2 sec"><button class="sech" data-sec="${key}" aria-expanded="${open}"><b>${esc(title)}</b><span class="secx">${extraHead || ''}</span><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(${open ? 180 : 0}deg)"><path d="m6 9 6 6 6-6"/></svg></button>${open ? list.map(e => evRow2(d, e)).join('') : ''}</div>`;
 }
+function varCard(d){
+  const list = d.varEvents || [];
+  if (!list.length) return '';
+  const lbl = k => k === 'goal' ? 'But annulé par la VAR' : k === 'penalty' ? 'Penalty annulé par la VAR' : 'Contrôle VAR';
+  const rows = list.map(x => `<div class="varrow"><span class="vmin">${esc(x.time)}${x.time ? "'" : ''}</span><span class="vtag ${x.kind}">VAR</span><div class="vtx"><b>${esc(lbl(x.kind))}</b>${x.player || x.team ? `<small>${[x.player ? esc(x.player) : '', x.team ? esc(trTeam(x.team === 'home' ? d.home : d.away)) : ''].filter(Boolean).join(' · ')}</small>` : ''}</div></div>`).join('');
+  return `<div class="card2 varcard"><div class="tk">Décisions VAR</div>${rows}</div>`;
+}
 function tabResume(d){
   preloadSquadPhotos(d);
   const mk = (k, arr) => arr.map(x => ({ k, ...x })).sort((a,b) => minOf(a.time) - minOf(b.time));
@@ -1520,10 +1533,10 @@ function tabResume(d){
   const cnt = (arr, f) => arr.filter(f);
   const yh = cards.filter(c => c.team === 'home').length, ya = cards.filter(c => c.team === 'away').length;
   let html = '';
-  if (!goals.length && !cards.length && !subs.length)
+  if (!goals.length && !cards.length && !subs.length && !(d.varEvents || []).length)
     html = `<div class="card2"><div class="noev">${d.status === 'scheduled' ? "Le match n'a pas encore commencé." : 'Aucun événement enregistré.'}</div></div>`;
   else
-    html = (top ? `<div class="card2">${top}</div>` : '') + secCard('goals', 'Buts', goals, d, `${d.hs ?? 0} - ${d.as ?? 0}`) + secCard('cards', 'Cartons', cards, d, `<i class="cbox"></i>${yh} - ${ya}`) + secCard('subs', 'Changements', subs, d, `${subs.filter(x => x.team === 'home').length} - ${subs.filter(x => x.team === 'away').length}`);
+    html = (top ? `<div class="card2">${top}</div>` : '') + secCard('goals', 'Buts', goals, d, `${d.hs ?? 0} - ${d.as ?? 0}`) + varCard(d) + secCard('cards', 'Cartons', cards, d, `<i class="cbox"></i>${yh} - ${ya}`) + secCard('subs', 'Changements', subs, d, `${subs.filter(x => x.team === 'home').length} - ${subs.filter(x => x.team === 'away').length}`);
   const nb = (n, w) => `${n} ${w}${n > 1 ? 's' : ''}`;
   const hasLu = d.lineups.home.starters.length || d.lineups.away.starters.length;
   const avail = `Données reçues : ${nb(d.goals.length, 'but')} · ${nb(d.cards.length, 'carton')} · ${nb(d.subs.length, 'remplacement')} · compositions ${hasLu ? 'oui' : 'non'} · statistiques ${d.stats.length ? 'oui' : 'non'}`;
