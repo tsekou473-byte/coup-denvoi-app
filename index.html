@@ -531,6 +531,20 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .ptiles .pt b{ display:block; font-family:'Barlow Condensed',sans-serif; font-size:1.7rem; line-height:1.05; color:var(--accent-ink); }
 .ptiles .pt.y b{ color:#c79a00; } .ptiles .pt.r b{ color:#d64545; }
 .ptiles .pt small{ color:var(--muted); font-size:.7rem; letter-spacing:.03em; text-transform:uppercase; }
+.fhero{ background:linear-gradient(135deg,#17294a,#25447a); color:#fff; border-radius:20px; padding:16px; margin:2px 2px 16px; box-shadow:0 4px 14px rgba(20,30,50,.25); }
+.fh-top{ display:flex; align-items:center; gap:12px; }
+.fh-top small{ display:block; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:#ffb547; }
+.fh-top b{ font-family:'Barlow Condensed',sans-serif; font-size:1.55rem; font-weight:600; line-height:1.1; }
+.fh-open{ margin-left:auto; border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.1); color:#fff; border-radius:999px; padding:6px 12px; font-size:.82rem; cursor:pointer; }
+.fh-mid{ margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,.14); cursor:pointer; display:grid; grid-template-columns:1fr auto; gap:4px 10px; align-items:center; }
+.fh-tag{ grid-column:1/-1; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.7); }
+.fh-tag.lv{ color:#ff8a8a; font-weight:700; }
+.fh-vs{ display:flex; align-items:center; gap:8px; min-width:0; } .fh-vs span{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fh-vs b{ margin-left:8px; font-family:'Barlow Condensed',sans-serif; font-size:1.8rem; color:#ffb547; }
+.fh-cd{ text-align:right; font-family:'Barlow Condensed',sans-serif; font-size:1.35rem; color:#ffb547; line-height:1.1; } .fh-cd small{ display:block; font-family:inherit; font-size:.78rem; color:rgba(255,255,255,.65); }
+.fh-last{ margin-top:10px; display:flex; align-items:center; gap:8px; font-size:.9rem; color:rgba(255,255,255,.8); cursor:pointer; } .fh-last b{ font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; color:#fff; }
+.fh-last .rs{ font-style:normal; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; color:#fff; background:#7a8599; } .fh-last .rs.w{ background:#2f9e5f; } .fh-last .rs.l{ background:#d64545; }
+.fm{ font-style:normal; color:#e0a21c; padding:2px 4px; cursor:pointer; font-size:1rem; }
 .fnx-row{ display:flex; gap:10px; overflow-x:auto; padding:0 2px 8px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
 .fnx-row::-webkit-scrollbar{ display:none; }
 .fnx{ flex:0 0 168px; background:var(--card); border-radius:16px; padding:12px; box-shadow:0 1px 2px rgba(20,30,50,.08); cursor:pointer; display:flex; flex-direction:column; gap:6px; }
@@ -640,7 +654,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v146';
+const VERSION = 'v147';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -762,6 +776,7 @@ function toggleFavMatch(g){
   else { FAV.matches.unshift(snap(g)); if (FAV.matches.length > 60) FAV.matches.length = 60; }
   saveFav();
 }
+const mainTeam = () => FAV.teams.find(t => t.id === FAV.main) || FAV.teams[0] || null;
 const favPlayerKey = (t, p) => String((t && t.id) || '') + '|' + pkey(p.name);
 const isFavPlayer = (t, p) => !!t && !!p && FAV.players.some(x => x.key === favPlayerKey(t, p));
 function toggleFavPlayer(t, p){
@@ -2732,6 +2747,7 @@ function renderDetail(){
     <div class="dh">
       <button class="icon-btn" id="dback" aria-label="Retour"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="ttl"><b>${esc(trComp(g.comp))}</b><small>${esc(dayLabel(g.date))}${g.time ? ' · ' + esc(g.time) : ''}</small></div>
+      <button class="icon-btn" id="dshare" aria-label="Partager"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7.5 7.5 12 3l4.5 4.5M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></button>
       <button class="icon-btn" id="dchat" aria-label="Chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/></svg></button>
       <button class="icon-btn" id="dfav" aria-label="Suivre ce match">${starSvg(isFavMatch(g.id))}</button>
     </div>
@@ -2764,6 +2780,7 @@ function renderDetail(){
     $('dfav').innerHTML = starSvg(isFavMatch(g.id));
   };
   $('dfav').onclick = () => { toggleFavMatch(g); syncFollow(); refreshList(); };
+  $('dshare').onclick = () => shareMatchImage(g, DETAIL.data);
   box.querySelectorAll('.pp[data-name], .subtap[data-name]').forEach(el => el.onclick = () => {
     openPitchPlayer(el.dataset.side, el.dataset.name, el.dataset.n, g);
   });
@@ -2786,6 +2803,59 @@ function renderDetail(){
   box.scrollTop = top;
 }
 
+
+
+/* ---------- partager un match en image ---------- */
+async function shareMatchImage(g, d){
+  const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  const load = url => new Promise(res => { if (!url || !SETTINGS.logos) return res(null); const im = new Image(); im.crossOrigin = 'anonymous'; im.referrerPolicy = 'no-referrer'; im.onload = () => res(im); im.onerror = () => res(null); im.src = url; setTimeout(() => res(null), 4000); });
+  const [lh, la] = await Promise.all([load(g.homeLogo), load(g.awayLogo)]);
+  const F = "'Barlow Condensed','Arial Narrow',Arial,sans-serif";
+  const T = I18N.tr.bind(I18N);
+  const bg = x.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0f1c33'); bg.addColorStop(1, '#1d3560');
+  x.fillStyle = bg; x.fillRect(0, 0, W, H);
+  x.fillStyle = 'rgba(255,181,71,.10)'; x.beginPath(); x.arc(W - 120, 160, 360, 0, 7); x.fill();
+  x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+  x.fillStyle = '#ffb547'; x.font = `700 54px ${F}`;
+  x.fillText(String(trComp(g.comp) || '').toUpperCase().slice(0, 34), W / 2, 130);
+  x.fillStyle = 'rgba(255,255,255,.72)'; x.font = `500 38px ${F}`;
+  x.fillText(`${dayLabel(g.date)}${g.time ? ' · ' + g.time : ''}`, W / 2, 190);
+  const logo = (im, name, cx) => {
+    const r = 100, cy = 440;
+    x.fillStyle = 'rgba(255,255,255,.95)'; x.beginPath(); x.arc(cx, cy, r + 14, 0, 7); x.fill();
+    if (im) { x.save(); x.beginPath(); x.arc(cx, cy, r, 0, 7); x.clip(); const k = Math.min(2 * r * .82 / im.width, 2 * r * .82 / im.height); x.drawImage(im, cx - im.width * k / 2, cy - im.height * k / 2, im.width * k, im.height * k); x.restore(); }
+    else { x.fillStyle = '#1d3560'; x.font = `700 90px ${F}`; x.fillText(String(name).trim().split(/\s+/).filter(w => w.length > 2 || /^[A-Z]/.test(w)).slice(0, 2).map(w => w[0]).join('').toUpperCase() || String(name).slice(0, 2).toUpperCase(), cx, cy + 30); }
+    let fs = 56; x.fillStyle = '#fff';
+    const nm = String(trTeam(name) || name);
+    do { x.font = `700 ${fs}px ${F}`; fs -= 3; } while (x.measureText(nm).width > 340 && fs > 24);
+    x.fillText(nm, cx, 640);
+  };
+  logo(lh, g.home, 200); logo(la, g.away, 880);
+  const played = g.status === 'live' || g.status === 'final';
+  x.fillStyle = '#ffb547'; x.font = `700 160px ${F}`;
+  x.fillText(played ? `${g.hs ?? 0} - ${g.as ?? 0}` : (g.time || 'VS'), W / 2, 490);
+  x.fillStyle = g.status === 'live' ? '#ff6b6b' : 'rgba(255,255,255,.75)'; x.font = `600 46px ${F}`;
+  x.fillText(g.status === 'live' ? `${T('En direct')}${g.minute ? ' · ' + String(g.minute).replace(/^(\d+(\+\d+)?)$/, "$1'") : ''}` : g.status === 'final' ? T('Terminé') : T('À venir'), W / 2, 560);
+  // buteurs
+  const goals = ((d && d.goals) || []).filter(e => !/missed|saved/i.test(e.info || '')).slice().sort((a, b) => parseInt(a.time) - parseInt(b.time));
+  const side = sd => goals.filter(e => e.team === sd).slice(0, 7);
+  const col = (list, ax, al) => { x.textAlign = al; x.fillStyle = '#fff'; x.font = `500 40px ${F}`; list.forEach((e, i) => x.fillText(`${al === 'left' ? '⚽ ' : ''}${String(e.time || '').replace(/'$/, '')}' ${String(e.player || '').slice(0, 22)}${al === 'right' ? ' ⚽' : ''}`, ax, 790 + i * 58)); };
+  if (goals.length) { col(side('home'), 70, 'left'); col(side('away'), W - 70, 'right'); }
+  x.textAlign = 'center';
+  x.fillStyle = 'rgba(255,255,255,.12)'; x.fillRect(70, H - 150, W - 140, 2);
+  x.fillStyle = '#fff'; x.font = `700 52px ${F}`; x.fillText("COUP D'ENVOI", W / 2, H - 80);
+  x.fillStyle = 'rgba(255,255,255,.6)'; x.font = `500 32px ${F}`; x.fillText('tsekou473-byte.github.io/coup-denvoi-app', W / 2, H - 38);
+  const blob = await new Promise(r => { try { c.toBlob(r, 'image/png'); } catch (e) { r(null); } });
+  const text = `${g.home} ${played ? (g.hs ?? 0) + '-' + (g.as ?? 0) : 'vs'} ${g.away}`;
+  if (!blob){ try { await navigator.share({ text }); } catch (e) {} return; }
+  const file = new File([blob], 'coup-denvoi.png', { type: 'image/png' });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'coup-denvoi.png'; document.body.appendChild(a); a.click(); a.remove();
+  toastMsg('Image enregistrée.');
+}
 
 /* ---------- panneaux : réglages et compte ---------- */
 const PANEL = { kind:null, msg:false };
@@ -2875,6 +2945,7 @@ function renderPanel(){
         <div class="row"><div class="rl"><b>Noms en français</b><small>Pays, sélections et compétitions</small></div><label class="sw"><input type="checkbox" id="setFr" ${SETTINGS.fr ? 'checked' : ''}><i></i></label></div>
         <div class="row"><div class="rl"><b>Logos des équipes et des compétitions</b><small>Désactive-les pour n'afficher que les initiales</small></div><label class="sw"><input type="checkbox" id="setLogos" ${SETTINGS.logos ? 'checked' : ''}><i></i></label></div>
         ${pushRow()}
+        <div class="row"><div class="rl"><b>Ouvrir sur Favoris</b><small>Au lancement, affiche d'abord ton équipe et tes favoris</small></div><label class="sw"><input type="checkbox" id="setStartFav" ${SETTINGS.startFav ? 'checked' : ''}><i></i></label></div>
         <div class="row"><div class="rl"><b>Actualisation automatique</b><small>Met à jour les matchs en direct toutes les 90 secondes</small></div><label class="sw"><input type="checkbox" id="setAuto" ${SETTINGS.auto ? 'checked' : ''}><i></i></label></div>
       </div>
       <div class="card2 set">
@@ -2978,6 +3049,7 @@ function renderPanel(){
     if ($('pushTest')) $('pushTest').onclick = async () => { try { await pushTest(); } catch(e) { alert(I18N.tr('Impossible d\'envoyer la notification test.')); } };
     $('setLang').onchange = e => { SETTINGS.lang = e.target.value; saveSettings(); location.reload(); };
     $('setFr').onchange = e => { SETTINGS.fr = e.target.checked; saveSettings(); refreshAfterSetting(); };
+    $('setStartFav').onchange = e => { SETTINGS.startFav = e.target.checked; saveSettings(); };
     $('setAuto').onchange = e => { SETTINGS.auto = e.target.checked; saveSettings(); };
     $('setLogos').onchange = e => { SETTINGS.logos = e.target.checked; saveSettings(); refreshAfterSetting(); };
     on('goReport', () => navPanel('report', { rep:null }));
@@ -3397,6 +3469,33 @@ function showFavoris(){
   if (FAVSTATE.dirty || !FAVSTATE.games || Date.now() - FAVSTATE.ts > 60000) loadFavGames(); else renderFavoris();
 }
 
+function countdownTxt(ts){
+  const m = Math.max(0, Math.round((ts - Date.now()) / 60000));
+  if (m >= 1440) return `Dans ${Math.floor(m / 1440)} j ${Math.floor(m % 1440 / 60)} h`;
+  if (m >= 60) return `Dans ${Math.floor(m / 60)} h ${m % 60} min`;
+  return `Dans ${m} min`;
+}
+function favHeroHtml(){
+  const t = mainTeam(); if (!t) return '';
+  const key = g => (g.date || '') + ' ' + (g.time || '');
+  const mine = (FAVSTATE.games || []).filter(g => String(g.homeId) === t.id || String(g.awayId) === t.id);
+  const live = mine.find(g => g.status === 'live');
+  const next = mine.filter(g => g.status !== 'final' && g.status !== 'live').sort((a, b) => key(a).localeCompare(key(b)))[0];
+  const last = mine.filter(g => g.status === 'final').sort((a, b) => key(b).localeCompare(key(a)))[0];
+  const gm = live || next;
+  const line = g => { const home = String(g.homeId) === t.id; return { opp: home ? g.away : g.home, oppLogo: home ? g.awayLogo : g.homeLogo, home, sc: home ? `${g.hs ?? 0} - ${g.as ?? 0}` : `${g.as ?? 0} - ${g.hs ?? 0}` }; };
+  let mid = '';
+  if (gm){
+    const L = line(gm);
+    mid = `<div class="fh-mid" data-mid="${esc(gm.id)}"><div class="fh-tag ${live ? 'lv' : ''}">${live ? 'En direct' + (gm.minute ? ' · ' + esc(String(gm.minute).replace(/^(\d+(\+\d+)?)$/, "$1'")) : '') : 'Prochain match'}</div>
+      <div class="fh-vs">${crest(trTeam(L.opp) || '', L.oppLogo, 'sm')}<span>${L.home ? 'vs' : '@'} ${esc(trTeam(L.opp))}</span><b>${live ? L.sc : ''}</b></div>
+      ${live ? '' : `<div class="fh-cd">${typeof gm.ts === 'number' ? countdownTxt(gm.ts) : esc(dayLabel(gm.date))}<small>${esc(dayLabel(gm.date))}${gm.time ? ' · ' + esc(gm.time) : ''}</small></div>`}</div>`;
+  }
+  let lastHtml = '';
+  if (last){ const L = line(last); const a = +(L.home ? last.hs : last.as), b = +(L.home ? last.as : last.hs); const r = a > b ? 'w' : a === b ? 'd' : 'l';
+    lastHtml = `<div class="fh-last" data-mid="${esc(last.id)}"><span>Dernier match</span><i class="rs ${r}">${r === 'w' ? 'V' : r === 'd' ? 'N' : 'D'}</i><b>${L.sc}</b><span>${L.home ? 'vs' : '@'} ${esc(trTeam(L.opp))}</span></div>`; }
+  return `<div class="fhero"><div class="fh-top">${crest(trTeam(t.name) || '', t.logo, 'md')}<div><small>Mon équipe</small><b>${esc(trTeam(t.name))}</b></div><button class="fh-open" data-id="${esc(t.id)}" data-lid="${esc(t.leagueId || '')}" data-name="${esc(t.name)}" data-logo="${esc(t.logo || '')}">Voir la fiche</button></div>${mid}${lastHtml}</div>`;
+}
 function favNextHtml(){
   const key = g => (g.date || '') + ' ' + (g.time || '');
   const cards = FAV.teams.map(t => {
@@ -3421,9 +3520,10 @@ function renderFavoris(){
     return;
   }
   let html = '';
+  if (FAV.teams.length && FAVSTATE.games && !FAVSTATE.err) html += favHeroHtml();
   if (FAV.teams.length){
     html += `<h3 class="ftitle">Mes équipes</h3><div class="chips">` + FAV.teams.map(t =>
-      `<span class="fchip"><span class="fchip-tap" data-id="${esc(t.id)}" data-lid="${esc(t.leagueId||'')}" data-name="${esc(t.name)}" data-logo="${esc(t.logo||'')}">${crest(trTeam(t.name) || '', t.logo, 'sm')}<b>${esc(trTeam(t.name))}</b></span><i class="fx" data-rm="${esc(t.id)}" aria-label="Retirer">✕</i></span>`).join('') + `</div>`;
+      `<span class="fchip"><span class="fchip-tap" data-id="${esc(t.id)}" data-lid="${esc(t.leagueId||'')}" data-name="${esc(t.name)}" data-logo="${esc(t.logo||'')}">${crest(trTeam(t.name) || '', t.logo, 'sm')}<b>${esc(trTeam(t.name))}</b></span><i class="fm" data-main="${esc(t.id)}" aria-label="Équipe principale">${mainTeam() && mainTeam().id === t.id ? '★' : '☆'}</i><i class="fx" data-rm="${esc(t.id)}" aria-label="Retirer">✕</i></span>`).join('') + `</div>`;
   }
   if (FAV.players.length){
     html += `<h3 class="ftitle">Mes joueurs</h3><div class="chips">` + FAV.players.map(p =>
@@ -3456,6 +3556,12 @@ function renderFavoris(){
   if (r) r.onclick = () => { FAVSTATE.dirty = true; showFavoris(); };
 }
 $('main').addEventListener('click', e => {
+  const op = e.target.closest('.fh-open');
+  if (op){ openTeam(op.dataset.id, op.dataset.lid, op.dataset.name, op.dataset.logo || null); return; }
+  const fm = e.target.closest('.fh-mid, .fh-last');
+  if (fm){ openMatch(fm.dataset.mid); return; }
+  const mn = e.target.closest('[data-main]');
+  if (mn){ FAV.main = mn.dataset.main; saveFav(); FAVSTATE.dirty = false; renderFavoris(); return; }
   const nx = e.target.closest('.fnx');
   if (nx){ openMatch(nx.dataset.mid); return; }
   const pk = e.target.closest('[data-pk]');
@@ -3502,6 +3608,7 @@ netbar();
 renderLeagueList();
 renderDates();
 show();
+if (SETTINGS.startFav && FAV.teams.length){ const nb = [...document.querySelectorAll('.nav-item')].find(b => b.dataset.page === 'favoris'); if (nb) nb.click(); }
 </script>
 </body>
 </html>
