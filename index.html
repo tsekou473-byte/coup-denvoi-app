@@ -563,6 +563,35 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 body.dens-compact .match{ padding:7px 10px; gap:6px; } body.dens-compact .match .crest{ width:26px; height:26px; font-size:.7rem; } body.dens-compact .tn{ font-size:.98rem; } body.dens-compact .score{ font-size:1.05rem; }
 .nfilter{ display:flex; gap:8px; padding:12px 14px 2px; } .nfilter button{ border:none; background:var(--card); box-shadow:0 1px 2px rgba(20,30,50,.08); border-radius:999px; padding:7px 16px; font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; letter-spacing:.04em; text-transform:uppercase; color:var(--text); cursor:pointer; } .nfilter button.on{ background:var(--accent); color:#1b1305; }
 .news .mine{ display:inline-block; margin-left:6px; padding:0 7px; border-radius:999px; background:var(--accent); color:#1b1305; font-size:.62rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+
+.tseason{ padding:14px 14px 12px; }
+.tseason .tk{ font-family:'Barlow Condensed',sans-serif; text-transform:uppercase; letter-spacing:.06em; color:var(--accent-ink); font-size:.95rem; margin-bottom:8px; }
+.tsn{ display:flex; justify-content:space-between; text-align:center; } .tsn b{ display:block; font-family:'Barlow Condensed',sans-serif; font-size:1.6rem; line-height:1.05; } .tsn small{ color:var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; }
+.tsn .w b{ color:#2f9e5f; } .tsn .l b{ color:#d64545; }
+.tbar{ display:flex; gap:2px; margin-top:12px; } .tbar i{ flex:1; height:8px; border-radius:2px; background:#8c97ab; max-width:14px; } .tbar i.w{ background:#2f9e5f; } .tbar i.l{ background:#d64545; }
+.brk{ display:flex; gap:12px; overflow-x:auto; padding:2px 2px 12px; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.brk::-webkit-scrollbar{ display:none; }
+.brk-col{ flex:0 0 82%; max-width:340px; scroll-snap-align:start; }
+.brk-h{ font-family:'Barlow Condensed',sans-serif; text-transform:uppercase; letter-spacing:.06em; color:var(--accent-ink); font-size:1.05rem; margin:0 2px 8px; }
+.tie{ background:var(--card); border-radius:14px; padding:8px 12px 6px; margin-bottom:10px; box-shadow:0 1px 2px rgba(20,30,50,.08); cursor:pointer; }
+.tie .tm{ display:flex; align-items:center; gap:9px; padding:5px 0; } .tie .tm .n{ flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tie .tm b{ font-family:'Barlow Condensed',sans-serif; font-size:1.25rem; min-width:22px; text-align:right; }
+.tie .tm.win .n, .tie .tm.win b{ font-weight:700; } .tie .tm.lose{ opacity:.55; }
+.tie .lgs{ border-top:1px solid var(--line); margin-top:3px; padding-top:5px; color:var(--muted); font-size:.74rem; display:flex; flex-wrap:wrap; gap:2px 12px; }
+.cmp-top{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; padding:18px 14px 6px; text-align:center; }
+.cmp-top .side{ display:flex; flex-direction:column; align-items:center; gap:6px; } .cmp-top .side b{ font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; line-height:1.1; }
+.cmp-top .vs{ color:var(--muted); font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; }
+.cmp-r{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; padding:9px 14px 3px; }
+.cmp-r span{ color:var(--muted); font-size:.78rem; text-transform:uppercase; letter-spacing:.04em; text-align:center; }
+.cmp-r b{ font-family:'Barlow Condensed',sans-serif; font-size:1.35rem; } .cmp-r b.l{ text-align:left; } .cmp-r b.r{ text-align:right; } .cmp-r b.win{ color:var(--accent-ink); }
+.cmp-b{ display:flex; gap:4px; padding:0 14px 4px; } .cmp-b div{ flex:1; height:5px; background:var(--line); border-radius:3px; display:flex; } .cmp-b div:first-child{ justify-content:flex-end; }
+.cmp-b i{ display:block; height:100%; border-radius:3px; background:#b9c2d0; } .cmp-b i.win{ background:var(--accent); }
+.cmp-frm{ display:flex; gap:3px; } .cmp-frm.r{ justify-content:flex-end; }
+.cmp-frm i{ width:20px; height:20px; border-radius:50%; font-style:normal; font-size:.68rem; font-weight:700; color:#fff; display:inline-flex; align-items:center; justify-content:center; background:#7a8599; } .cmp-frm i.w{ background:#2f9e5f; } .cmp-frm i.l{ background:#d64545; }
+.cmp-pick{ padding:14px; } .cmp-pick input{ width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); color:var(--text); font-size:1rem; font-family:inherit; }
+.cmp-res .srow{ display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid var(--line); cursor:pointer; } .cmp-res .srow:first-child{ border-top:none; }
+.cmp-res .sn{ flex:1; } .cmp-res .sn small{ display:block; color:var(--muted); font-size:.8rem; }
+.cmpbtn{ display:block; width:100%; margin:6px 0 14px; border:none; background:var(--line); color:var(--text); padding:11px 0; border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
 .fnx-row{ display:flex; gap:10px; overflow-x:auto; padding:0 2px 8px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
 .fnx-row::-webkit-scrollbar{ display:none; }
 .fnx{ flex:0 0 168px; background:var(--card); border-radius:16px; padding:12px; box-shadow:0 1px 2px rgba(20,30,50,.08); cursor:pointer; display:flex; flex-direction:column; gap:6px; }
@@ -672,7 +701,7 @@ body.dens-compact .match{ padding:7px 10px; gap:6px; } body.dens-compact .match 
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v148';
+const VERSION = 'v149';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1527,7 +1556,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
   function context(){
     if (!$('panel').hidden){
       if (PANEL.kind === 'competition' && !PANEL.sub){
-        const tabs = ['info','matches','table','teams'], i = PANEL.csub ? -1 : tabs.indexOf(PANEL.ctab);
+        const tabs = compTabList(PANEL.comp), i = PANEL.csub ? -1 : tabs.indexOf(PANEL.ctab);
         return { els:() => after($('panel'), '.dtabs'), prev:i > 0, next:i >= 0 && i < tabs.length - 1,
           go:dir => { PANEL.ctab = tabs[i + dir]; $('panel').scrollTop = 0; renderPanel(); } };
       }
@@ -1848,7 +1877,7 @@ function loadH2H(d){
   H2H[k] = { loading:true };
   apiGet(`${BACKEND}/api/h2h?a=${encodeURIComponent(d.homeId)}&b=${encodeURIComponent(d.awayId)}&an=${encodeURIComponent(d.home)}&bn=${encodeURIComponent(d.away)}`)
     .then(r => { H2H[k] = { data:r.data }; }).catch(e => { H2H[k] = { err:e.message }; })
-    .finally(() => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); });
+    .finally(() => { if (DETAIL.id && DETAIL.tab === 'resume') renderDetail(); if (PANEL.kind === 'compare') renderPanel(); });
 }
 function h2hHtml(d){
   const k = h2hKey(d); if (!k) return '';
@@ -2432,7 +2461,7 @@ function openTeam(teamId, leagueId, name, logo){
     }
     PANEL.team = { id: String(teamId), leagueId: String(leagueId), name: name || '', logo: logo || null };
     PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = null; PANEL.player = null;
-    PANEL.tab = 'info'; PANEL.tgames = null; PANEL.tgErr = null; PANEL.tgLoading = false; PANEL.standErr = null; PANEL.clubOpen = false;
+    PANEL.tab = 'info'; PANEL.tgames = null; PANEL.tgErr = null; PANEL.tgLoading = false; PANEL.standErr = null; PANEL.clubOpen = false; PANEL.tgScrolled = false;
     openPanel('team');
     loadSquad();
     loadTeamGames();
@@ -2455,13 +2484,14 @@ function loadSquad(){
 
 /* ---------- fiche équipe : Infos / Matchs / Équipe / Classement ---------- */
 function isTeamGame(g, t){ return String(g.homeId) === t.id || String(g.awayId) === t.id || g.home === t.name || g.away === t.name; }
+function seasonStart(){ const d = fromIso(TODAY), y = d.getFullYear(), m = d.getMonth() + 1; return (m >= 7 ? y : y - 1) + '-07-01'; }
 async function loadTeamGames(){
   const t = PANEL.team;
   if (!t || PANEL.tgLoading) return;
   PANEL.tgLoading = true;
   const afr = String(t.leagueId).startsWith('afr:');
   const url = afr ? `${BACKEND}/api/fixtures?league_id=${encodeURIComponent(t.leagueId)}&from=${addDays(TODAY, -60)}&to=${addDays(TODAY, 60)}`
-                  : `${BACKEND}/api/fixtures?team_id=${encodeURIComponent(t.id)}&from=${addDays(TODAY, -70)}&to=${addDays(TODAY, 70)}`;
+                  : `${BACKEND}/api/fixtures?team_id=${encodeURIComponent(t.id)}&from=${seasonStart()}&to=${addDays(TODAY, 90)}`;
   try {
     const { data } = await apiGet(url);
     if (!PANEL.team || PANEL.team.id !== t.id) return;
@@ -2532,7 +2562,7 @@ function teamInfoHtml(){
       top += `<div class="card2 tmini"><div class="tk">Classement<span>${esc(trComp(L.name || ''))}</span></div>${standingsHtml(part, { favs:true, leagueId:L.id, ids:[t.id], names:[t.name] })}<button class="more" id="goTable">Voir le classement complet</button></div>`;
     }
   }
-  return top + clubHtml();
+  return top + (PANEL.team && !PANEL.sub ? `<button class="cmpbtn" id="goCmp">Comparer avec une autre équipe</button>` : '') + clubHtml();
 }
 function teamMatchesHtml(){
   const st = teamGamesState(); if (st) return st;
@@ -2540,7 +2570,14 @@ function teamMatchesHtml(){
   if (!gs.length) return `<div class="empty">Aucun match récent ou à venir pour cette équipe.</div>`;
   const byDate = {};
   gs.forEach(g => { (byDate[g.date] = byDate[g.date] || []).push(g); });
-  return Object.keys(byDate).sort().map(d => `<section class="group" data-d="${d}"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${byDate[d].map(g => `<div class="tcomp2">${esc(trComp(g.comp))}</div>${matchRow(g)}`).join('')}</section>`).join('');
+  return teamSeasonCard(gs, PANEL.team) + Object.keys(byDate).sort().map(d => `<section class="group" data-d="${d}"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${byDate[d].map(g => `<div class="tcomp2">${esc(trComp(g.comp))}</div>${matchRow(g)}`).join('')}</section>`).join('');
+}
+function teamSeasonCard(gs, t){
+  const fin = gs.filter(g => g.status === 'final' && isFinite(+g.hs) && isFinite(+g.as));
+  if (!fin.length) return '';
+  let w = 0, d = 0, l = 0, gf = 0, ga = 0;
+  fin.forEach(g => { const home = String(g.homeId) === t.id || g.home === t.name; gf += +(home ? g.hs : g.as); ga += +(home ? g.as : g.hs); const r = teamResult(g, t); if (r === 'w') w++; else if (r === 'l') l++; else d++; });
+  return `<div class="card2 tseason"><div class="tk">Saison</div><div class="tsn"><div><b>${fin.length}</b><small>Matchs</small></div><div class="w"><b>${w}</b><small>V</small></div><div><b>${d}</b><small>N</small></div><div class="l"><b>${l}</b><small>D</small></div><div><b>${gf}-${ga}</b><small>Buts</small></div></div><div class="tbar">${fin.map(g => `<i class="${teamResult(g, t)}"></i>`).join('')}</div></div>`;
 }
 function teamTableHtml(){
   if (!PANEL.tgames) return teamGamesState();
@@ -2552,13 +2589,13 @@ function teamTableHtml(){
   return (L.name ? `<div class="tcomp" style="padding:0 4px 8px">${esc(trComp(L.name))}</div>` : '') + `<div class="card2" style="margin:0 0 14px">${standingsHtml(withLiveForm(S.rows, L.id), { favs:true, form:true, leagueId:L.id, ids:[PANEL.team.id], names:[PANEL.team.name] })}</div>${zoneLegend(S.rows)}`;
 }
 /* note de l'équipe (0-100) calculée par l'app : points par match, différence de buts et forme récente */
-function teamRating(rk, fin, t){
+function teamRating(rk, fin, t, gamesArg){
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   let played = 0, pts = 0, gf = null, ga = null;
   if (rk && rk.row && rk.row.played){ const r = rk.row; played = r.played; pts = r.pts || 0; gf = r.gf; ga = r.ga; }
   else {
     // pas de classement chargé : on calcule d'après les derniers matchs terminés de l'équipe
-    const all = (PANEL.tgames || []).filter(g => g.status === 'final' && isFinite(+g.hs) && isFinite(+g.as)).slice(-10);
+    const all = (gamesArg || PANEL.tgames || []).filter(g => g.status === 'final' && isFinite(+g.hs) && isFinite(+g.as)).slice(-10);
     if (all.length < 2) return null;
     gf = 0; ga = 0;
     all.forEach(g => { const home = String(g.homeId) === t.id || g.home === t.name; const a = +(home ? g.hs : g.as), b = +(home ? g.as : g.hs); gf += a; ga += b; const x = a > b ? 3 : a === b ? 1 : 0; pts += x; });
@@ -2693,7 +2730,7 @@ function playerProfileHtml(p){
       <h3>${esc(trTeam(p.fullName || p.name))}${p.captain ? '<span class="tag-cap">C</span>' : ''}</h3>
       <div class="ppos">${esc(POS_FR[p.position] ? POS_FR[p.position].one : (p.position || ''))}${p.number != null ? ' · N° ' + p.number : ''}</div>
       ${PANEL.team && PANEL.team.name ? `<div class="pclub" id="pclub">${crest(trTeam(PANEL.team.name) || '', PANEL.team.logo, 'sm')}<span>${esc(trTeam(PANEL.team.name))}</span></div>` : ''}
-      ${PANEL.team && PANEL.team.id ? `<button class="follow pfv ${isFavPlayer(PANEL.team, p) ? 'on' : ''}" id="pfav">${isFavPlayer(PANEL.team, p) ? '★ Suivi' : '☆ Suivre'}</button>` : ''}
+      ${PANEL.team && PANEL.team.id ? `<button class="follow pfv ${isFavPlayer(PANEL.team, p) ? 'on' : ''}" id="pfav">${isFavPlayer(PANEL.team, p) ? '★ Suivi' : '☆ Suivre'}</button><button class="follow pfv" id="pcmp" style="margin-top:8px">Comparer</button>` : ''}
     </div>
     <div class="pmeta">
       ${p.age != null ? `<span>${p.age} ans</span>` : ''}
@@ -3101,9 +3138,11 @@ function renderPanel(){
       PANEL.games.forEach(g => { (byDate[g.date] = byDate[g.date] || []).push(g); });
       mbody = Object.keys(byDate).sort().map(d => `<section class="group" data-d="${d}"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${byDate[d].sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('')}</section>`).join('');
     }
-    const ctabs = `<div class="dtabs">${[['info','Aperçu'],['matches','Matchs'],['table','Classement'],['teams','Équipes']].map(([k,l]) => `<button class="dtab ${PANEL.ctab===k?'active':''}" data-ct="${k}">${l}</button>`).join('')}</div>`;
+    ensureBracket(c);
+    const ctl = compTabList(c);
+    const ctabs = `<div class="dtabs${ctl.length > 4 ? ' c5' : ''}">${ctl.map(k => `<button class="dtab ${PANEL.ctab===k?'active':''}" data-ct="${k}">${COMP_TAB_LABEL[k]}</button>`).join('')}</div>`;
     COMP_STRIP = '';
-    const body = PANEL.ctab === 'info' ? compInfoHtml(c) : PANEL.ctab === 'table' ? panelTable(c) : PANEL.ctab === 'teams' ? compTeamsHtml(c) : mbody;
+    const body = PANEL.ctab === 'info' ? compInfoHtml(c) : PANEL.ctab === 'table' ? panelTable(c) : PANEL.ctab === 'teams' ? compTeamsHtml(c) : PANEL.ctab === 'bracket' ? bracketHtml(c) : mbody;
     html = PANEL.csub ? head(PANEL.csub === 'scorers' ? 'Meilleurs buteurs' : 'Meilleurs passeurs', esc(trComp(c.name))) + `<div class="cplist">${panelTops(c, PANEL.csub)}</div>`
       : head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + ctabs + (PANEL.ctab === 'info' ? COMP_STRIP : '') + `<div class="cplist">${body}</div>`;
   } else if (PANEL.kind === 'team') {
@@ -3113,6 +3152,8 @@ function renderPanel(){
     } else {
       html = teamPanelHtml(head);
     }
+  } else if (PANEL.kind === 'compare' && PANEL.cmp) {
+    html = compareHtml(head);
   } else if (PANEL.kind === 'report') {
     const st = PANEL.rep || (PANEL.rep = { text:'', state:'' });
     html = head('Signaler une erreur') + (st.state === 'ok'
@@ -3156,6 +3197,7 @@ function renderPanel(){
   { const dh = box.querySelector('.dh'); if (dh) box.style.setProperty('--dhh', dh.offsetHeight + 'px'); }
   $('pback').onclick = backFromPanel;
   const on = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
+  if (PANEL.kind === 'compare') bindCompare(box);
 
   if (PANEL.kind === 'settings'){
     box.querySelectorAll('#segTheme button').forEach(b => b.onclick = () => { SETTINGS.theme = b.dataset.v; saveSettings(); applyTheme(); renderPanel(); });
@@ -3220,7 +3262,7 @@ function renderPanel(){
       on('goTable', () => { PANEL.tab = 'table'; box.scrollTop = 0; renderPanel(); });
       on('tgretry', () => { PANEL.tgErr = null; PANEL.tgames = null; renderPanel(); loadTeamGames(); });
       on('sretry', () => { PANEL.standErr = null; renderPanel(); });
-      box.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { PANEL.tab = b.dataset.tt; box.scrollTop = 0; renderPanel(); });
+      box.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { PANEL.tab = b.dataset.tt; if (PANEL.tab === 'matches') PANEL.tgScrolled = false; box.scrollTop = 0; renderPanel(); });
       
       box.querySelectorAll('.prow2').forEach(el => el.onclick = () => {
         const p = PANEL.squad.find(x => playerIdent(x) === el.dataset.id);
@@ -3229,6 +3271,13 @@ function renderPanel(){
     }
   }
   box.scrollTop = top;
+  // fiche équipe, onglet Matchs : se placer sur le prochain match, une seule fois
+  if (PANEL.kind === 'team' && !PANEL.sub && PANEL.tab === 'matches' && PANEL.tgames && PANEL.tgames.length && !PANEL.tgScrolled){
+    PANEL.tgScrolled = true;
+    const secs = [...box.querySelectorAll('section.group')];
+    const target = secs.find(sec => sec.dataset.d >= TODAY) || secs[secs.length - 1];
+    if (target) box.scrollTop = Math.max(0, target.offsetTop - 70);
+  }
   // page d'une compétition : se placer sur le prochain jour de match, une seule fois
   if (PANEL.kind === 'competition' && PANEL.ctab === 'matches' && PANEL.games && PANEL.games.length && !PANEL.scrolled){
     PANEL.scrolled = true;
@@ -3446,6 +3495,158 @@ function panelTops(c, kind){
 /* ---------- aperçu d'une compétition : résumé de la saison ---------- */
 const CSTAT = {};
 let COMP_STRIP = '';
+
+/* ---------- comparer deux équipes ou deux joueurs ---------- */
+const CMPD = {};
+async function cmpTeamData(t){
+  const key = String(t.id); if (CMPD[key] && CMPD[key].ready) return CMPD[key];
+  const { data } = await apiGet(`${BACKEND}/api/fixtures?team_id=${encodeURIComponent(t.id)}&from=${seasonStart()}&to=${addDays(TODAY, 30)}`);
+  const gs = (data.games || []).map(localize).filter(g => isTeamGame(g, t)).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  const cnt = {}; gs.forEach(g => { if (g.leagueId) (cnt[g.leagueId] = cnt[g.leagueId] || { n:0 }).n++; });
+  const best = Object.keys(cnt).sort((a, b) => cnt[b].n - cnt[a].n)[0] || t.leagueId;
+  let row = null;
+  try { const S = await getStandings(best); row = (S.rows || []).find(r => (r.teamId && String(r.teamId) === String(t.id)) || norm(r.team) === norm(t.name)) || null; } catch (e) {}
+  const fin = gs.filter(g => g.status === 'final' && isFinite(+g.hs) && isFinite(+g.as));
+  const rating = teamRating(row ? { row } : null, fin.slice(-5), t, gs);
+  return CMPD[key] = { ready:true, t, games:gs, fin, row, rating };
+}
+function cmpStats(D){
+  const r = D.row;
+  let w = 0, d = 0, l = 0, gf = 0, ga = 0;
+  D.fin.forEach(g => { const home = String(g.homeId) === String(D.t.id) || g.home === D.t.name; gf += +(home ? g.hs : g.as); ga += +(home ? g.as : g.hs); const x = teamResult(g, D.t); if (x === 'w') w++; else if (x === 'l') l++; else d++; });
+  if (r && r.played) return { rating:D.rating, pos:r.pos, pts:r.pts, played:r.played, w:r.w, d:r.d, l:r.l, gf:r.gf, ga:r.ga };
+  return D.fin.length ? { rating:D.rating, pos:null, pts:w * 3 + d, played:D.fin.length, w, d, l, gf, ga } : { rating:D.rating };
+}
+const numOf = v => { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isFinite(n) ? n : null; };
+function cmpRows(rows, A, B){
+  return rows.map(([label, a, b, o]) => {
+    o = o || {};
+    if (a == null && b == null) return '';
+    const fmt = v => v == null ? '–' : (o.dec ? (Math.round(v * 100) / 100).toFixed(o.dec) : String(v));
+    let wa = false, wb = false;
+    if (!o.neutral && a != null && b != null && a !== b){ if (o.low ? a < b : a > b) wa = true; else wb = true; }
+    const mx = Math.max(a || 0, b || 0, 0.0001);
+    const bar = o.nobar || o.low ? '' : `<div class="cmp-b"><div><i class="${wa ? 'win' : ''}" style="width:${(a || 0) / mx * 100}%"></i></div><div><i class="${wb ? 'win' : ''}" style="width:${(b || 0) / mx * 100}%"></i></div></div>`;
+    return `<div class="cmp-r"><b class="l ${wa ? 'win' : ''}">${fmt(a)}</b><span>${label}</span><b class="r ${wb ? 'win' : ''}">${fmt(b)}</b></div>${bar}`;
+  }).join('');
+}
+function cmpPickerHtml(C){
+  const isT = C.mode === 'team';
+  let list = [];
+  if (isT){ (C.res && C.res.teams || []).filter(t => String(t.id) !== String(C.a.id)).slice(0, 12).forEach(t => list.push(`<div class="srow" data-cpick="t" data-tid="${esc(t.id)}" data-lid="${esc(t.leagueId)}" data-name="${esc(t.name)}" data-logo="${esc(t.badge || '')}">${crest(trTeam(t.name) || '', t.badge, 'sm')}<div class="sn">${esc(trTeam(t.name))}<small>${t.national ? 'Équipe nationale' : esc(trComp(t.league || ''))}</small></div><span class="chev">›</span></div>`)); }
+  else {
+    const q = norm(C.q || '');
+    (C.mates || []).filter(p => pkey(p.name) !== pkey(C.a.player.name) && (!q || norm(p.fullName || p.name).includes(q))).slice(0, 8).forEach((p, i) => list.push(`<div class="srow" data-cpick="m" data-i="${(C.mates || []).indexOf(p)}">${pfacePlayer(p, 'sm')}<div class="sn">${esc(trTeam(p.fullName || p.name))}<small>${esc(trTeam(C.a.team.name))} · Les coéquipiers</small></div><span class="chev">›</span></div>`));
+    (C.res && C.res.players || []).slice(0, 10).forEach((x, i) => list.push(`<div class="srow" data-cpick="s" data-i="${i}">${pfacePlayer(x.player, 'sm')}<div class="sn">${esc(trTeam(x.player.fullName || x.player.name))}<small>${esc(trTeam(x.team.name))}</small></div><span class="chev">›</span></div>`));
+  }
+  return list.length ? list.join('') : `<div class="noev" style="padding:14px">${C.q && C.q.length >= 2 ? (C.searching ? 'Recherche…' : 'Aucun résultat.') : 'Tape au moins 2 lettres.'}</div>`;
+}
+function compareHtml(head){
+  const C = PANEL.cmp;
+  const isT = C.mode === 'team';
+  const nameA = isT ? C.a.name : C.a.player.name;
+  if (!C.b){
+    return head('Comparer', esc(trTeam(nameA))) + `<div class="cmp-pick"><div style="margin-bottom:10px;color:var(--muted)">${isT ? 'Choisis une équipe à comparer' : 'Choisis un joueur à comparer'}</div><input id="cmpq" autocomplete="off" placeholder="${isT ? 'Rechercher une équipe…' : 'Rechercher un joueur…'}" value="${esc(C.q || '')}"><div class="card2 cmp-res" id="cmpres" style="margin-top:12px">${cmpPickerHtml(C)}</div></div>`;
+  }
+  if (isT){
+    const DA = CMPD[C.a.id], DB = CMPD[C.b.id];
+    const top = `<div class="card2"><div class="cmp-top"><div class="side">${crest(trTeam(C.a.name) || '', C.a.logo, 'xl')}<b>${esc(trTeam(C.a.name))}</b></div><div class="vs">VS</div><div class="side">${crest(trTeam(C.b.name) || '', C.b.logo, 'xl')}<b>${esc(trTeam(C.b.name))}</b></div></div>`;
+    if (!DA || !DB || !DA.ready || !DB.ready) return head('Comparer', esc(trTeam(nameA))) + top + `<div class="empty">${C.err ? 'Impossible de charger la comparaison.' : 'Chargement de la comparaison…'}</div></div>`;
+    const A = cmpStats(DA), B = cmpStats(DB), gpm = S => (S.played && S.gf != null) ? S.gf / S.played : null;
+    const frm = D => `<div class="cmp-frm">${D.fin.slice(-5).map(g => { const r = teamResult(g, D.t); return `<i class="${r}">${{ w:'V', d:'N', l:'D' }[r]}</i>`; }).join('')}</div>`;
+    const rows = cmpRows([
+      ['Note', A.rating, B.rating], ['Classement', A.pos, B.pos, { low:true }], ['Points', A.pts, B.pts], ['Matchs joués', A.played, B.played, { neutral:true }],
+      ['Victoires', A.w, B.w], ['Nuls', A.d, B.d, { neutral:true }], ['Défaites', A.l, B.l, { low:true }], ['Buts marqués', A.gf, B.gf], ['Buts encaissés', A.ga, B.ga, { low:true }],
+      ['Différence de buts', (A.gf != null && A.ga != null) ? A.gf - A.ga : null, (B.gf != null && B.ga != null) ? B.gf - B.ga : null, { nobar:true }], ['Buts par match', gpm(A), gpm(B), { dec:2 }]
+    ], A, B);
+    return head('Comparer', esc(trTeam(nameA)) + ' · ' + esc(trTeam(C.b.name))) + top + rows + `<div class="cmp-r" style="padding-top:14px">${frm(DA)}<span>Forme</span><div class="cmp-frm r">${DB.fin.slice(-5).map(g => { const r = teamResult(g, DB.t); return `<i class="${r}">${{ w:'V', d:'N', l:'D' }[r]}</i>`; }).join('')}</div></div><div style="padding:10px 14px 14px"><button class="cmpbtn" id="cmpchg">Changer d'équipe</button></div></div>` + h2hHtml({ homeId:C.a.id, awayId:C.b.id, home:C.a.name, away:C.b.name });
+  }
+  // joueurs
+  const pa = C.a.player, pb = C.b.player, sa = pa.stats || {}, sb = pb.stats || {};
+  const n = (s, k) => numOf(s[k]);
+  const ratio = (s) => (n(s, 'apps') ? (n(s, 'goals') || 0) / n(s, 'apps') : null);
+  const contrib = s => (s.goals != null || s.assists != null) ? (n(s, 'goals') || 0) + (n(s, 'assists') || 0) : null;
+  const top = `<div class="card2"><div class="cmp-top"><div class="side">${pfacePlayer(pa, 'big')}<b>${esc(trTeam(pa.fullName || pa.name))}</b><small style="color:var(--muted)">${esc(trTeam(C.a.team.name))}</small></div><div class="vs">VS</div><div class="side">${pfacePlayer(pb, 'big')}<b>${esc(trTeam(pb.fullName || pb.name))}</b><small style="color:var(--muted)">${esc(trTeam(C.b.team.name))}</small></div></div>`;
+  const rows = cmpRows([
+    ['Âge', pa.age, pb.age, { neutral:true, nobar:true }], ['Matchs joués', n(sa, 'apps'), n(sb, 'apps'), { neutral:true }], ['Buts', n(sa, 'goals'), n(sb, 'goals')], ['Passes décisives', n(sa, 'assists'), n(sb, 'assists')],
+    ['Contributions (buts + passes)', contrib(sa), contrib(sb)], ['Buts par match', ratio(sa), ratio(sb), { dec:2 }], ['Cartons jaunes', n(sa, 'yellow'), n(sb, 'yellow'), { low:true }], ['Cartons rouges', n(sa, 'red'), n(sb, 'red'), { low:true }], ['Note moyenne', n(sa, 'rating'), n(sb, 'rating'), { dec:2 }]
+  ], sa, sb);
+  return head('Comparer', esc(trTeam(pa.name)) + ' · ' + esc(trTeam(pb.name))) + top + (rows || `<div class="noev" style="padding:16px">Aucune statistique à comparer.</div>`) + `<div style="padding:10px 14px 14px"><button class="cmpbtn" id="cmpchg">Changer de joueur</button></div></div>`;
+}
+function startCompare(mode){
+  const t = PANEL.team; if (!t) return;
+  const cmp = mode === 'team' ? { mode, a:{ id:t.id, leagueId:t.leagueId, name:t.name, logo:t.logo }, b:null, q:'', res:null }
+    : { mode, a:{ team:{ ...t }, player:PANEL.player }, b:null, q:'', res:null, mates:(PANEL.squad || []).slice() };
+  if (mode === 'team') cmpTeamData(cmp.a).then(() => { if (PANEL.kind === 'compare') renderPanel(); }).catch(() => {});
+  navPanel('compare', { cmp });
+}
+async function cmpPick(kind, el){
+  const C = PANEL.cmp; if (!C) return;
+  if (kind === 't'){
+    C.b = { id:String(el.dataset.tid), leagueId:String(el.dataset.lid), name:el.dataset.name, logo:el.dataset.logo || null }; C.err = null; renderPanel();
+    try { await Promise.all([cmpTeamData(C.a), cmpTeamData(C.b)]); } catch (e) { C.err = e.message; }
+    if (PANEL.kind === 'compare') renderPanel();
+    return;
+  }
+  let team, player;
+  if (kind === 'm'){ player = C.mates[+el.dataset.i]; team = C.a.team; }
+  else { const x = (C.res && C.res.players || [])[+el.dataset.i]; if (!x) return; player = x.player; team = { id:String(x.team.id), leagueId:String(x.team.leagueId), name:x.team.name, logo:x.team.badge || null }; }
+  if (!player) return;
+  try { const data = await getTeam(team.leagueId, team.id); const f = (data.players || []).find(p => pkey(p.name) === pkey(player.name)); if (f) player = f; } catch (e) {}
+  C.b = { team, player };
+  if (!(C.a.player.stats && Object.keys(C.a.player.stats).length)){ try { const data = await getTeam(C.a.team.leagueId, C.a.team.id); const f = (data.players || []).find(p => pkey(p.name) === pkey(C.a.player.name)); if (f) C.a.player = f; } catch (e) {} }
+  if (PANEL.kind === 'compare') renderPanel();
+}
+function bindCompare(box){
+  const C = PANEL.cmp; if (!C) return;
+  const q = $('cmpq');
+  if (q){
+    q.oninput = () => {
+      C.q = q.value; clearTimeout(C.t);
+      const upd = () => { const r = $('cmpres'); if (r) r.innerHTML = cmpPickerHtml(C); };
+      if (C.q.trim().length < 2){ C.res = null; upd(); return; }
+      C.searching = true; upd();
+      const my = C.seq = (C.seq || 0) + 1;
+      C.t = setTimeout(async () => {
+        try { const { data } = await apiGet(`${BACKEND}/api/search?q=${encodeURIComponent(C.q.trim())}`); if (my === C.seq) C.res = data; } catch (e) { if (my === C.seq) C.res = null; }
+        C.searching = false; upd();
+      }, 350);
+    };
+  }
+  const chg = $('cmpchg'); if (chg) chg.onclick = () => { C.b = null; C.q = ''; C.res = null; renderPanel(); };
+  box.querySelectorAll('[data-cpick]').forEach(el => el.onclick = () => cmpPick(el.dataset.cpick, el));
+  const rs = $('cmpres'); if (rs) rs.onclick = e => { const el = e.target.closest('[data-cpick]'); if (el) cmpPick(el.dataset.cpick, el); };
+}
+
+/* ---------- phases finales ---------- */
+const BRK = {};   // league id -> { loading } | { stages } | { err }
+const CUPRE = /cup|champions|europa|conference|copa|coupe|pokal|supercup|libertadores|sudamericana|world|euro\b|nations|trophy|play-?off|coppa|taça|beker|kupa/i;
+function ensureBracket(c){
+  if (BRK[c.id] || !CUPRE.test(c.name || '')) return;
+  BRK[c.id] = { loading:true };
+  apiGet(`${BACKEND}/api/bracket?league_id=${encodeURIComponent(c.id)}`)
+    .then(r => { const stages = (r.data && r.data.stages) || []; stages.forEach(S => S.ties.forEach(T => T.legs.forEach(l => { if (l.game){ const g = localize(l.game); GAME_INDEX[g.id] = g; } }))); BRK[c.id] = { stages }; })
+    .catch(e => { BRK[c.id] = { err:e.message, stages:[] }; })
+    .finally(() => { if (!$('panel').hidden && PANEL.kind === 'competition' && PANEL.comp && PANEL.comp.id === c.id) renderPanel(); });
+}
+const compTabList = c => { const B = BRK[c.id]; return (B && B.stages && B.stages.length) ? ['info','matches','table','bracket','teams'] : ['info','matches','table','teams']; };
+const COMP_TAB_LABEL = { info:'Aperçu', matches:'Matchs', table:'Classement', bracket:'Tableau', teams:'Équipes' };
+function tieHtml(T){
+  const legs = T.legs, done = legs.every(l => l.status === 'final' && l.hs != null && l.as != null);
+  let sa = 0, sb = 0, any = false;
+  legs.forEach(l => { if (l.hs == null || l.as == null || (l.status !== 'final' && l.status !== 'live')) return; any = true; const a = l.aHome ? +l.hs : +l.as, b = l.aHome ? +l.as : +l.hs; sa += a; sb += b; });
+  const win = done && sa !== sb ? (sa > sb ? 'a' : 'b') : '';
+  const row = (X, sc, k) => `<div class="tm ${win ? (win === k ? 'win' : 'lose') : ''}">${crest(trTeam(X.name) || '', X.badge, 'sm')}<span class="n">${esc(trTeam(X.name))}</span><b>${any ? sc : ''}</b></div>`;
+  const legTxt = legs.map(l => { const scored = l.hs != null && l.as != null && (l.status === 'final' || l.status === 'live'); const a = l.aHome ? l.hs : l.as, b = l.aHome ? l.as : l.hs; return `<span>${esc(shortDate(l.date).slice(0, 5))}${scored ? ` · ${a} - ${b}${l.status === 'live' ? " ●" : ''}` : (l.time ? ' · ' + esc(l.time) : '')}</span>`; }).join('');
+  const target = legs.find(l => l.status === 'live') || legs.find(l => l.status !== 'final') || legs[legs.length - 1];
+  return `<div class="tie" data-mid="${esc(target.id)}">${row(T.a, sa, 'a')}${row(T.b, sb, 'b')}${legs.length > 1 && any ? `<div class="lgs">${legTxt}${done ? `<span>Agr. ${sa} - ${sb}</span>` : ''}</div>` : `<div class="lgs">${legTxt}</div>`}</div>`;
+}
+function bracketHtml(c){
+  const B = BRK[c.id];
+  if (!B || B.loading) return `<div class="empty">Chargement du tableau…</div>`;
+  if (!B.stages.length) return `<div class="empty">Aucune phase finale pour le moment.</div>`;
+  return `<div class="brk">${B.stages.map(S => `<div class="brk-col"><div class="brk-h">${esc(S.name)}</div>${S.ties.map(tieHtml).join('')}</div>`).join('')}</div>`;
+}
 function compInfoHtml(c){
   let S = CSTAT[c.id];
   if (!S){
@@ -3522,11 +3723,14 @@ async function loadCompetitionGames(id){
 $('main').addEventListener('click', e => { const c = e.target.closest('.crow'); if (c) openCompetition(c.dataset.id); });
 $('panel').addEventListener('click', e => {
   const m = e.target.closest('.match'); if (m){ openMatch(m.dataset.id); return; }
+  const ti = e.target.closest('.tie'); if (ti){ openMatch(ti.dataset.mid); return; }
   const pf = e.target.closest('#pfav');
   if (pf && PANEL.kind === 'team' && PANEL.player){
     if (toggleFavPlayer(PANEL.team, PANEL.player) === false){ toastMsg('Tu as atteint la limite de joueurs suivis.'); return; }
     const on = isFavPlayer(PANEL.team, PANEL.player); pf.classList.toggle('on', on); pf.textContent = I18N.tr(on ? '★ Suivi' : '☆ Suivre'); return;
   }
+  const gc = e.target.closest('#goCmp'); if (gc && PANEL.kind === 'team'){ startCompare('team'); return; }
+  const pcm = e.target.closest('#pcmp'); if (pcm && PANEL.kind === 'team' && PANEL.player){ startCompare('player'); return; }
   const pc = e.target.closest('#pclub');
   if (pc && PANEL.kind === 'team' && PANEL.team && PANEL.team.id) navPanel('team', { sub:null, player:null });
 });
