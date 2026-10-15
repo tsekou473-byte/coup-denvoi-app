@@ -578,7 +578,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v137';
+const VERSION = 'v138';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -3008,17 +3008,35 @@ function renderExplorerList(){
   }).join('');
 }
 
-/* photos des joueurs : une recherche par équipe (le serveur les cherche chez TheSportsDB, quelques-unes à la fois) */
+/* photos des joueurs : d'abord celles de l'effectif de l'équipe (les mêmes que dans « Compos »), puis TheSportsDB en secours */
+const topPhoto = (c, r) => (SETTINGS.logos ? (squadPhoto({ leagueId:c.id, homeId:r.teamId }, 'home', r.name) || PH[phKey(r.team, r.name)] || '') : '');
 function loadTopPhotos(c, rows){
   const T = TOPS[c.id]; if (!T || T.phBusy || (T.phTries || 0) >= 8) return;
-  const need = rows.filter(r => r.team && !PH[phKey(r.team, r.name)] && !PH[phKey(r.team, r.name) + '#miss']);
+  const again = () => { if (!$('panel').hidden && PANEL.kind === 'competition' && PANEL.comp && PANEL.comp.id === c.id) renderPanel(); };
+  // 1) effectifs des équipes concernées
+  const ids = [...new Set(rows.filter(r => r.teamId).map(r => r.teamId))].slice(0, 16);
+  const todo = ids.filter(id => !TEAM[teamKey(c.id, id)] && !TEAM[teamKey(c.id, id) + ':tried']);
+  if (todo.length){
+    T.phBusy = true;
+    let i = 0;
+    const worker = async () => {
+      while (i < todo.length){
+        const id = todo[i++];
+        try { await getTeam(c.id, id); } catch (e) { TEAM[teamKey(c.id, id) + ':tried'] = 1; }
+      }
+    };
+    Promise.all([worker(), worker(), worker()]).then(() => { T.phBusy = false; again(); });
+    return;
+  }
+  // 2) joueurs sans photo dans l'effectif : recherche en secours
+  const need = rows.filter(r => r.team && !topPhoto(c, r) && !PH[phKey(r.team, r.name) + '#miss']);
   if (!need.length) return;
   T.phBusy = true; T.phTries = (T.phTries || 0) + 1;
   const byTeam = {};
   need.forEach(r => { (byTeam[r.team] = byTeam[r.team] || []).push(r.name); });
   (async () => {
     let left = 0, got = false;
-    for (const [team, names] of Object.entries(byTeam).slice(0, 10)){
+    for (const [team, names] of Object.entries(byTeam).slice(0, 8)){
       try {
         const res = await fetch(`${BACKEND}/api/photos?team=${encodeURIComponent(team)}&names=${encodeURIComponent(names.join('|'))}`);
         const j = await res.json();
@@ -3029,9 +3047,9 @@ function loadTopPhotos(c, rows){
       } catch (e) { left++; }
     }
     T.phBusy = false;
-    if (got){ savePhotos(); }
-    if (!$('panel').hidden && PANEL.kind === 'competition' && PANEL.comp && PANEL.comp.id === c.id) renderPanel();
-    if (left > 0 || Object.keys(byTeam).length > 10) setTimeout(() => { if (!$('panel').hidden && PANEL.kind === 'competition' && PANEL.comp && PANEL.comp.id === c.id) renderPanel(); }, 4000);
+    if (got) savePhotos();
+    again();
+    if (left > 0) setTimeout(again, 4000);
   })();
 }
 /* meilleurs buteurs / passeurs d'une compétition */
@@ -3054,7 +3072,7 @@ function panelTops(c, kind){
   rows = goals ? rows.sort((a, b) => b.goals - a.goals || b.assists - a.assists) : rows.filter(r => r.assists > 0).sort((a, b) => b.assists - a.assists || b.goals - a.goals);
   if (!rows.length) return `<div class="card2"><div class="noev">Aucune passe décisive enregistrée pour le moment.</div></div>`;
   loadTopPhotos(c, rows.slice(0, 30));
-  const body = rows.slice(0, 30).map((r, i) => `<div class="sc"><span class="ps">${i + 1}</span>${pfacePlayer({ name:r.name, photo:PH[phKey(r.team, r.name)] || '' }, 'sm')}<span class="who"><b>${esc(r.name)}</b><small>${crest(trTeam(r.team) || '', null, 'sm')} ${esc(trTeam(r.team))}</small></span><span class="sub2">${goals ? `${r.assists} PD` : `${r.goals} but${r.goals > 1 ? 's' : ''}`}</span><span class="big">${goals ? r.goals : r.assists}</span></div>`).join('');
+  const body = rows.slice(0, 30).map((r, i) => `<div class="sc"><span class="ps">${i + 1}</span>${pfacePlayer({ name:r.name, photo:topPhoto(c, r) }, 'sm')}<span class="who"><b>${esc(r.name)}</b><small>${crest(trTeam(r.team) || '', null, 'sm')} ${esc(trTeam(r.team))}</small></span><span class="sub2">${goals ? `${r.assists} PD` : `${r.goals} but${r.goals > 1 ? 's' : ''}`}</span><span class="big">${goals ? r.goals : r.assists}</span></div>`).join('');
   return `<div class="card2" style="margin:0 0 14px"><div class="tk">${goals ? 'Meilleurs buteurs' : 'Meilleurs passeurs'}</div><div class="scl">${body}</div><div class="tk" style="font-size:.72rem;opacity:.7;text-transform:none;letter-spacing:0;padding-top:8px">Données du fournisseur, mises à jour toutes les 30 min environ</div></div>`;
 }
 function openCompetition(id){
