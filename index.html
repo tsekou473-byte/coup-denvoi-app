@@ -652,6 +652,14 @@ body.dens-compact .match{ padding:7px 10px; gap:6px; } body.dens-compact .match 
 .pn-rk i{font-style:normal;width:22px;font-weight:700;color:var(--muted)}.pn-rk span{flex:1;font-weight:600}.pn-rk small{color:var(--muted)}.pn-rk b{font-size:1.2rem;min-width:30px;text-align:right}.pn-rk.me{background:rgba(255,180,0,.12)}
 .pn-rvt{padding:10px 14px;font-weight:600;background:var(--card-head)}.pn-pk span{flex:1}.pn-pk em{color:var(--muted)}
 .pn-entry{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-top:10px;cursor:pointer}.pn-entry b{display:block}.pn-entry small{color:var(--muted)}.pn-entry span{font-size:1.6rem;color:var(--muted)}
+.dfocus{display:block;margin:10px auto 0;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:7px 14px;font-size:.85rem;cursor:pointer}.dfocus.on{background:var(--accent);color:#1b1305;border-color:var(--accent)}
+body.focusmode #dbody{font-size:1.12em}body.focusmode .hero .sb .score{font-size:3.4rem}
+#qsug{position:absolute;left:0;right:0;top:100%;background:var(--card);border-bottom:1px solid var(--line);box-shadow:0 8px 16px rgba(0,0,0,.12);z-index:30;max-height:50vh;overflow:auto}
+.qs{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;border-top:1px solid var(--line)}.qs img,.qs .sph{width:26px;height:26px;border-radius:50%;object-fit:contain;flex-shrink:0}.qs span{flex:1;font-weight:600}.qs small{color:var(--muted)}
+#lvbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(66px + env(safe-area-inset-bottom,0px));z-index:19;display:flex;align-items:center;gap:8px;background:#1b2538;color:#fff;border-radius:999px;padding:8px 16px;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer;max-width:94vw;font-size:.9rem;white-space:nowrap}
+#lvbar[hidden]{display:none}#lvbar b{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem}#lvbar span{overflow:hidden;text-overflow:ellipsis;max-width:34vw}#lvbar small{color:#ff8a8a;font-weight:700}
+.daysum{display:flex;flex-direction:column;gap:2px;padding:12px 16px;margin-top:10px}.daysum span{color:var(--muted);font-size:.9rem}
+.eff{padding:12px 14px;margin-top:16px}.eff h4{margin:0 0 8px}.er{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:.9rem}.er span{width:130px;color:var(--muted)}.er i{flex:1;height:8px;border-radius:6px;background:var(--line);overflow:hidden}.er u{display:block;height:100%;background:var(--accent)}.er b{min-width:34px;text-align:right}
 </style>
 </head>
 <body>
@@ -719,7 +727,7 @@ body.dens-compact .match{ padding:7px 10px; gap:6px; } body.dens-compact .match 
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v154';
+const VERSION = 'v155';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -789,7 +797,7 @@ async function pushSync(){
     if (!SETTINGS.push || !PUSH.supported || Notification.permission !== 'granted') return;
     const sub = await pushGetSub(); if (!sub) return;
     await fetch(`${BACKEND}/api/push/sync`, { method:'POST', headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ subscription: sub.toJSON(), teams: FAV.teams.map(t => t.id), matches: FAV.matches.map(m => m.id), lang: I18N.lang, types: { goal: ptOn('goal'), kickoff: ptOn('kickoff'), final: ptOn('final'), remind: ptOn('remind') }, preds: Object.keys(PRON.preds) }) });
+      body: JSON.stringify({ subscription: sub.toJSON(), teams: FAV.teams.map(t => t.id), matches: FAV.matches.map(m => m.id), lang: I18N.lang, types: { goal: ptOn('goal'), kickoff: ptOn('kickoff'), final: ptOn('final'), remind: ptOn('remind') }, muted: Object.keys(SETTINGS.mute || {}).filter(k => SETTINGS.mute[k]), preds: Object.keys(PRON.preds) }) });
   } catch(e) {}
 }
 window.pushSyncSoon = () => { clearTimeout(PUSH.timer); PUSH.timer = setTimeout(pushSync, 1500); };
@@ -825,6 +833,7 @@ function pushRow(){
   const on = SETTINGS.push && PUSH.supported && Notification.permission === 'granted';
   return `<div class="row"><div class="rl"><b>Notifications</b><small>${hint}</small></div><label class="sw"><input type="checkbox" id="setPush" ${on ? 'checked' : ''} ${dis}><i></i></label></div>`
     + (on ? [['goal','Buts'],['kickoff',"Coups d'envoi"],['final','Fins de match'],['remind','Rappel de pronostic']].map(([k,l]) => `<div class="row"><div class="rl"><b>${l}</b></div><label class="sw"><input type="checkbox" data-pt="${k}" ${ptOn(k) ? 'checked' : ''}><i></i></label></div>`).join('') : '')
+    + (on && FAV.teams.length ? `<div class="row"><div class="rl"><b>Alertes par équipe</b><small>Coupe les alertes d'une équipe que tu suis</small></div></div>` + FAV.teams.map(t => `<div class="row"><div class="rl"><b>${esc(trTeam(t.name))}</b></div><label class="sw"><input type="checkbox" data-mt="${esc(t.id)}" ${(SETTINGS.mute || {})[t.id] ? '' : 'checked'}><i></i></label></div>`).join('') : '')
     + (on ? `<div class="row"><div class="rl"><b>Envoyer une notification test</b><small>Pour vérifier que tout fonctionne</small></div><button class="btn small" id="pushTest">Envoyer</button></div>` : '');
 }
 pushSync();
@@ -1482,7 +1491,37 @@ $('searchBtn').onclick = () => {
   row.hidden = !row.hidden;
   if (!row.hidden) $('q').focus(); else { $('q').value = ''; state.q = ''; refreshList(); }
 };
-$('q').oninput = e => { state.q = e.target.value; refreshList(); };
+$('q').oninput = e => { state.q = e.target.value; refreshList(); qSuggest(e.target.value); };
+const QS = { t:null, seq:0, list:[] };
+function qSuggest(v){
+  clearTimeout(QS.t);
+  let box = $('qsug');
+  if (!box){ box = document.createElement('div'); box.id = 'qsug'; $('searchRow').appendChild(box); }
+  const q = String(v || '').trim();
+  if (q.length < 2){ box.innerHTML = ''; return; }
+  QS.t = setTimeout(async () => {
+    const my = ++QS.seq;
+    try {
+      const { data } = await apiGet(`${BACKEND}/api/search?q=${encodeURIComponent(q)}`);
+      if (my !== QS.seq) return;
+      QS.list = (data.players || []).slice(0, 4);
+      const tm = (data.teams || []).slice(0, 4);
+      const img = u => u && SETTINGS.logos ? `<img src="${esc(u)}" alt="" referrerpolicy="no-referrer" onerror="this.outerHTML='<span class=sph></span>'">` : '<span class="sph"></span>';
+      box.innerHTML = tm.map(t => `<div class="qs" data-k="t" data-tid="${esc(t.id)}" data-lid="${esc(t.leagueId)}" data-name="${esc(t.name)}" data-logo="${esc(t.badge || '')}">${img(t.badge)}<span>${esc(trTeam(t.name))}</span><small>Équipe</small></div>`).join('')
+        + QS.list.map((x, i) => `<div class="qs" data-k="p" data-i="${i}">${img(x.player.photo)}<span>${esc(x.player.fullName || x.player.name)}</span><small>${esc(trTeam(x.team.name))}</small></div>`).join('');
+    } catch (e) { box.innerHTML = ''; }
+  }, 300);
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('#qsug .qs'); if (!el) return;
+  $('searchRow').hidden = true; $('qsug').innerHTML = ''; $('q').value = ''; state.q = ''; refreshList();
+  if (el.dataset.k === 't'){ openTeam(el.dataset.tid, el.dataset.lid, el.dataset.name, el.dataset.logo || null); return; }
+  const x = QS.list[+el.dataset.i]; if (!x) return;
+  prePanel();
+  PANEL.team = { id:String(x.team.id), leagueId:String(x.team.leagueId), name:x.team.name, logo:x.team.badge || null };
+  PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = 'player'; PANEL.player = x.player;
+  openPanel('team'); loadSquad();
+});
 function refreshList(){
   if (state.page !== 'matchs') return;
   const iso = state.sel === 'live' ? TODAY : state.sel;
@@ -1763,7 +1802,7 @@ function openMatch(id, fromDetail){
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && DETAIL.id && !$('detail').hidden){ const c = DETAIL.data || GAME_INDEX[DETAIL.id]; if (c && c.status !== 'final') loadDetail(true); } });
 function hideDetail(){
-  $('detail').hidden = true;
+  $('detail').hidden = true; focusSet(false);
   document.body.style.overflow = ($('panel').hidden ? '' : 'hidden');
   clearInterval(DETAIL.timer);
   DETAIL.id = null;
@@ -2893,6 +2932,10 @@ function playerProfileHtml(p){
   const tiles = tl.length ? `<div class="ptiles">${tl.map(([k, l]) => `<div class="pt ${k === 'yellow' ? 'y' : k === 'red' ? 'r' : ''}"><b>${esc(p.stats[k])}</b><small>${l}</small></div>`).join('')}</div>` : '';
   const rows = STAT_LABELS.filter(([k]) => !TILE.some(t => t[0] === k) && p.stats[k] != null && p.stats[k] !== '').map(([k,l]) =>
     `<div class="st"><div class="str" style="grid-template-columns:1fr auto"><span>${esc(l)}</span><span class="stv r">${esc(p.stats[k])}</span></div></div>`).join('');
+  const per = (k) => (p.stats.apps > 0 && p.stats[k] != null && p.stats[k] !== '') ? Math.round(p.stats[k] / p.stats.apps * 100) / 100 : null;
+  const eff = [['goals','Buts par match'],['assists','Passes D. par match'],['yellow','Jaunes par match']].map(([k, l]) => [l, per(k)]).filter(x => x[1] !== null);
+  const mx = Math.max(1, ...eff.map(x => x[1]));
+  const effHtml = eff.length ? `<div class="card2 eff"><h4>Rendement</h4>${eff.map(([l, v]) => `<div class="er"><span>${l}</span><i><u style="width:${Math.round(v / mx * 100)}%"></u></i><b>${v}</b></div>`).join('')}</div>` : '';
   return `
     <div class="pprofile">
       ${pfacePlayer(p, 'big')}
@@ -2907,7 +2950,7 @@ function playerProfileHtml(p){
       ${p.country ? `<span>${esc(natLabel(p.country))}</span>` : ''}
       ${isInj(p) ? `<span class="tag-inj">Actuellement blessé</span>` : ''}
     </div>
-    ${tiles}
+    ${tiles}${effHtml}
     <div class="card2" style="margin-top:16px">${rows || (tiles ? '' : `<div class="noev">Aucune statistique disponible cette saison.</div>`)}</div>
     ${careerHtml(p)}`;
 }
@@ -3057,6 +3100,15 @@ function chatMount(){
   d.addEventListener('contextmenu', e => { const m = find(e.target); if (m){ e.preventDefault(); sheet(m); } });
 })();
 
+const FOCUS = { on:false, lock:null };
+async function focusSet(on){
+  FOCUS.on = !!on; document.body.classList.toggle('focusmode', FOCUS.on);
+  try {
+    if (FOCUS.on && navigator.wakeLock && !FOCUS.lock){ FOCUS.lock = await navigator.wakeLock.request('screen'); FOCUS.lock.addEventListener('release', () => { FOCUS.lock = null; }); }
+    else if (!FOCUS.on && FOCUS.lock){ await FOCUS.lock.release(); FOCUS.lock = null; }
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && FOCUS.on && !FOCUS.lock) focusSet(true); });
 function renderDetail(){
   const box = $('detail');
   if (box.hidden || !DETAIL.id) return;
@@ -3084,7 +3136,7 @@ function renderDetail(){
       <div class="sbmid">${sbMid(g)}</div>
       <div class="sbteam"><div class="sbtap" data-side="away">${crestRc(g, 'away', 'big')}<span>${esc(trTeam(g.away))}</span></div>${followBtn(g, 'away')}</div>
     </div>
-    ${meta ? `<div class="meta">${meta}</div>` : ''}</div>`;
+    ${meta ? `<div class="meta">${meta}</div>` : ''}${g.status === 'live' ? `<button class="dfocus ${FOCUS.on ? 'on' : ''}" id="dfocus">${FOCUS.on ? '📺 Mode match activé' : '📺 Mode match'}</button>` : ''}</div>`;
   const bodyHtml = `
     <div class="dtabs${hasFeed(d) ? ' t5' : ''}">${[['resume', g.status === 'scheduled' ? 'Avant-match' : 'Résumé'],['compos','Compos'],['stats','Stats'],...(hasFeed(d) ? [['feed','En direct']] : []),['table','Classement']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}`;
@@ -3102,6 +3154,7 @@ function renderDetail(){
   if (DETAIL.tab === 'chat') chatMount();
 
   $('dback').onclick = backFromDetail;
+  const dfo = $('dfocus'); if (dfo) dfo.onclick = () => { focusSet(!FOCUS.on); DETAIL.headSig = null; renderDetail(); toastMsg(FOCUS.on ? "L'écran reste allumé pendant ce match." : 'Mode match désactivé.'); };
   $('dchat').classList.toggle('on', DETAIL.tab === 'chat');
   $('dchat').onclick = () => { DETAIL.userTab = true; DETAIL.tab = DETAIL.tab === 'chat' ? 'resume' : 'chat'; renderDetail(); };
   // on met à jour le bouton et l'étoile sur place (sans tout redessiner) : les écussons ne clignotent plus
@@ -3388,6 +3441,7 @@ function renderPanel(){
       }
       renderPanel();
     };
+    box.querySelectorAll('[data-mt]').forEach(el => el.onchange = () => { SETTINGS.mute = SETTINGS.mute || {}; SETTINGS.mute[el.dataset.mt] = !el.checked; saveSettings(); pushSync(); });
     box.querySelectorAll('[data-pt]').forEach(el => el.onchange = () => { SETTINGS.pt = SETTINGS.pt || {}; SETTINGS.pt[el.dataset.pt] = el.checked; saveSettings(); pushSync(); });
     if ($('pushTest')) $('pushTest').onclick = async () => { try { await pushTest(); } catch(e) { alert(I18N.tr('Impossible d\'envoyer la notification test.')); } };
     $('setLang').onchange = e => { SETTINGS.lang = e.target.value; saveSettings(); location.reload(); };
@@ -4019,6 +4073,19 @@ function favNextHtml(){
   }).join('');
   return cards ? `<div class="fnx-row">${cards}</div>` : '';
 }
+function updateLiveBar(){
+  let bar = $('lvbar');
+  const t = mainTeam();
+  const live = t && Object.values(GAME_INDEX).find(g => g.status === 'live' && (String(g.homeId) === t.id || String(g.awayId) === t.id));
+  const open = !$('detail').hidden || !$('panel').hidden;
+  if (!live || open){ if (bar) bar.hidden = true; return; }
+  if (!bar){ bar = document.createElement('div'); bar.id = 'lvbar'; document.body.appendChild(bar); bar.onclick = () => { if (bar.dataset.mid) openMatch(bar.dataset.mid); }; }
+  const sc = scoreHidden(live) ? '• - •' : `${live.hs ?? 0} - ${live.as ?? 0}`;
+  bar.dataset.mid = live.id; bar.hidden = false;
+  const html = `<i class="dot"></i><span>${esc(trTeam(live.home))}</span><b>${sc}</b><span>${esc(trTeam(live.away))}</span><small>${minTag(live).replace(/<[^>]*>/g, '')}</small>`;
+  if (bar.dataset.h !== html){ bar.innerHTML = html; bar.dataset.h = html; }
+}
+setInterval(updateLiveBar, 5000);
 function favTodayHtml(){
   const seen = new Set(), list = (FAVSTATE.games || []).filter(g => g.date === TODAY && !seen.has(g.id) && seen.add(g.id)).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   if (list.length < 1) return '';
@@ -4028,7 +4095,11 @@ function favTodayHtml(){
     const tag = live ? 'En direct' : fin ? 'Terminé' : (g.time || '');
     return `<div class="fnx" data-mid="${esc(g.id)}"><div class="tg ${live ? 'lv' : ''}">${esc(tag)}</div><div class="op">${crest(trTeam(g.home) || '', g.homeLogo, 'xs')}<span>${esc(trTeam(g.home))}</span></div><div class="op">${crest(trTeam(g.away) || '', g.awayLogo, 'xs')}<span>${esc(trTeam(g.away))}</span>${sc ? `<b>${sc}</b>` : ''}</div></div>`;
   }).join('');
-  return `<h3 class="ftitle">Aujourd'hui</h3><div class="fnx-row">${cards}</div>`;
+  const fin = list.filter(g => g.status === 'final');
+  let pts = 0, np = 0;
+  Object.entries(PRON.preds).forEach(([id, p]) => { const r = PRON.res[id]; if (p.date === TODAY && r){ pts += pronPts(p, r); np++; } });
+  const sum = fin.length && fin.length === list.length ? `<div class="card2 daysum"><b>Résumé du jour</b><span>${fin.length} match${fin.length > 1 ? 's' : ''} terminé${fin.length > 1 ? 's' : ''}${np ? ` · ${pts} point${pts > 1 ? 's' : ''} aux pronostics` : ''}</span></div>` : '';
+  return `<h3 class="ftitle">Aujourd'hui</h3><div class="fnx-row">${cards}</div>${sum}`;
 }
 function renderFavoris(){
   if (state.page !== 'favoris') return;
