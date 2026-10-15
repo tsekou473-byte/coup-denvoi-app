@@ -221,6 +221,38 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .cb small{ display:block; text-align:right; font-size:.66rem; opacity:.6; margin-top:1px; }
 .chatbar{ position:sticky; bottom:0; display:flex; gap:8px; align-items:center; padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px)); background:var(--card); border-top:1px solid var(--line); max-width:none; }
 .reptxt{ width:100%; box-sizing:border-box; border:1px solid var(--line); background:var(--bg,#f1f4f9); color:var(--text); border-radius:14px; padding:12px 14px; font:inherit; font-size:1rem; outline:none; resize:vertical; margin:6px 0 10px; }
+.ci{ padding:16px; }
+.ci-top{ display:flex; align-items:center; gap:18px; }
+.ci-ring{ width:112px; height:112px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.ci-ring > div{ width:78px; height:78px; border-radius:50%; background:var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.ci-ring b{ font-family:'Barlow Condensed',sans-serif; font-size:1.9rem; line-height:1; }
+.ci-ring small{ color:var(--muted); font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; }
+.ci-leg{ list-style:none; margin:0; padding:0; flex:1; display:flex; flex-direction:column; gap:10px; }
+.ci-leg li{ display:grid; grid-template-columns:12px 1fr auto 42px; align-items:center; gap:8px; }
+.ci-leg i{ width:12px; height:12px; border-radius:4px; }
+.ci-leg b{ font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; }
+.ci-leg em{ font-style:normal; color:var(--muted); font-size:.85rem; text-align:right; }
+.ci-t{ font-family:'Barlow Condensed',sans-serif; text-transform:uppercase; letter-spacing:.08em; color:var(--accent-ink); font-size:.95rem; margin-bottom:10px; }
+.ci-t2{ font-family:'Barlow Condensed',sans-serif; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-size:.95rem; margin:18px 4px 8px; }
+.ci-m{ margin-bottom:14px; } .ci-m:last-child{ margin-bottom:0; }
+.ci-ml{ display:flex; justify-content:space-between; align-items:baseline; }
+.ci-ml b{ font-family:'Barlow Condensed',sans-serif; font-size:1.5rem; }
+.ci-bar{ height:7px; border-radius:99px; background:var(--line); overflow:hidden; margin:3px 0 4px; }
+.ci-bar i{ display:block; height:100%; border-radius:99px; }
+.ci-bar i.g{ background:var(--accent); } .ci-bar i.y{ background:#f2c230; } .ci-bar i.r{ background:#ec5b5b; }
+.ci-m small{ color:var(--muted); }
+.ci-big{ display:grid; grid-template-columns:auto 1fr auto 1fr auto; align-items:center; gap:8px; }
+.ci-big b{ font-family:'Barlow Condensed',sans-serif; font-size:1.7rem; padding:0 6px; }
+.ci-big span:nth-of-type(1){ text-align:right; } .ci-big span{ font-size:.95rem; line-height:1.1; }
+.ci-c{ margin-top:10px; color:var(--muted); font-size:.9rem; } .ci-c b{ color:var(--text); }
+.ci-hs{ display:flex; gap:10px; overflow-x:auto; padding:0 2px 6px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; }
+.ci-pl{ position:relative; flex:0 0 138px; scroll-snap-align:start; background:var(--card); border-radius:18px; padding:14px 10px 12px; text-align:center; box-shadow:0 1px 2px rgba(20,30,50,.08); display:flex; flex-direction:column; align-items:center; gap:4px; }
+.ci-pl small{ color:var(--muted); font-size:.74rem; letter-spacing:.05em; text-transform:uppercase; }
+.ci-pl b{ font-size:.98rem; line-height:1.1; }
+.ci-pl .tm{ display:flex; align-items:center; gap:5px; color:var(--muted); font-size:.82rem; }
+.ci-pl em{ font-style:normal; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.8rem; color:var(--accent-ink); }
+.ci-pl.y em{ color:#c79a00; } .ci-pl.r em{ color:#d64545; }
+.pface.ci{ width:64px; height:64px; font-size:1.1rem; }
 .scl .sc{ display:grid; grid-template-columns:24px 40px 1fr auto 34px; align-items:center; gap:8px; padding:10px 6px 10px 0; border-top:1px solid var(--line); }
 .scl .sc:first-child{ border-top:none; }
 .scl .ps{ text-align:center; font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:1.05rem; }
@@ -331,6 +363,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .nm input{ flex:1; min-width:0; border:1px solid var(--line); border-radius:12px; background:var(--bg); color:var(--text); padding:10px 12px; font-size:1.05rem; font-family:inherit; outline:none; }
 .pill{ font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); padding:2px 8px; border-radius:999px; align-self:center; }
 .dtabs.t5{ gap:4px; } .dtabs.t5 .dtab{ font-size:.82rem; letter-spacing:0; padding-left:2px; padding-right:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dtabs.c5{ gap:3px; } .dtabs.c5 .dtab{ font-size:.74rem; letter-spacing:0; text-overflow:clip; }
 .dtab.dim{ opacity:.5; }
 .avail{ text-align:center; color:var(--muted); font-size:.82rem; padding:0 22px 6px; line-height:1.4; max-width:620px; margin:0 auto; }
 .chev{ color:var(--muted); font-size:1.4rem; line-height:1; }
@@ -578,7 +611,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v138';
+const VERSION = 'v139';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1320,7 +1353,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
   function context(){
     if (!$('panel').hidden){
       if (PANEL.kind === 'competition' && !PANEL.sub){
-        const tabs = ['matches','table','scorers','assists'], i = tabs.indexOf(PANEL.ctab);
+        const tabs = ['info','matches','table','scorers','assists'], i = tabs.indexOf(PANEL.ctab);
         return { els:() => after($('panel'), '.dtabs'), prev:i > 0, next:i >= 0 && i < tabs.length - 1,
           go:dir => { PANEL.ctab = tabs[i + dir]; $('panel').scrollTop = 0; renderPanel(); } };
       }
@@ -2775,8 +2808,8 @@ function renderPanel(){
       PANEL.games.forEach(g => { (byDate[g.date] = byDate[g.date] || []).push(g); });
       mbody = Object.keys(byDate).sort().map(d => `<section class="group" data-d="${d}"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${byDate[d].sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('')}</section>`).join('');
     }
-    const ctabs = `<div class="dtabs">${[['matches','Matchs'],['table','Classement'],['scorers','Buteurs'],['assists','Passeurs']].map(([k,l]) => `<button class="dtab ${PANEL.ctab===k?'active':''}" data-ct="${k}">${l}</button>`).join('')}</div>`;
-    const body = PANEL.ctab === 'table' ? panelTable(c) : (PANEL.ctab === 'scorers' || PANEL.ctab === 'assists') ? panelTops(c, PANEL.ctab) : mbody;
+    const ctabs = `<div class="dtabs t5 c5">${[['info','Aperçu'],['matches','Matchs'],['table','Classement'],['scorers','Buteurs'],['assists','Passeurs']].map(([k,l]) => `<button class="dtab ${PANEL.ctab===k?'active':''}" data-ct="${k}">${l}</button>`).join('')}</div>`;
+    const body = PANEL.ctab === 'info' ? compInfoHtml(c) : PANEL.ctab === 'table' ? panelTable(c) : (PANEL.ctab === 'scorers' || PANEL.ctab === 'assists') ? panelTops(c, PANEL.ctab) : mbody;
     html = head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + ctabs + `<div class="cplist">${body}</div>`;
   } else if (PANEL.kind === 'team') {
     const t = PANEL.team;
@@ -2855,6 +2888,7 @@ function renderPanel(){
     on('sretry', () => { PANEL.standErr = null; renderPanel(); });
     box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { PANEL.ctab = b.dataset.ct; box.scrollTop = 0; renderPanel(); });
     on('tretry2', () => { delete TOPS[PANEL.comp.id]; renderPanel(); });
+    on('ciretry', () => { delete CSTAT[PANEL.comp.id]; renderPanel(); });
   } else if (PANEL.kind === 'report') {
     const st = PANEL.rep;
     $('pback').onclick = () => { PANEL.kind = 'settings'; PANEL.rep = null; renderPanel(); };
@@ -3054,16 +3088,19 @@ function loadTopPhotos(c, rows){
 }
 /* meilleurs buteurs / passeurs d'une compétition */
 const TOPS = {};
-function panelTops(c, kind){
-  const T = TOPS[c.id];
+function ensureTops(c){
+  let T = TOPS[c.id];
   if (!T){
-    TOPS[c.id] = { loading:true };
+    T = TOPS[c.id] = { loading:true };
     apiGet(`${BACKEND}/api/topscorers?league_id=${encodeURIComponent(c.id)}`)
       .then(r => { TOPS[c.id] = { rows:r.data.rows || [], note:r.data.note || '' }; })
       .catch(e => { TOPS[c.id] = { err:e.message }; })
       .finally(() => { if (!$('panel').hidden && PANEL.kind === 'competition' && PANEL.comp && PANEL.comp.id === c.id) renderPanel(); });
-    return `<div class="empty">Chargement des statistiques…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
   }
+  return T;
+}
+function panelTops(c, kind){
+  const T = ensureTops(c);
   if (T.loading) return `<div class="empty">Chargement des statistiques…</div>`;
   if (T.err) return `<div class="empty">Impossible de charger les statistiques.<small>${esc(T.err).slice(0,200)}</small><button class="retry" id="tretry2">Réessayer</button></div>`;
   let rows = (T.rows || []).slice();
@@ -3075,10 +3112,55 @@ function panelTops(c, kind){
   const body = rows.slice(0, 30).map((r, i) => `<div class="sc"><span class="ps">${i + 1}</span>${pfacePlayer({ name:r.name, photo:topPhoto(c, r) }, 'sm')}<span class="who"><b>${esc(r.name)}</b><small>${crest(trTeam(r.team) || '', null, 'sm')} ${esc(trTeam(r.team))}</small></span><span class="sub2">${goals ? `${r.assists} PD` : `${r.goals} but${r.goals > 1 ? 's' : ''}`}</span><span class="big">${goals ? r.goals : r.assists}</span></div>`).join('');
   return `<div class="card2" style="margin:0 0 14px"><div class="tk">${goals ? 'Meilleurs buteurs' : 'Meilleurs passeurs'}</div><div class="scl">${body}</div><div class="tk" style="font-size:.72rem;opacity:.7;text-transform:none;letter-spacing:0;padding-top:8px">Données du fournisseur, mises à jour toutes les 30 min environ</div></div>`;
 }
+/* ---------- aperçu d'une compétition : résumé de la saison ---------- */
+const CSTAT = {};
+function compInfoHtml(c){
+  let S = CSTAT[c.id];
+  if (!S){
+    S = CSTAT[c.id] = { loading:true };
+    apiGet(`${BACKEND}/api/comp-stats?league_id=${encodeURIComponent(c.id)}`)
+      .then(r => { CSTAT[c.id] = { d:r.data }; })
+      .catch(e => { CSTAT[c.id] = { err:e.message }; })
+      .finally(() => { if (!$('panel').hidden && PANEL.kind === 'competition' && PANEL.comp && PANEL.comp.id === c.id) renderPanel(); });
+  }
+  const T = ensureTops(c);
+  if (S.loading) return `<div class="empty">Chargement du résumé de la saison…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
+  if (S.err) return `<div class="empty">Impossible de charger le résumé.<small>${esc(S.err).slice(0,200)}</small><button class="retry" id="ciretry">Réessayer</button></div>`;
+  const d = S.d || {};
+  if (!d.played) return `<div class="card2"><div class="noev">Pas encore de match terminé cette saison.<br><small style="opacity:.8">${esc(d.note || 'Le résumé apparaît dès que des matchs sont joués.')}</small></div></div>`;
+  const pct = n => Math.round(n / d.played * 100);
+  const ph = pct(d.homeWins), pd = pct(d.draws), pa = Math.max(0, 100 - ph - pd);
+  const fmt = n => String(n).replace('.', ',');
+  const meter = (label, val, sub, max, cls) => `<div class="ci-m"><div class="ci-ml"><span>${label}</span><b>${val}</b></div><div class="ci-bar"><i class="${cls}" style="width:${Math.max(3, Math.min(100, val / (max || 1) * 100))}%"></i></div>${sub ? `<small>${sub}</small>` : ''}</div>`;
+  const donut = `<div class="ci-ring" style="background:conic-gradient(var(--accent) 0 ${ph}%, #98a4b7 ${ph}% ${ph + pd}%, #4f7cff ${ph + pd}% 100%)"><div><b>${d.played}</b><small>matchs</small></div></div>`;
+  const legend = `<ul class="ci-leg"><li><i style="background:var(--accent)"></i><span>Domicile</span><b>${d.homeWins}</b><em>${ph}%</em></li><li><i style="background:#98a4b7"></i><span>Nuls</span><b>${d.draws}</b><em>${pd}%</em></li><li><i style="background:#4f7cff"></i><span>Extérieur</span><b>${d.awayWins}</b><em>${pa}%</em></li></ul>`;
+  const season = c.season ? `<div class="ci-t">Saison ${esc(c.season)}</div>` : '<div class="ci-t">Saison en cours</div>';
+  let h = `<div class="card2 ci"><div class="ci-top">${donut}${legend}</div></div>`;
+  h += `<div class="card2 ci">${season}${meter('Buts', d.goals, `${fmt(d.gpm)} / match`, d.goals, 'g')}${meter('Cartons jaunes', d.yellow, `${fmt(Math.round(d.yellow / d.played * 100) / 100)} / match`, Math.max(d.yellow, d.goals), 'y')}${meter('Cartons rouges', d.red, `${fmt(Math.round(d.red / d.played * 100) / 100)} / match`, Math.max(d.yellow, d.goals), 'r')}</div>`;
+  if (d.biggest){
+    const b = d.biggest;
+    h += `<div class="card2 ci"><div class="ci-t">Match le plus riche en buts</div><div class="ci-big">${crest(trTeam(b.home), b.homeLogo, 'sm')}<span>${esc(trTeam(b.home))}</span><b>${b.hs} – ${b.as}</b><span>${esc(trTeam(b.away))}</span>${crest(trTeam(b.away), b.awayLogo, 'sm')}</div>${d.common ? `<div class="ci-c"><span>Score le plus courant :</span> <b>${esc(d.common.score.replace('-', ' – '))}</b> · <span>${d.common.times} fois</span></div>` : ''}</div>`;
+  }
+  // joueurs en vue
+  const rows = (T.rows || []);
+  const sc = rows.slice().sort((a, b) => b.goals - a.goals || b.assists - a.assists)[0];
+  const as = rows.slice().sort((a, b) => b.assists - a.assists || b.goals - a.goals)[0];
+  const tiles = [];
+  if (sc && sc.goals) tiles.push({ k:'Meilleur buteur', r:sc, v:sc.goals });
+  if (as && as.assists) tiles.push({ k:'Meilleur passeur', r:as, v:as.assists });
+  if (d.mostYellow) tiles.push({ k:'Le plus de jaunes', r:d.mostYellow, v:d.mostYellow.n, cls:'y' });
+  if (d.mostRed) tiles.push({ k:'Le plus de rouges', r:d.mostRed, v:d.mostRed.n, cls:'r' });
+  if (tiles.length){
+    const prs = tiles.map(t => ({ name:t.r.name, team:t.r.team, teamId:t.r.teamId }));
+    loadTopPhotos(c, prs);
+    h += `<div class="ci-t2">Joueurs en vue</div><div class="ci-hs">${tiles.map(t => `<div class="ci-pl ${t.cls || ''}">${pfacePlayer({ name:t.r.name, photo:topPhoto(c, { name:t.r.name, team:t.r.team, teamId:t.r.teamId }) }, 'ci')}<small>${t.k}</small><b>${esc(t.r.name)}</b><span class="tm">${crest(trTeam(t.r.team) || '', null, 'sm')}${esc(trTeam(t.r.team))}</span><em>${t.v}</em></div>`).join('')}</div>`;
+  }
+  return h;
+}
 function openCompetition(id){
   const c = (COMP.list || []).find(x => x.id === id);
   if (!c) return;
-  PANEL.comp = c; PANEL.games = null; PANEL.searched = undefined; PANEL.err = null; PANEL.scrolled = false; PANEL.ctab = 'matches'; PANEL.standErr = null; PANEL.standLoading = false;
+  PANEL.comp = c; PANEL.games = null; PANEL.searched = undefined; PANEL.err = null; PANEL.scrolled = false; PANEL.ctab = 'info'; PANEL.standErr = null; PANEL.standLoading = false;
   openPanel('competition');
   loadCompetitionGames(id);
 }
