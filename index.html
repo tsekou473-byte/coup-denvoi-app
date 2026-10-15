@@ -620,7 +620,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v140';
+const VERSION = 'v141';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1561,7 +1561,7 @@ function hideDetail(){
 function backFromDetail(){ if (history.state && history.state.d) history.back(); else hideDetail(); }
 window.addEventListener('popstate', () => {
   if (!$('panel').hidden){
-    if (PANEL.ret){ const r = PANEL.ret; Object.keys(r).forEach(k => { PANEL[k] = r[k]; }); PANEL.ret = null; PANEL.sub = null; PANEL.player = null; $('panel').scrollTop = 0; renderPanel(); }
+    if (PSTACK.length) restorePanel();
     else hidePanel();
   }
   else if (!$('detail').hidden){
@@ -1819,6 +1819,7 @@ function findSquadPlayer(leagueId, teamId, name){
 // Ouvre la fiche d'un joueur touché sur le terrain ou dans les remplaçants,
 // même si l'effectif complet n'a pas encore été consulté (fiche minimale en attendant).
 function openPitchPlayer(side, name, number, d){
+  prePanel();
   const teamId = side === 'home' ? d.homeId : d.awayId;
   const teamName = side === 'home' ? d.home : d.away;
   const teamLogo = side === 'home' ? d.homeLogo : d.awayLogo;
@@ -2254,7 +2255,7 @@ async function getTeam(leagueId, teamId, force){
   return data;
 }
 function openTeam(teamId, leagueId, name, logo){
-  const ret = (!$('panel').hidden && PANEL.kind === 'competition') ? Object.assign({}, PANEL) : null;   // pour revenir à la compétition avec « retour »
+  prePanel();
   try {
     if (!teamId || !leagueId) {
       alert(`Diagnostic — info manquante pour ouvrir l'équipe.\n\néquipe : ${teamId || '(aucune)'}\nchampionnat : ${leagueId || '(aucun)'}\n\nEnvoie une capture de ce message à Claude.`);
@@ -2264,7 +2265,6 @@ function openTeam(teamId, leagueId, name, logo){
     PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = null; PANEL.player = null;
     PANEL.tab = 'info'; PANEL.tgames = null; PANEL.tgErr = null; PANEL.tgLoading = false; PANEL.standErr = null; PANEL.clubOpen = false;
     openPanel('team');
-    PANEL.ret = ret;
     loadSquad();
     loadTeamGames();
   } catch (e) {
@@ -2384,10 +2384,19 @@ function teamTableHtml(){
 }
 /* note de l'équipe (0-100) calculée par l'app : points par match, différence de buts et forme récente */
 function teamRating(rk, fin, t){
-  const r = rk && rk.row; if (!r || !r.played) return null;
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
-  const ppg = clamp((r.pts || 0) / r.played / 3, 0, 1);
-  const gd = (r.gf != null && r.ga != null) ? clamp((r.gf - r.ga) / r.played, -2, 2) / 4 + 0.5 : ppg;
+  let played = 0, pts = 0, gf = null, ga = null;
+  if (rk && rk.row && rk.row.played){ const r = rk.row; played = r.played; pts = r.pts || 0; gf = r.gf; ga = r.ga; }
+  else {
+    // pas de classement chargé : on calcule d'après les derniers matchs terminés de l'équipe
+    const all = (PANEL.tgames || []).filter(g => g.status === 'final' && isFinite(+g.hs) && isFinite(+g.as)).slice(-10);
+    if (all.length < 2) return null;
+    gf = 0; ga = 0;
+    all.forEach(g => { const home = String(g.homeId) === t.id || g.home === t.name; const a = +(home ? g.hs : g.as), b = +(home ? g.as : g.hs); gf += a; ga += b; const x = a > b ? 3 : a === b ? 1 : 0; pts += x; });
+    played = all.length;
+  }
+  const ppg = clamp(pts / played / 3, 0, 1);
+  const gd = (gf != null && ga != null) ? clamp((gf - ga) / played, -2, 2) / 4 + 0.5 : ppg;
   let fp = ppg;
   if (fin && fin.length){ fp = fin.reduce((a, g) => { const x = teamResult(g, t); return a + (x === 'w' ? 3 : x === 'd' ? 1 : 0); }, 0) / (3 * fin.length); }
   return Math.round(40 + 60 * (0.55 * ppg + 0.25 * gd + 0.20 * fp));
@@ -2745,16 +2754,52 @@ const PANEL = { kind:null, msg:false };
 const POS_FR = { Goalkeepers:{g:'Gardiens',one:'Gardien'}, Defenders:{g:'Défenseurs',one:'Défenseur'}, Midfielders:{g:'Milieux',one:'Milieu'}, Forwards:{g:'Attaquants',one:'Attaquant'} };
 const MOIS_TXT = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 function formatBirth(iso){ if(!iso) return ''; const d = fromIso(iso); if(isNaN(d)) return ''; if (I18N.lang !== 'fr'){ const x = I18N.birth(d); if (x) return x; } return `${d.getDate()} ${MOIS_TXT[d.getMonth()]} ${d.getFullYear()}`; }
+/* pile des écrans de la fiche : chaque « retour » revient à l'écran précédent (même défilement), jamais plus loin */
+const PSTACK = [];
+function slideIn(dir){
+  try {
+    const box = $('panel');
+    Array.from(box.children).forEach(ch => { if (ch.animate) ch.animate(dir === 'back' ? [{ transform:'translateX(-14%)', opacity:.0 }, { transform:'none', opacity:1 }] : [{ transform:'translateX(34%)', opacity:.0 }, { transform:'none', opacity:1 }], { duration:300, easing:'cubic-bezier(.2,.8,.2,1)' }); });
+  } catch (e) {}
+}
+let PRE_SNAP = null;
+function prePanel(){ if (!$('panel').hidden && PANEL.kind){ PRE_SNAP = Object.assign({}, PANEL); PRE_SNAP._st = $('panel').scrollTop; } else PRE_SNAP = null; }   // à appeler AVANT de modifier PANEL
+function pushPanelState(){
+  const snap = Object.assign({}, PANEL); snap._st = $('panel').scrollTop;
+  PSTACK.push(snap);
+}
 function openPanel(kind){
   closeDrawer();
-  PANEL.kind = kind; PANEL.msg = false;
   const box = $('panel');
+  const nested = !box.hidden && !!PANEL.kind;
+  if (nested){ if (PRE_SNAP) PSTACK.push(PRE_SNAP); else pushPanelState(); } else PSTACK.length = 0;
+  PRE_SNAP = null;
+  PANEL.kind = kind; PANEL.msg = false;
   box.hidden = false; box.scrollTop = 0; bringToFront(box);
   document.body.style.overflow = 'hidden';
   history.pushState({ p:1 }, '');
   renderPanel();
+  if (nested) slideIn('fwd');
+}
+/* changement d'écran dans la même fiche (réglages → compte, aperçu → « voir plus », équipe → joueur…) avec son propre « retour » */
+function navPanel(kind, patch){
+  pushPanelState();
+  history.pushState({ p:1 }, '');
+  PANEL.kind = kind; Object.assign(PANEL, patch || {});
+  $('panel').scrollTop = 0;
+  renderPanel();
+  slideIn('fwd');
+}
+function restorePanel(){
+  const snap = PSTACK.pop(); if (!snap) return;
+  Object.keys(PANEL).forEach(k => { delete PANEL[k]; });
+  Object.assign(PANEL, snap);
+  renderPanel();
+  $('panel').scrollTop = snap._st || 0;
+  slideIn('back');
 }
 function hidePanel(){
+  PSTACK.length = 0;
   $('panel').hidden = true;
   PANEL.kind = null;
   document.body.style.overflow = ($('detail').hidden ? '' : 'hidden');
@@ -2894,9 +2939,9 @@ function renderPanel(){
     $('setFr').onchange = e => { SETTINGS.fr = e.target.checked; saveSettings(); refreshAfterSetting(); };
     $('setAuto').onchange = e => { SETTINGS.auto = e.target.checked; saveSettings(); };
     $('setLogos').onchange = e => { SETTINGS.logos = e.target.checked; saveSettings(); refreshAfterSetting(); };
-    on('goReport', () => { PANEL.kind = 'report'; PANEL.rep = null; renderPanel(); });
+    on('goReport', () => navPanel('report', { rep:null }));
     on('goPrivacy', () => { window.open('privacy.html', '_blank'); });
-    on('goAccount', () => { PANEL.kind = 'account'; PANEL.msg = false; renderPanel(); });
+    on('goAccount', () => navPanel('account', { msg:false }));
     on('clearCache', () => { clearCache(); renderPanel(); });
   } else if (PANEL.kind === 'competition') {
     on('cretry2', () => { PANEL.err = null; PANEL.games = null; renderPanel(); loadCompetitionGames(PANEL.comp.id); });
@@ -2904,12 +2949,10 @@ function renderPanel(){
     box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { PANEL.ctab = b.dataset.ct; box.scrollTop = 0; renderPanel(); });
     on('tretry2', () => { delete TOPS[PANEL.comp.id]; renderPanel(); });
     on('teretry', () => { delete CTEAMS[PANEL.comp.id]; renderPanel(); });
-    if (PANEL.csub && $('pback')) $('pback').onclick = () => { PANEL.csub = null; box.scrollTop = 0; renderPanel(); };
     on('ciretry', () => { delete CSTAT[PANEL.comp.id]; renderPanel(); });
   } else if (PANEL.kind === 'report') {
     const st = PANEL.rep;
-    $('pback').onclick = () => { PANEL.kind = 'settings'; PANEL.rep = null; renderPanel(); };
-    on('repDone', () => { PANEL.kind = 'settings'; PANEL.rep = null; renderPanel(); });
+    on('repDone', () => backFromPanel());
     if ($('repText')) $('repText').oninput = e => { st.text = e.target.value; };
     on('repSend', async () => {
       const text = ($('repText').value || '').trim(); st.text = text;
@@ -2927,10 +2970,9 @@ function renderPanel(){
     on('accLogin', () => { PANEL.msg = true; renderPanel(); });
     on('accSignup', () => { PANEL.msg = true; renderPanel(); });
     on('accSave', () => { PROFILE.name = $('accName').value.trim(); saveProfile(); updateAccIcon(); renderPanel(); });
-    on('goSettings', () => { PANEL.kind = 'settings'; renderPanel(); });
+    on('goSettings', () => navPanel('settings'));
   } else if (PANEL.kind === 'team') {
     if (PANEL.sub === 'player') {
-      $('pback').onclick = () => { PANEL.sub = null; PANEL.player = null; PANEL.bioOpen = false; renderPanel(); };
       on('bioMore', () => { PANEL.bioOpen = !PANEL.bioOpen; renderPanel(); });
     } else {
       on('clubMore', () => { PANEL.clubOpen = !PANEL.clubOpen; renderPanel(); });
@@ -2942,7 +2984,7 @@ function renderPanel(){
       
       box.querySelectorAll('.prow2').forEach(el => el.onclick = () => {
         const p = PANEL.squad.find(x => playerIdent(x) === el.dataset.id);
-        if (p) { PANEL.sub = 'player'; PANEL.player = p; renderPanel(); }
+        if (p) { navPanel('team', { sub:'player', player:p, bioOpen:false }); }
       });
     }
   }
@@ -3030,6 +3072,7 @@ $('main').addEventListener('click', e => {
   const el = e.target.closest('.srow'); if (!el) return;
   if (el.dataset.k === 't'){ openTeam(el.dataset.tid, el.dataset.lid, el.dataset.name, el.dataset.logo || null); return; }
   const x = SRCH.list[+el.dataset.i]; if (!x) return;
+  prePanel();
   PANEL.team = { id: String(x.team.id), leagueId: String(x.team.leagueId), name: x.team.name, logo: x.team.badge || null };
   PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = 'player'; PANEL.player = x.player;
   openPanel('team'); loadSquad();
@@ -3120,16 +3163,16 @@ function topRow(c, r, i, goals){
   return `<div class="sc tap" data-k="${esc(r.teamId)}|${esc(r.name)}"><span class="ps">${i}</span>${pfacePlayer({ name:r.name, photo:topPhoto(c, r) }, 'sm')}<span class="who"><b>${esc(r.name)}</b><small>${crest(trTeam(r.team) || '', r.badge || null, 'sm')} ${esc(trTeam(r.team))}</small></span><span class="sub2">${goals ? `${r.assists} PD` : `${r.goals} but${r.goals > 1 ? 's' : ''}`}</span><span class="big">${goals ? r.goals : r.assists}</span></div>`;
 }
 function openTopPlayer(c, key){
+  prePanel();
   const T = TOPS[c.id]; if (!T || !T.rows) return;
   const [tid, ...nm] = String(key).split('|'); const name = nm.join('|');
   const r = T.rows.find(x => String(x.teamId) === tid && x.name === name); if (!r) return;
-  const ret = Object.assign({}, PANEL);
   const found = findSquadPlayer(c.id, r.teamId, r.name);
   const player = found || { id: pkey(r.name), name: r.name, fullName: r.name, number: null, age: null, birthdate: null, country: null, position: null, photo: null, captain: false, injured: false, stats: {} };
   if (!player.photo){ const u = topPhoto(c, r); if (u) player.photo = u; }
   PANEL.team = { id: String(r.teamId), leagueId: String(c.id), name: r.team, logo: r.badge || null };
   PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = 'player'; PANEL.player = player;
-  openPanel('team'); PANEL.ret = ret; loadSquad();
+  openPanel('team'); loadSquad();
 }
 /* onglet Équipes d'une compétition */
 const CTEAMS = {};
@@ -3216,7 +3259,7 @@ function compInfoHtml(c){
 function openCompetition(id){
   const c = (COMP.list || []).find(x => x.id === id);
   if (!c) return;
-  PANEL.comp = c; PANEL.games = null; PANEL.searched = undefined; PANEL.err = null; PANEL.scrolled = false; PANEL.ctab = 'info'; PANEL.csub = null; PANEL.ret = null; PANEL.standErr = null; PANEL.standLoading = false;
+  PANEL.comp = c; PANEL.games = null; PANEL.searched = undefined; PANEL.err = null; PANEL.scrolled = false; PANEL.ctab = 'info'; PANEL.csub = null; PANEL.standErr = null; PANEL.standLoading = false;
   openPanel('competition');
   loadCompetitionGames(id);
 }
@@ -3238,7 +3281,7 @@ $('panel').addEventListener('click', e => { const m = e.target.closest('.match')
 $('panel').addEventListener('click', e => {
   if (PANEL.kind !== 'competition' || !PANEL.comp) return;
   const more = e.target.closest('[data-csub]');
-  if (more){ PANEL.csub = more.dataset.csub; $('panel').scrollTop = 0; renderPanel(); return; }
+  if (more){ navPanel('competition', { csub:more.dataset.csub }); return; }
   const row = e.target.closest('.sc[data-k]');
   if (row){ openTopPlayer(PANEL.comp, row.dataset.k); return; }
   const ct = e.target.closest('.ct[data-tid]');
