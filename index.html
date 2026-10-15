@@ -719,7 +719,7 @@ body.dens-compact .match{ padding:7px 10px; gap:6px; } body.dens-compact .match 
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v153';
+const VERSION = 'v154';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1956,6 +1956,7 @@ try { const s = JSON.parse(localStorage.getItem('ce_pron') || '{}'); PRON.preds 
 const savePron = () => { try { localStorage.setItem('ce_pron', JSON.stringify({ preds:PRON.preds, groups:PRON.groups, res:PRON.res })); } catch (e) {} };
 const pronPts = (p, r) => (p.h === r.hs && p.a === r.as) ? 3 : (Math.sign(p.h - p.a) === Math.sign(r.hs - r.as) ? 1 : 0);
 const pronKickTs = d => { const t = d.ts ?? (GAME_INDEX[d.id] || {}).ts; return Number.isFinite(Number(t)) && t !== null ? Number(t) : null; };
+const pronStreak = () => { const a = Object.entries(PRON.preds).filter(([id]) => PRON.res[id]).sort((x, y) => y[1].ts - x[1].ts); let n = 0; for (const [id, p] of a){ if (pronPts(p, PRON.res[id]) >= 1) n++; else break; } return n; };
 const pronTotals = () => { let pts = 0, ex = 0, n = 0; Object.entries(PRON.preds).forEach(([id, p]) => { const r = PRON.res[id]; if (!r) return; const x = pronPts(p, r); pts += x; n++; if (x === 3) ex++; }); return { pts, ex, n }; };
 function pronCard(d){
   const id = String(d.id), ts = pronKickTs(d);
@@ -2030,7 +2031,7 @@ function pronPanelHtml(head){
     const now = Date.now(), all = Object.entries(PRON.preds).map(([id, p]) => ({ id, ...p }));
     const fut = all.filter(p => p.ts > now).sort((a, b) => a.ts - b.ts), past = all.filter(p => p.ts <= now).sort((a, b) => b.ts - a.ts).slice(0, 40);
     const line = (p, r) => { const x = r ? pronPts(p, r) : null; return `<div class="pn-li" data-mid="${esc(p.id)}"><span class="pn-lm">${esc(trTeam(p.home))} - ${esc(trTeam(p.away))}</span><span class="pn-lp">${p.h} - ${p.a}</span>${r ? `<span class="pn-lr">${r.hs} - ${r.as}</span><b class="pn-pt p${x}">${x ? '+' + x : '0'}</b>` : `<span class="pn-lr">${p.ts > now ? shortDate(p.date) : '…'}</span>`}</div>`; };
-    body = `<div class="pn-sum"><div><b>${tt.pts}</b>points</div><div><b>${tt.ex}</b>scores exacts</div><div><b>${tt.n}</b>matchs notés</div></div>
+    body = `<div class="pn-sum"><div><b>${tt.pts}</b>points</div><div><b>${tt.ex}</b>scores exacts</div><div><b>${tt.n}</b>matchs notés</div><div><b>${pronStreak()}</b>série 🔥</div></div>
       <small class="pn-rule">3 points pour le score exact · 1 point pour le bon résultat (victoire, nul, défaite).</small>
       ${!all.length ? `<div class="empty">Aucun pronostic pour l'instant.<small>Ouvre un match à venir : tu peux choisir ton score dans l'onglet Résumé.</small></div>` : ''}
       ${fut.length ? `<h3 class="ftitle">À venir</h3><div class="card2">${fut.map(p => line(p, null)).join('')}</div>` : ''}
@@ -4018,6 +4019,17 @@ function favNextHtml(){
   }).join('');
   return cards ? `<div class="fnx-row">${cards}</div>` : '';
 }
+function favTodayHtml(){
+  const seen = new Set(), list = (FAVSTATE.games || []).filter(g => g.date === TODAY && !seen.has(g.id) && seen.add(g.id)).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  if (list.length < 1) return '';
+  const cards = list.map(g => {
+    const live = g.status === 'live', fin = g.status === 'final';
+    const sc = (live || fin) ? (scoreHidden(g) ? '• - •' : `${g.hs ?? 0} - ${g.as ?? 0}`) : '';
+    const tag = live ? 'En direct' : fin ? 'Terminé' : (g.time || '');
+    return `<div class="fnx" data-mid="${esc(g.id)}"><div class="tg ${live ? 'lv' : ''}">${esc(tag)}</div><div class="op">${crest(trTeam(g.home) || '', g.homeLogo, 'xs')}<span>${esc(trTeam(g.home))}</span></div><div class="op">${crest(trTeam(g.away) || '', g.awayLogo, 'xs')}<span>${esc(trTeam(g.away))}</span>${sc ? `<b>${sc}</b>` : ''}</div></div>`;
+  }).join('');
+  return `<h3 class="ftitle">Aujourd'hui</h3><div class="fnx-row">${cards}</div>`;
+}
 function renderFavoris(){
   if (state.page !== 'favoris') return;
   const main = $('main');
@@ -4027,6 +4039,7 @@ function renderFavoris(){
   }
   let html = pronEntryHtml();
   if (FAV.teams.length && FAVSTATE.games && !FAVSTATE.err) html += favHeroHtml();
+  if (FAVSTATE.games && !FAVSTATE.err) html += favTodayHtml();
   if (FAV.teams.length){
     html += `<h3 class="ftitle">Mes équipes</h3><div class="chips">` + FAV.teams.map(t =>
       `<span class="fchip"><span class="fchip-tap" data-id="${esc(t.id)}" data-lid="${esc(t.leagueId||'')}" data-name="${esc(t.name)}" data-logo="${esc(t.logo||'')}">${crest(trTeam(t.name) || '', t.logo, 'sm')}<b>${esc(trTeam(t.name))}</b></span><i class="fm" data-main="${esc(t.id)}" aria-label="Équipe principale">${mainTeam() && mainTeam().id === t.id ? '★' : '☆'}</i><i class="fx" data-rm="${esc(t.id)}" aria-label="Retirer">✕</i></span>`).join('') + `</div>`;
