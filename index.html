@@ -623,7 +623,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v143';
+const VERSION = 'v144';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -2874,7 +2874,7 @@ function renderPanel(){
     COMP_STRIP = '';
     const body = PANEL.ctab === 'info' ? compInfoHtml(c) : PANEL.ctab === 'table' ? panelTable(c) : PANEL.ctab === 'teams' ? compTeamsHtml(c) : mbody;
     html = PANEL.csub ? head(PANEL.csub === 'scorers' ? 'Meilleurs buteurs' : 'Meilleurs passeurs', esc(trComp(c.name))) + `<div class="cplist">${panelTops(c, PANEL.csub)}</div>`
-      : head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + (PANEL.ctab === 'info' ? COMP_STRIP : '') + ctabs + `<div class="cplist">${body}</div>`;
+      : head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + ctabs + (PANEL.ctab === 'info' ? COMP_STRIP : '') + `<div class="cplist">${body}</div>`;
   } else if (PANEL.kind === 'team') {
     const t = PANEL.team;
     if (PANEL.sub === 'player' && PANEL.player) {
