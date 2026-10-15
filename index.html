@@ -253,6 +253,13 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .ci-pl em{ font-style:normal; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.8rem; color:var(--accent-ink); }
 .ci-pl.y em{ color:#c79a00; } .ci-pl.r em{ color:#d64545; }
 .pface.ci{ width:64px; height:64px; font-size:1.1rem; }
+.ci .more{ display:block; width:100%; margin-top:10px; border:none; background:var(--line); color:var(--text); padding:11px 0; border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+.ci .more::after{ content:' ›'; }
+.ct-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+.ct{ background:var(--card); border-radius:18px; padding:14px 6px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; box-shadow:0 1px 2px rgba(20,30,50,.08); cursor:pointer; }
+.ct:active{ transform:scale(.97); }
+.ct span{ font-size:.86rem; line-height:1.15; font-weight:500; overflow-wrap:anywhere; }
+.scl .sc.tap{ cursor:pointer; }
 .scl .sc{ display:grid; grid-template-columns:24px 40px 1fr auto 34px; align-items:center; gap:8px; padding:10px 6px 10px 0; border-top:1px solid var(--line); }
 .scl .sc:first-child{ border-top:none; }
 .scl .ps{ text-align:center; font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:1.05rem; }
@@ -441,6 +448,8 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .crw{ position:relative; display:inline-flex; flex:none; }
 .rcb{ position:absolute; top:-3px; right:-4px; min-width:11px; height:15px; padding:0 2px; box-sizing:border-box; background:#e5231b; border-radius:2px; border:1px solid #fff; color:#fff; font:700 .6rem/13px system-ui; text-align:center; font-style:normal; box-shadow:0 1px 2px rgba(0,0,0,.4); }
 .rcb.big{ min-width:14px; height:19px; line-height:17px; top:-2px; right:-3px; }
+.crest.md{ width:48px; height:48px; font-size:.9rem; }
+.crest.md img{ padding:5px; }
 .crest.sm{ width:26px; height:26px; font-size:.65rem; box-shadow:none; }
 .crest.sm img{ padding:3px; }
 .fx{ font-style:normal; color:var(--muted); padding:2px 8px; cursor:pointer; font-size:.95rem; }
@@ -611,7 +620,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v139';
+const VERSION = 'v140';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1353,7 +1362,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
   function context(){
     if (!$('panel').hidden){
       if (PANEL.kind === 'competition' && !PANEL.sub){
-        const tabs = ['info','matches','table','scorers','assists'], i = tabs.indexOf(PANEL.ctab);
+        const tabs = ['info','matches','table','teams'], i = PANEL.csub ? -1 : tabs.indexOf(PANEL.ctab);
         return { els:() => after($('panel'), '.dtabs'), prev:i > 0, next:i >= 0 && i < tabs.length - 1,
           go:dir => { PANEL.ctab = tabs[i + dir]; $('panel').scrollTop = 0; renderPanel(); } };
       }
@@ -1551,7 +1560,10 @@ function hideDetail(){
 }
 function backFromDetail(){ if (history.state && history.state.d) history.back(); else hideDetail(); }
 window.addEventListener('popstate', () => {
-  if (!$('panel').hidden) hidePanel();
+  if (!$('panel').hidden){
+    if (PANEL.ret){ const r = PANEL.ret; Object.keys(r).forEach(k => { PANEL[k] = r[k]; }); PANEL.ret = null; PANEL.sub = null; PANEL.player = null; $('panel').scrollTop = 0; renderPanel(); }
+    else hidePanel();
+  }
   else if (!$('detail').hidden){
     if (DETAIL.stack && DETAIL.stack.length){ showPrevMatch(DETAIL.stack.pop()); }
     else hideDetail();
@@ -2242,6 +2254,7 @@ async function getTeam(leagueId, teamId, force){
   return data;
 }
 function openTeam(teamId, leagueId, name, logo){
+  const ret = (!$('panel').hidden && PANEL.kind === 'competition') ? Object.assign({}, PANEL) : null;   // pour revenir à la compétition avec « retour »
   try {
     if (!teamId || !leagueId) {
       alert(`Diagnostic — info manquante pour ouvrir l'équipe.\n\néquipe : ${teamId || '(aucune)'}\nchampionnat : ${leagueId || '(aucun)'}\n\nEnvoie une capture de ce message à Claude.`);
@@ -2251,6 +2264,7 @@ function openTeam(teamId, leagueId, name, logo){
     PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = null; PANEL.player = null;
     PANEL.tab = 'info'; PANEL.tgames = null; PANEL.tgErr = null; PANEL.tgLoading = false; PANEL.standErr = null; PANEL.clubOpen = false;
     openPanel('team');
+    PANEL.ret = ret;
     loadSquad();
     loadTeamGames();
   } catch (e) {
@@ -2808,9 +2822,10 @@ function renderPanel(){
       PANEL.games.forEach(g => { (byDate[g.date] = byDate[g.date] || []).push(g); });
       mbody = Object.keys(byDate).sort().map(d => `<section class="group" data-d="${d}"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${byDate[d].sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('')}</section>`).join('');
     }
-    const ctabs = `<div class="dtabs t5 c5">${[['info','Aperçu'],['matches','Matchs'],['table','Classement'],['scorers','Buteurs'],['assists','Passeurs']].map(([k,l]) => `<button class="dtab ${PANEL.ctab===k?'active':''}" data-ct="${k}">${l}</button>`).join('')}</div>`;
-    const body = PANEL.ctab === 'info' ? compInfoHtml(c) : PANEL.ctab === 'table' ? panelTable(c) : (PANEL.ctab === 'scorers' || PANEL.ctab === 'assists') ? panelTops(c, PANEL.ctab) : mbody;
-    html = head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + ctabs + `<div class="cplist">${body}</div>`;
+    const ctabs = `<div class="dtabs">${[['info','Aperçu'],['matches','Matchs'],['table','Classement'],['teams','Équipes']].map(([k,l]) => `<button class="dtab ${PANEL.ctab===k?'active':''}" data-ct="${k}">${l}</button>`).join('')}</div>`;
+    const body = PANEL.ctab === 'info' ? compInfoHtml(c) : PANEL.ctab === 'table' ? panelTable(c) : PANEL.ctab === 'teams' ? compTeamsHtml(c) : mbody;
+    html = PANEL.csub ? head(PANEL.csub === 'scorers' ? 'Meilleurs buteurs' : 'Meilleurs passeurs', esc(trComp(c.name))) + `<div class="cplist">${panelTops(c, PANEL.csub)}</div>`
+      : head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + ctabs + `<div class="cplist">${body}</div>`;
   } else if (PANEL.kind === 'team') {
     const t = PANEL.team;
     if (PANEL.sub === 'player' && PANEL.player) {
@@ -2888,6 +2903,8 @@ function renderPanel(){
     on('sretry', () => { PANEL.standErr = null; renderPanel(); });
     box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { PANEL.ctab = b.dataset.ct; box.scrollTop = 0; renderPanel(); });
     on('tretry2', () => { delete TOPS[PANEL.comp.id]; renderPanel(); });
+    on('teretry', () => { delete CTEAMS[PANEL.comp.id]; renderPanel(); });
+    if (PANEL.csub && $('pback')) $('pback').onclick = () => { PANEL.csub = null; box.scrollTop = 0; renderPanel(); };
     on('ciretry', () => { delete CSTAT[PANEL.comp.id]; renderPanel(); });
   } else if (PANEL.kind === 'report') {
     const st = PANEL.rep;
@@ -3099,6 +3116,37 @@ function ensureTops(c){
   }
   return T;
 }
+function topRow(c, r, i, goals){
+  return `<div class="sc tap" data-k="${esc(r.teamId)}|${esc(r.name)}"><span class="ps">${i}</span>${pfacePlayer({ name:r.name, photo:topPhoto(c, r) }, 'sm')}<span class="who"><b>${esc(r.name)}</b><small>${crest(trTeam(r.team) || '', r.badge || null, 'sm')} ${esc(trTeam(r.team))}</small></span><span class="sub2">${goals ? `${r.assists} PD` : `${r.goals} but${r.goals > 1 ? 's' : ''}`}</span><span class="big">${goals ? r.goals : r.assists}</span></div>`;
+}
+function openTopPlayer(c, key){
+  const T = TOPS[c.id]; if (!T || !T.rows) return;
+  const [tid, ...nm] = String(key).split('|'); const name = nm.join('|');
+  const r = T.rows.find(x => String(x.teamId) === tid && x.name === name); if (!r) return;
+  const ret = Object.assign({}, PANEL);
+  const found = findSquadPlayer(c.id, r.teamId, r.name);
+  const player = found || { id: pkey(r.name), name: r.name, fullName: r.name, number: null, age: null, birthdate: null, country: null, position: null, photo: null, captain: false, injured: false, stats: {} };
+  if (!player.photo){ const u = topPhoto(c, r); if (u) player.photo = u; }
+  PANEL.team = { id: String(r.teamId), leagueId: String(c.id), name: r.team, logo: r.badge || null };
+  PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = 'player'; PANEL.player = player;
+  openPanel('team'); PANEL.ret = ret; loadSquad();
+}
+/* onglet Équipes d'une compétition */
+const CTEAMS = {};
+function compTeamsHtml(c){
+  let S = CTEAMS[c.id];
+  if (!S){
+    S = CTEAMS[c.id] = { loading:true };
+    apiGet(`${BACKEND}/api/teams?league_id=${encodeURIComponent(c.id)}`)
+      .then(r => { CTEAMS[c.id] = { list:r.data.teams || [], note:r.data.note || '' }; })
+      .catch(e => { CTEAMS[c.id] = { err:e.message }; })
+      .finally(() => { if (!$('panel').hidden && PANEL.kind === 'competition' && PANEL.comp && PANEL.comp.id === c.id) renderPanel(); });
+  }
+  if (S.loading) return `<div class="empty">Chargement des équipes…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
+  if (S.err) return `<div class="empty">Impossible de charger les équipes.<small>${esc(S.err).slice(0,200)}</small><button class="retry" id="teretry">Réessayer</button></div>`;
+  if (!S.list.length) return `<div class="card2"><div class="noev">Pas de liste d'équipes pour cette compétition.<br><small style="opacity:.8">${esc(S.note || 'Le fournisseur de données ne la envoie pas.')}</small></div></div>`;
+  return `<div class="ct-grid">${S.list.map(t => `<div class="ct" data-tid="${esc(t.id)}" data-name="${esc(t.name)}" data-logo="${esc(t.badge || '')}">${crest(trTeam(t.name), t.badge, 'md')}<span>${esc(trTeam(t.name))}</span></div>`).join('')}</div>`;
+}
 function panelTops(c, kind){
   const T = ensureTops(c);
   if (T.loading) return `<div class="empty">Chargement des statistiques…</div>`;
@@ -3109,7 +3157,7 @@ function panelTops(c, kind){
   rows = goals ? rows.sort((a, b) => b.goals - a.goals || b.assists - a.assists) : rows.filter(r => r.assists > 0).sort((a, b) => b.assists - a.assists || b.goals - a.goals);
   if (!rows.length) return `<div class="card2"><div class="noev">Aucune passe décisive enregistrée pour le moment.</div></div>`;
   loadTopPhotos(c, rows.slice(0, 30));
-  const body = rows.slice(0, 30).map((r, i) => `<div class="sc"><span class="ps">${i + 1}</span>${pfacePlayer({ name:r.name, photo:topPhoto(c, r) }, 'sm')}<span class="who"><b>${esc(r.name)}</b><small>${crest(trTeam(r.team) || '', null, 'sm')} ${esc(trTeam(r.team))}</small></span><span class="sub2">${goals ? `${r.assists} PD` : `${r.goals} but${r.goals > 1 ? 's' : ''}`}</span><span class="big">${goals ? r.goals : r.assists}</span></div>`).join('');
+  const body = rows.slice(0, 30).map((r, i) => topRow(c, r, i + 1, goals)).join('');
   return `<div class="card2" style="margin:0 0 14px"><div class="tk">${goals ? 'Meilleurs buteurs' : 'Meilleurs passeurs'}</div><div class="scl">${body}</div><div class="tk" style="font-size:.72rem;opacity:.7;text-transform:none;letter-spacing:0;padding-top:8px">Données du fournisseur, mises à jour toutes les 30 min environ</div></div>`;
 }
 /* ---------- aperçu d'une compétition : résumé de la saison ---------- */
@@ -3143,6 +3191,14 @@ function compInfoHtml(c){
   }
   // joueurs en vue
   const rows = (T.rows || []);
+  let lists = '';
+  if (rows.length){
+    loadTopPhotos(c, rows.slice(0, 12));
+    const byG = rows.slice().sort((a, b) => b.goals - a.goals || b.assists - a.assists).filter(r => r.goals > 0).slice(0, 5);
+    const byA = rows.slice().sort((a, b) => b.assists - a.assists || b.goals - a.goals).filter(r => r.assists > 0).slice(0, 5);
+    const card = (title, list, goals, sub) => list.length ? `<div class="card2 ci"><div class="ci-t">${title}</div><div class="scl">${list.map((r, i) => topRow(c, r, i + 1, goals)).join('')}</div><button class="more" data-csub="${sub}">Voir plus</button></div>` : '';
+    lists = card('Meilleurs buteurs', byG, true, 'scorers') + card('Meilleurs passeurs', byA, false, 'assists');
+  }
   const sc = rows.slice().sort((a, b) => b.goals - a.goals || b.assists - a.assists)[0];
   const as = rows.slice().sort((a, b) => b.assists - a.assists || b.goals - a.goals)[0];
   const tiles = [];
@@ -3155,12 +3211,12 @@ function compInfoHtml(c){
     loadTopPhotos(c, prs);
     h += `<div class="ci-t2">Joueurs en vue</div><div class="ci-hs">${tiles.map(t => `<div class="ci-pl ${t.cls || ''}">${pfacePlayer({ name:t.r.name, photo:topPhoto(c, { name:t.r.name, team:t.r.team, teamId:t.r.teamId }) }, 'ci')}<small>${t.k}</small><b>${esc(t.r.name)}</b><span class="tm">${crest(trTeam(t.r.team) || '', null, 'sm')}${esc(trTeam(t.r.team))}</span><em>${t.v}</em></div>`).join('')}</div>`;
   }
-  return h;
+  return h + lists;
 }
 function openCompetition(id){
   const c = (COMP.list || []).find(x => x.id === id);
   if (!c) return;
-  PANEL.comp = c; PANEL.games = null; PANEL.searched = undefined; PANEL.err = null; PANEL.scrolled = false; PANEL.ctab = 'info'; PANEL.standErr = null; PANEL.standLoading = false;
+  PANEL.comp = c; PANEL.games = null; PANEL.searched = undefined; PANEL.err = null; PANEL.scrolled = false; PANEL.ctab = 'info'; PANEL.csub = null; PANEL.ret = null; PANEL.standErr = null; PANEL.standLoading = false;
   openPanel('competition');
   loadCompetitionGames(id);
 }
@@ -3179,6 +3235,15 @@ async function loadCompetitionGames(id){
 }
 $('main').addEventListener('click', e => { const c = e.target.closest('.crow'); if (c) openCompetition(c.dataset.id); });
 $('panel').addEventListener('click', e => { const m = e.target.closest('.match'); if (m) openMatch(m.dataset.id); });
+$('panel').addEventListener('click', e => {
+  if (PANEL.kind !== 'competition' || !PANEL.comp) return;
+  const more = e.target.closest('[data-csub]');
+  if (more){ PANEL.csub = more.dataset.csub; $('panel').scrollTop = 0; renderPanel(); return; }
+  const row = e.target.closest('.sc[data-k]');
+  if (row){ openTopPlayer(PANEL.comp, row.dataset.k); return; }
+  const ct = e.target.closest('.ct[data-tid]');
+  if (ct) openTeam(ct.dataset.tid, PANEL.comp.id, ct.dataset.name, ct.dataset.logo || null);
+});
 $('panel').addEventListener('click', e => { const el = e.target.closest('.tr[data-tid]'); if (el) openTeam(el.dataset.tid, el.dataset.lid, el.dataset.name, el.dataset.logo || null); });
 $('detail').addEventListener('click', e => {
   const sh = e.target.closest('.sech');
