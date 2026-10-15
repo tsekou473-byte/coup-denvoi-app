@@ -634,6 +634,24 @@ body.dens-compact .match{ padding:7px 10px; gap:6px; } body.dens-compact .match 
 .fb.w{ border-color:#2ec27e; } .fb.d{ border-color:#f5c242; } .fb.l{ border-color:#ff5a5f; }
 .fb b{ font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; }
 .fb small{ color:var(--muted); font-size:.72rem; }
+.pron{padding:12px 14px}.pn-t{font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);font-weight:600;margin-bottom:8px}
+.pn-row{display:flex;align-items:center;justify-content:center;gap:8px}.pn-nm{flex:1;font-weight:600;font-size:.95rem;text-align:center;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pn-c{display:flex;flex-direction:column;align-items:center;gap:2px}.pn-c b{font-size:1.7rem;font-family:'Barlow Condensed',sans-serif;line-height:1.1}
+.pn-c button{width:38px;height:30px;border:none;border-radius:10px;background:var(--line);color:var(--text);font-size:1.2rem;cursor:pointer}
+.pn-ok{display:block;width:100%;margin-top:10px;border:none;border-radius:12px;padding:11px;background:var(--accent);color:#1b1305;font-weight:700;font-size:1rem;cursor:pointer}.pn-ok.saved{background:var(--line);color:var(--text)}
+.pn-s{display:block;margin-top:8px;color:var(--muted);font-size:.8rem;text-align:center}.pn-s u{cursor:pointer;color:var(--accent-ink)}
+.pn-done{display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center}.pn-g{color:#1f9d55}.pn-b{color:var(--muted)}
+.pn-tabs{display:flex;gap:8px;margin:12px 10px}.pn-tabs button{flex:1;border:none;border-radius:999px;padding:9px;background:var(--card-head);color:var(--text);font-weight:600;cursor:pointer}.pn-tabs button.on{background:var(--accent);color:#1b1305}
+.pn-sum{display:flex;gap:8px;margin:0 10px 6px}.pn-sum div{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center;font-size:.8rem;color:var(--muted)}.pn-sum b{display:block;font-size:1.6rem;color:var(--text);font-family:'Barlow Condensed',sans-serif}
+.pn-rule{display:block;margin:0 14px 6px;color:var(--muted)}
+.pn-li,.pn-rk,.pn-pk{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--line)}.pn-li:first-child,.pn-rk:first-of-type,.pn-pk:first-of-type{border-top:none}
+.pn-lm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.92rem}.pn-lp{font-weight:700}.pn-lr{color:var(--muted);font-size:.85rem;min-width:44px;text-align:right}
+.pn-pt{min-width:28px;text-align:center;border-radius:8px;padding:2px 6px;background:var(--line)}.pn-pt.p3{background:#1f9d55;color:#fff}.pn-pt.p1{background:var(--accent);color:#1b1305}
+.pn-in{width:100%;border:1px solid var(--line);background:var(--card-head);color:var(--text);border-radius:12px;padding:11px 12px;font-size:1rem;margin-top:8px}.pn-f{display:flex;gap:8px;align-items:center;margin-top:2px}.pn-f .pn-in{flex:1}
+.pn-sel{outline:2px solid var(--accent)}.pn-code{display:flex;align-items:center;gap:10px;padding:12px 14px}.pn-code b{font-size:1.3rem;letter-spacing:.15em;flex:1}
+.pn-rk i{font-style:normal;width:22px;font-weight:700;color:var(--muted)}.pn-rk span{flex:1;font-weight:600}.pn-rk small{color:var(--muted)}.pn-rk b{font-size:1.2rem;min-width:30px;text-align:right}.pn-rk.me{background:rgba(255,180,0,.12)}
+.pn-rvt{padding:10px 14px;font-weight:600;background:var(--card-head)}.pn-pk span{flex:1}.pn-pk em{color:var(--muted)}
+.pn-entry{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin-top:10px;cursor:pointer}.pn-entry b{display:block}.pn-entry small{color:var(--muted)}.pn-entry span{font-size:1.6rem;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -701,7 +719,7 @@ body.dens-compact .match{ padding:7px 10px; gap:6px; } body.dens-compact .match 
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v149';
+const VERSION = 'v150';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1932,6 +1950,156 @@ function varCard(d){
   const rows = list.map(x => `<div class="varrow"><span class="vmin">${esc(x.time)}${x.time ? "'" : ''}</span><span class="vtag ${x.kind}">VAR</span><div class="vtx"><b>${esc(lbl(x.kind))}</b>${x.player || x.team ? `<small>${[x.player ? esc(x.player) : '', x.team ? esc(trTeam(x.team === 'home' ? d.home : d.away)) : ''].filter(Boolean).join(' · ')}</small>` : ''}</div></div>`).join('');
   return `<div class="card2 varcard"><div class="tk">Décisions VAR</div>${rows}</div>`;
 }
+/* ---------- pronostics entre amis ---------- */
+const PRON = { preds:{}, groups:[], res:{}, draft:{}, boards:{}, busy:false, err:'', last:0, syncing:false };
+try { const s = JSON.parse(localStorage.getItem('ce_pron') || '{}'); PRON.preds = s.preds || {}; PRON.groups = Array.isArray(s.groups) ? s.groups : []; PRON.res = s.res || {}; } catch (e) {}
+const savePron = () => { try { localStorage.setItem('ce_pron', JSON.stringify({ preds:PRON.preds, groups:PRON.groups, res:PRON.res })); } catch (e) {} };
+const pronPts = (p, r) => (p.h === r.hs && p.a === r.as) ? 3 : (Math.sign(p.h - p.a) === Math.sign(r.hs - r.as) ? 1 : 0);
+const pronKickTs = d => { const t = d.ts ?? (GAME_INDEX[d.id] || {}).ts; return Number.isFinite(Number(t)) && t !== null ? Number(t) : null; };
+const pronTotals = () => { let pts = 0, ex = 0, n = 0; Object.entries(PRON.preds).forEach(([id, p]) => { const r = PRON.res[id]; if (!r) return; const x = pronPts(p, r); pts += x; n++; if (x === 3) ex++; }); return { pts, ex, n }; };
+function pronCard(d){
+  const id = String(d.id), ts = pronKickTs(d);
+  if (id.startsWith('afr:') || !ts) return '';
+  const p = PRON.preds[id], open = d.status === 'scheduled' && Date.now() < ts;
+  if (open){
+    const dr = PRON.draft[id] || (PRON.draft[id] = p ? { h:p.h, a:p.a } : { h:1, a:1 });
+    const st = (k, v) => `<div class="pn-c"><button data-pd="${k}" data-s="-1" aria-label="Moins">−</button><b>${v}</b><button data-pd="${k}" data-s="1" aria-label="Plus">+</button></div>`;
+    const dirty = !p || p.h !== dr.h || p.a !== dr.a;
+    return `<div class="card2 pron" data-pid="${esc(id)}"><div class="pn-t">Ton pronostic</div>
+      <div class="pn-row"><span class="pn-nm">${esc(trTeam(d.home))}</span>${st('h', dr.h)}<i>-</i>${st('a', dr.a)}<span class="pn-nm">${esc(trTeam(d.away))}</span></div>
+      <button class="pn-ok ${dirty ? '' : 'saved'}" data-pok="1">${p ? (dirty ? 'Modifier mon pronostic' : '✓ Pronostic enregistré') : 'Valider mon pronostic'}</button>
+      <small class="pn-s">Tes amis voient ton score seulement après le coup d'envoi. <u data-pgo="1">Mes pronostics</u></small></div>`;
+  }
+  if (!p) return '';
+  let tail = '';
+  if (d.status === 'final' && d.hs != null){ const x = pronPts(p, { hs:Number(d.hs), as:Number(d.as) }); tail = x === 3 ? '<b class="pn-g">Score exact · +3 pts</b>' : x === 1 ? '<b class="pn-g">Bon résultat · +1 pt</b>' : '<b class="pn-b">Raté · 0 pt</b>'; }
+  else tail = '<small class="pn-s">En attente du résultat</small>';
+  return `<div class="card2 pron"><div class="pn-t">Ton pronostic</div><div class="pn-done"><span>${esc(trTeam(d.home))} <b>${p.h} - ${p.a}</b> ${esc(trTeam(d.away))}</span>${tail}</div></div>`;
+}
+function pronValidate(d){
+  const id = String(d.id), ts = pronKickTs(d), dr = PRON.draft[id];
+  if (!ts || !dr) return;
+  if (Date.now() >= ts - 5000){ toastMsg('Le match a commencé : plus de pronostic possible.'); return; }
+  PRON.preds[id] = { h:dr.h, a:dr.a, at:Date.now(), ts, date:d.pdate || d.date || '', home:d.home || '', away:d.away || '', comp:d.comp || '' };
+  const ids = Object.keys(PRON.preds);
+  if (ids.length > 300){ ids.sort((a, b) => PRON.preds[a].ts - PRON.preds[b].ts).slice(0, ids.length - 300).forEach(k => { delete PRON.preds[k]; delete PRON.res[k]; }); }
+  savePron(); toastMsg('Pronostic enregistré ✓'); pronSync();
+}
+async function pronSync(){
+  if (PRON.syncing) return; if (!Object.keys(PRON.preds).length && !PRON.groups.length) return;
+  PRON.syncing = true;
+  try {
+    const lim = Date.now() - 21 * 86400000, preds = {};
+    Object.entries(PRON.preds).forEach(([id, p]) => { if (p.ts > lim) preds[id] = p; });
+    await fetch(`${BACKEND}/api/pron/sync`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ uid:CHAT.uid, name:PROFILE.name.trim(), groups:PRON.groups, preds }) });
+    PRON.last = Date.now();
+  } catch (e) {} finally { PRON.syncing = false; }
+}
+async function pronSettle(){
+  const now = Date.now(), dates = new Set();
+  Object.entries(PRON.preds).forEach(([id, p]) => { if (!PRON.res[id] && p.ts < now - 100 * 60000 && p.date) dates.add(p.date); });
+  let got = false;
+  for (const dt of [...dates].slice(0, 6)){
+    try { (await getDay(dt)).forEach(g => { const id = String(g.id); if (PRON.preds[id] && g.status === 'final' && g.hs != null && g.as != null && !PRON.res[id]){ PRON.res[id] = { hs:Number(g.hs), as:Number(g.as) }; got = true; } }); } catch (e) {}
+  }
+  if (got){ savePron(); if (PANEL.kind === 'pron' && !$('panel').hidden) renderPanel(); }
+}
+async function pronLoadBoard(code){
+  PRON.busy = true; PRON.err = '';
+  try {
+    await pronSync();
+    const r = await fetch(`${BACKEND}/api/pron/board?code=${encodeURIComponent(code)}`);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'Erreur');
+    PRON.boards[code] = j;
+  } catch (e) { PRON.err = String(e.message || e); }
+  PRON.busy = false;
+  if (PANEL.kind === 'pron' && !$('panel').hidden) renderPanel();
+}
+async function pronPost(path, body){
+  const r = await fetch(`${BACKEND}/api/pron/${path}`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ uid:CHAT.uid, name:PROFILE.name.trim(), ...body }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'Erreur');
+  return j;
+}
+function pronPanelHtml(head){
+  const tab = PANEL.ptab || 'mine', tt = pronTotals();
+  const tabs = `<div class="pn-tabs">${[['mine','Mes pronos'],['board','Classement']].map(([k, l]) => `<button data-ptab="${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  let body = '';
+  if (tab === 'mine'){
+    const now = Date.now(), all = Object.entries(PRON.preds).map(([id, p]) => ({ id, ...p }));
+    const fut = all.filter(p => p.ts > now).sort((a, b) => a.ts - b.ts), past = all.filter(p => p.ts <= now).sort((a, b) => b.ts - a.ts).slice(0, 40);
+    const line = (p, r) => { const x = r ? pronPts(p, r) : null; return `<div class="pn-li" data-mid="${esc(p.id)}"><span class="pn-lm">${esc(trTeam(p.home))} - ${esc(trTeam(p.away))}</span><span class="pn-lp">${p.h} - ${p.a}</span>${r ? `<span class="pn-lr">${r.hs} - ${r.as}</span><b class="pn-pt p${x}">${x ? '+' + x : '0'}</b>` : `<span class="pn-lr">${p.ts > now ? shortDate(p.date) : '…'}</span>`}</div>`; };
+    body = `<div class="pn-sum"><div><b>${tt.pts}</b>points</div><div><b>${tt.ex}</b>scores exacts</div><div><b>${tt.n}</b>matchs notés</div></div>
+      <small class="pn-rule">3 points pour le score exact · 1 point pour le bon résultat (victoire, nul, défaite).</small>
+      ${!all.length ? `<div class="empty">Aucun pronostic pour l'instant.<small>Ouvre un match à venir : tu peux choisir ton score dans l'onglet Résumé.</small></div>` : ''}
+      ${fut.length ? `<h3 class="ftitle">À venir</h3><div class="card2">${fut.map(p => line(p, null)).join('')}</div>` : ''}
+      ${past.length ? `<h3 class="ftitle">Passés</h3><div class="card2">${past.map(p => line(p, PRON.res[p.id])).join('')}</div>` : ''}`;
+  } else {
+    const named = PROFILE.name.trim().length >= 2;
+    const forms = `<div class="card2 set"><div class="row col"><div class="rl"><b>Joue avec tes amis</b><small>Crée un groupe et partage le code, ou entre le code d'un ami. Vos pronostics se comparent au fil des matchs.</small></div>
+      ${named ? '' : `<input id="pnName" class="pn-in" maxlength="20" placeholder="Ton pseudo (visible par le groupe)">`}
+      <div class="pn-f"><input id="pnGname" class="pn-in" maxlength="24" placeholder="Nom du groupe"><button class="btn small" id="pnNew">Créer</button></div>
+      <div class="pn-f"><input id="pnCode" class="pn-in" maxlength="6" autocapitalize="characters" placeholder="Code d'un ami" data-notr><button class="btn small" id="pnJoin">Rejoindre</button></div>
+      ${PRON.err ? `<div class="note">${esc(PRON.err)}</div>` : ''}</div></div>`;
+    const sel = PANEL.pcode && PRON.groups.some(g => g.code === PANEL.pcode) ? PANEL.pcode : (PRON.groups[0] || {}).code;
+    if (!PRON.groups.length) body = forms;
+    else {
+      const chips = `<div class="chips">${PRON.groups.map(g => `<span class="fchip ${g.code === sel ? 'pn-sel' : ''}" data-pcode="${esc(g.code)}"><b>${esc(g.name)}</b></span>`).join('')}</div>`;
+      const b = PRON.boards[sel];
+      let inner = '';
+      if (!b) inner = PRON.err ? `<div class="empty">${esc(PRON.err)}<button class="retry" id="pnRetry">Réessayer</button></div>` : `<div class="empty">Chargement du classement…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
+      else {
+        const me = PROFILE.name.trim();
+        inner = `<div class="card2"><div class="pn-code">Code du groupe <b data-notr>${esc(sel)}</b><button class="btn small" id="pnShare">Partager</button></div>
+          ${b.rows.map((r, i) => `<div class="pn-rk ${r.name === me ? 'me' : ''}"><i>${i + 1}</i><span>${esc(r.name)}</span><small>${r.exact} exact${r.exact > 1 ? 's' : ''} · ${r.n} match${r.n > 1 ? 's' : ''}</small><b>${r.pts}</b></div>`).join('')}</div>
+          ${b.reveals.length ? `<h3 class="ftitle">Derniers matchs</h3>${b.reveals.map(m => `<div class="card2 pn-rv"><div class="pn-rvt">${esc(trTeam(m.home))} - ${esc(trTeam(m.away))}${m.res ? ` <b>${m.res.hs} - ${m.res.as}</b>` : ''}</div>${m.picks.map(k => `<div class="pn-pk"><span>${esc(k.name)}</span><b>${k.h} - ${k.a}</b>${k.pts == null ? '<em>…</em>' : `<b class="pn-pt p${k.pts}">${k.pts ? '+' + k.pts : '0'}</b>`}</div>`).join('')}</div>`).join('')}` : ''}
+          <button class="cmpbtn" id="pnLeave">Quitter ce groupe</button>`;
+      }
+      body = chips + inner + `<h3 class="ftitle">Autre groupe</h3>` + forms;
+    }
+  }
+  return head('Pronostics', 'Entre amis') + tabs + body;
+}
+function bindPron(box){
+  box.querySelectorAll('[data-ptab]').forEach(b => b.onclick = () => { PANEL.ptab = b.dataset.ptab; renderPanel(); if (PANEL.ptab === 'board'){ const c = PANEL.pcode || (PRON.groups[0] || {}).code; if (c) pronLoadBoard(c); } });
+  box.querySelectorAll('[data-pcode]').forEach(b => b.onclick = () => { PANEL.pcode = b.dataset.pcode; renderPanel(); pronLoadBoard(PANEL.pcode); });
+  box.querySelectorAll('.pn-li[data-mid]').forEach(b => b.onclick = () => { if (GAME_INDEX[b.dataset.mid]) openMatch(b.dataset.mid); });
+  const name = () => { const e = $('pnName'); if (e && e.value.trim().length >= 2){ PROFILE.name = e.value.trim(); saveProfile(); updateAccIcon(); } if (PROFILE.name.trim().length < 2){ PRON.err = 'Choisis un pseudo (2 lettres minimum).'; renderPanel(); return false; } return true; };
+  const add = (g) => { if (!PRON.groups.some(x => x.code === g.code)) PRON.groups.push({ code:g.code, name:g.name }); PANEL.pcode = g.code; PRON.err = ''; savePron(); renderPanel(); pronLoadBoard(g.code); };
+  const go = async fn => { try { PRON.err = ''; await fn(); } catch (e) { PRON.err = String(e.message || e); renderPanel(); } };
+  const nw = $('pnNew'); if (nw) nw.onclick = () => { if (!name()) return; go(async () => add(await pronPost('group', { groupName:$('pnGname').value }))); };
+  const jn = $('pnJoin'); if (jn) jn.onclick = () => { if (!name()) return; go(async () => add(await pronPost('join', { code:$('pnCode').value }))); };
+  const rt = $('pnRetry'); if (rt) rt.onclick = () => pronLoadBoard(PANEL.pcode || (PRON.groups[0] || {}).code);
+  const sh = $('pnShare'); if (sh) sh.onclick = async () => {
+    const c = PANEL.pcode || (PRON.groups[0] || {}).code, g = PRON.groups.find(x => x.code === c) || {};
+    const txt = `Rejoins mon groupe de pronostics « ${g.name} » sur Coup d'Envoi ! Code : ${c}\nhttps://tsekou473-byte.github.io/coup-denvoi-app/`;
+    try { if (navigator.share) await navigator.share({ text:txt }); else { await navigator.clipboard.writeText(txt); toastMsg('Invitation copiée'); } } catch (e) {}
+  };
+  const lv = $('pnLeave'); if (lv) lv.onclick = () => {
+    const c = PANEL.pcode || (PRON.groups[0] || {}).code; if (!c || !confirm(I18N.tr('Quitter ce groupe ?'))) return;
+    PRON.groups = PRON.groups.filter(g => g.code !== c); delete PRON.boards[c]; PANEL.pcode = null; savePron(); renderPanel(); pronSync();
+  };
+}
+function pronEntryHtml(){
+  const tt = pronTotals(), n = Object.keys(PRON.preds).length;
+  return `<div class="card2 pn-entry" id="goPron"><div><b>Pronostics entre amis</b><small>${n ? tt.pts + ' pt' + (tt.pts > 1 ? 's' : '') + ' · ' + n + ' prono' + (n > 1 ? 's' : '') : 'Devine les scores et défie tes amis'}</small></div><span>›</span></div>`;
+}
+setTimeout(() => { pronSettle(); pronSync(); }, 5000);
+setInterval(() => { if (!document.hidden){ pronSettle(); pronSync(); } }, 240000);
+document.addEventListener('click', e => {
+  if (e.target.closest('#goPron')){ PANEL.ptab = PRON.groups.length && !Object.keys(PRON.preds).length ? 'board' : 'mine'; openPanel('pron'); pronSettle(); pronSync(); if (PANEL.ptab === 'board' && PRON.groups[0]) pronLoadBoard(PRON.groups[0].code); return; }
+  const dt = $('detail'), t = e.target;
+  if (!dt || !dt.contains(t)) return;
+  const box = t.closest('.pron[data-pid]'); if (!box) return;
+  const d = DETAIL.data; if (!d) return;
+  const id = box.dataset.pid;
+  if (t.closest('[data-pgo]')){ PANEL.ptab = 'mine'; openPanel('pron'); pronSettle(); return; }
+  const st = t.closest('[data-pd]');
+  if (st){ const dr = PRON.draft[id] || (PRON.draft[id] = { h:1, a:1 }); const k = st.dataset.pd; dr[k] = Math.max(0, Math.min(20, dr[k] + Number(st.dataset.s))); box.outerHTML = pronCard(d); return; }
+  if (t.closest('[data-pok]')){ pronValidate(d); box.outerHTML = pronCard(d); }
+});
+
 function tabResume(d){
   if (scoreHidden(d)) return `<div class="card2"><div class="noev">Score masqué.<small style="display:block;margin-top:6px">Touche le score en haut pour l'afficher.</small></div></div>`;
   preloadSquadPhotos(d);
@@ -1955,7 +2123,7 @@ function tabResume(d){
   const avail = `Données reçues : ${nb(d.goals.length, 'but')} · ${nb(d.cards.length, 'carton')} · ${nb(d.subs.length, 'remplacement')} · compositions ${hasLu ? 'oui' : 'non'} · statistiques ${d.stats.length ? 'oui' : 'non'}`;
   if (d.status === 'scheduled') loadWinProb(d);
   if (d.status === 'live') loadWinProb(d);
-  return `${liveProbCard(d)}${predCard(d)}${timelineHtml(d)}${html}${h2hHtml(d)}`;
+  return `${liveProbCard(d)}${pronCard(d)}${predCard(d)}${timelineHtml(d)}${html}${h2hHtml(d)}`;
 }
 
 const PARTICLES = new Set(['de','da','do','dos','das','van','von','der','den','di','del','le','la','el','al','bin','ter','ten']);
@@ -3152,6 +3320,8 @@ function renderPanel(){
     } else {
       html = teamPanelHtml(head);
     }
+  } else if (PANEL.kind === 'pron') {
+    html = pronPanelHtml(head);
   } else if (PANEL.kind === 'compare' && PANEL.cmp) {
     html = compareHtml(head);
   } else if (PANEL.kind === 'report') {
@@ -3198,6 +3368,7 @@ function renderPanel(){
   $('pback').onclick = backFromPanel;
   const on = (id, fn) => { const e = $(id); if (e) e.onclick = fn; };
   if (PANEL.kind === 'compare') bindCompare(box);
+  if (PANEL.kind === 'pron') bindPron(box);
 
   if (PANEL.kind === 'settings'){
     box.querySelectorAll('#segTheme button').forEach(b => b.onclick = () => { SETTINGS.theme = b.dataset.v; saveSettings(); applyTheme(); renderPanel(); });
@@ -3847,10 +4018,10 @@ function renderFavoris(){
   if (state.page !== 'favoris') return;
   const main = $('main');
   if (!FAV.teams.length && !FAV.matches.length && !FAV.players.length){
-    main.innerHTML = `<div class="empty">Tu n'as pas encore de favoris.<small>Ouvre un match, puis touche ☆ pour le suivre, ou « ☆ Suivre » sous une équipe pour voir ici ses prochains matchs et ses résultats.</small></div>`;
+    main.innerHTML = pronEntryHtml() + `<div class="empty">Tu n'as pas encore de favoris.<small>Ouvre un match, puis touche ☆ pour le suivre, ou « ☆ Suivre » sous une équipe pour voir ici ses prochains matchs et ses résultats.</small></div>`;
     return;
   }
-  let html = '';
+  let html = pronEntryHtml();
   if (FAV.teams.length && FAVSTATE.games && !FAVSTATE.err) html += favHeroHtml();
   if (FAV.teams.length){
     html += `<h3 class="ftitle">Mes équipes</h3><div class="chips">` + FAV.teams.map(t =>
