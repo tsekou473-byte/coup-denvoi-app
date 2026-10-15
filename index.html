@@ -660,6 +660,8 @@ body.focusmode #dbody{font-size:1.12em}body.focusmode .hero .sb .score{font-size
 #lvbar[hidden]{display:none}#lvbar b{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem}#lvbar span{overflow:hidden;text-overflow:ellipsis;max-width:34vw}#lvbar small{color:#ff8a8a;font-weight:700}
 .daysum{display:flex;flex-direction:column;gap:2px;padding:12px 16px;margin-top:10px}.daysum span{color:var(--muted);font-size:.9rem}
 .eff{padding:12px 14px;margin-top:16px}.eff h4{margin:0 0 8px}.er{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:.9rem}.er span{width:130px;color:var(--muted)}.er i{flex:1;height:8px;border-radius:6px;background:var(--line);overflow:hidden}.er u{display:block;height:100%;background:var(--accent)}.er b{min-width:34px;text-align:right}
+.tseason2{padding:12px 14px;margin-bottom:10px}.ts2{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:.92rem}.ts2:first-of-type{border-top:none}.ts2 span{color:var(--muted)}
+.pn-pick{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}.pn-pick span{flex:1;font-weight:600;font-size:.92rem}.pn-pick small{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -727,7 +729,7 @@ body.focusmode #dbody{font-size:1.12em}body.focusmode .hero .sb .score{font-size
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v155';
+const VERSION = 'v156';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -797,7 +799,7 @@ async function pushSync(){
     if (!SETTINGS.push || !PUSH.supported || Notification.permission !== 'granted') return;
     const sub = await pushGetSub(); if (!sub) return;
     await fetch(`${BACKEND}/api/push/sync`, { method:'POST', headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ subscription: sub.toJSON(), teams: FAV.teams.map(t => t.id), matches: FAV.matches.map(m => m.id), lang: I18N.lang, types: { goal: ptOn('goal'), kickoff: ptOn('kickoff'), final: ptOn('final'), remind: ptOn('remind') }, muted: Object.keys(SETTINGS.mute || {}).filter(k => SETTINGS.mute[k]), preds: Object.keys(PRON.preds) }) });
+      body: JSON.stringify({ subscription: sub.toJSON(), teams: FAV.teams.map(t => t.id), matches: FAV.matches.map(m => m.id), lang: I18N.lang, types: { goal: ptOn('goal'), kickoff: ptOn('kickoff'), final: ptOn('final'), remind: ptOn('remind') }, remindMin: SETTINGS.remindMin || 60, muted: Object.keys(SETTINGS.mute || {}).filter(k => SETTINGS.mute[k]), preds: Object.keys(PRON.preds) }) });
   } catch(e) {}
 }
 window.pushSyncSoon = () => { clearTimeout(PUSH.timer); PUSH.timer = setTimeout(pushSync, 1500); };
@@ -833,6 +835,7 @@ function pushRow(){
   const on = SETTINGS.push && PUSH.supported && Notification.permission === 'granted';
   return `<div class="row"><div class="rl"><b>Notifications</b><small>${hint}</small></div><label class="sw"><input type="checkbox" id="setPush" ${on ? 'checked' : ''} ${dis}><i></i></label></div>`
     + (on ? [['goal','Buts'],['kickoff',"Coups d'envoi"],['final','Fins de match'],['remind','Rappel de pronostic']].map(([k,l]) => `<div class="row"><div class="rl"><b>${l}</b></div><label class="sw"><input type="checkbox" data-pt="${k}" ${ptOn(k) ? 'checked' : ''}><i></i></label></div>`).join('') : '')
+    + (on && ptOn('remind') ? `<div class="row"><div class="rl"><b>Rappel envoyé</b><small>Avant le coup d'envoi</small></div><div class="seg" id="segRem">${[[30,'30 min'],[60,'1 h'],[180,'3 h']].map(([v,l]) => `<button data-v="${v}" class="${(SETTINGS.remindMin||60)===v?'on':''}">${l}</button>`).join('')}</div></div>` : '')
     + (on && FAV.teams.length ? `<div class="row"><div class="rl"><b>Alertes par équipe</b><small>Coupe les alertes d'une équipe que tu suis</small></div></div>` + FAV.teams.map(t => `<div class="row"><div class="rl"><b>${esc(trTeam(t.name))}</b></div><label class="sw"><input type="checkbox" data-mt="${esc(t.id)}" ${(SETTINGS.mute || {})[t.id] ? '' : 'checked'}><i></i></label></div>`).join('') : '')
     + (on ? `<div class="row"><div class="rl"><b>Envoyer une notification test</b><small>Pour vérifier que tout fonctionne</small></div><button class="btn small" id="pushTest">Envoyer</button></div>` : '');
 }
@@ -2062,6 +2065,14 @@ async function pronPost(path, body){
   if (!r.ok) throw new Error(j.error || 'Erreur');
   return j;
 }
+function pronStatsHtml(){
+  const by = (keyf) => { const m = {}; Object.entries(PRON.preds).forEach(([id, p]) => { const r = PRON.res[id]; if (!r) return; (Array.isArray(keyf(p)) ? keyf(p) : [keyf(p)]).filter(Boolean).forEach(k => { const o = m[k] || (m[k] = { n:0, ok:0, ex:0 }); const x = pronPts(p, r); o.n++; if (x >= 1) o.ok++; if (x === 3) o.ex++; }); }); return m; };
+  const tot = pronTotals(); if (tot.n < 2) return '';
+  const row = (k, o) => `<div class="er"><span>${esc(trTeam(k))}</span><i><u style="width:${Math.round(o.ok / o.n * 100)}%"></u></i><b>${Math.round(o.ok / o.n * 100)}%</b></div>`;
+  const comps = Object.entries(by(p => p.comp)).sort((a, b) => b[1].n - a[1].n).slice(0, 4);
+  const teams = Object.entries(by(p => [p.home, p.away])).filter(([, o]) => o.n >= 2).sort((a, b) => b[1].ok / b[1].n - a[1].ok / a[1].n || b[1].n - a[1].n).slice(0, 3);
+  return `<div class="card2 eff"><h4>Mon taux de réussite · ${Math.round(Object.entries(PRON.preds).filter(([id]) => PRON.res[id] && pronPts(PRON.preds[id], PRON.res[id]) >= 1).length / tot.n * 100)}%</h4>${comps.map(([k, o]) => row(k, o)).join('')}${teams.length ? `<h4 style="margin-top:12px">Équipes que tu prévois le mieux</h4>${teams.map(([k, o]) => row(k, o)).join('')}` : ''}</div>`;
+}
 function pronPanelHtml(head){
   const tab = PANEL.ptab || 'mine', tt = pronTotals();
   const tabs = `<div class="pn-tabs">${[['mine','Mes pronos'],['board','Classement']].map(([k, l]) => `<button data-ptab="${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
@@ -2071,6 +2082,7 @@ function pronPanelHtml(head){
     const fut = all.filter(p => p.ts > now).sort((a, b) => a.ts - b.ts), past = all.filter(p => p.ts <= now).sort((a, b) => b.ts - a.ts).slice(0, 40);
     const line = (p, r) => { const x = r ? pronPts(p, r) : null; return `<div class="pn-li" data-mid="${esc(p.id)}"><span class="pn-lm">${esc(trTeam(p.home))} - ${esc(trTeam(p.away))}</span><span class="pn-lp">${p.h} - ${p.a}</span>${r ? `<span class="pn-lr">${r.hs} - ${r.as}</span><b class="pn-pt p${x}">${x ? '+' + x : '0'}</b>` : `<span class="pn-lr">${p.ts > now ? shortDate(p.date) : '…'}</span>`}</div>`; };
     body = `<div class="pn-sum"><div><b>${tt.pts}</b>points</div><div><b>${tt.ex}</b>scores exacts</div><div><b>${tt.n}</b>matchs notés</div><div><b>${pronStreak()}</b>série 🔥</div></div>
+      ${pronStatsHtml()}
       <small class="pn-rule">3 points pour le score exact · 1 point pour le bon résultat (victoire, nul, défaite).</small>
       ${!all.length ? `<div class="empty">Aucun pronostic pour l'instant.<small>Ouvre un match à venir : tu peux choisir ton score dans l'onglet Résumé.</small></div>` : ''}
       ${fut.length ? `<h3 class="ftitle">À venir</h3><div class="card2">${fut.map(p => line(p, null)).join('')}</div>` : ''}
@@ -2093,6 +2105,7 @@ function pronPanelHtml(head){
         const me = PROFILE.name.trim();
         inner = `<div class="card2"><div class="pn-code">Code du groupe <b data-notr>${esc(sel)}</b><button class="btn small" id="pnShare">Partager</button></div>
           ${b.rows.map((r, i) => `<div class="pn-rk ${r.name === me ? 'me' : ''}"><i>${i + 1}</i><span>${esc(r.name)}</span><small>${r.exact} exact${r.exact > 1 ? 's' : ''} · ${r.n} match${r.n > 1 ? 's' : ''}</small><b>${r.pts}</b></div>`).join('')}</div>
+          ${pronChallengeHtml(b)}
           ${b.reveals.length ? `<h3 class="ftitle">Derniers matchs</h3>${b.reveals.map(m => `<div class="card2 pn-rv"><div class="pn-rvt">${esc(trTeam(m.home))} - ${esc(trTeam(m.away))}${m.res ? ` <b>${m.res.hs} - ${m.res.as}</b>` : ''}</div>${m.picks.map(k => `<div class="pn-pk"><span>${esc(k.name)}</span><b>${k.h} - ${k.a}</b>${k.pts == null ? '<em>…</em>' : `<b class="pn-pt p${k.pts}">${k.pts ? '+' + k.pts : '0'}</b>`}</div>`).join('')}</div>`).join('')}` : ''}
           <button class="cmpbtn" id="pnLeave">Quitter ce groupe</button>`;
       }
@@ -2101,7 +2114,27 @@ function pronPanelHtml(head){
   }
   return head('Pronostics', 'Entre amis') + tabs + body;
 }
+function pronChallengeHtml(b){
+  if (PANEL.pch){
+    const now = Date.now(), list = Object.values(GAME_INDEX).filter(g => g.status === 'scheduled' && typeof g.ts === 'number' && g.ts > now + 600000 && g.ts < now + 4 * 86400000 && !String(g.id).startsWith('afr:')).sort((a, c) => a.ts - c.ts).slice(0, 25);
+    return `<h3 class="ftitle">Choisis 3 matchs maximum</h3><div class="card2">${list.length ? list.map(g => `<label class="pn-pick"><input type="checkbox" data-chm="${esc(g.id)}" ${PANEL.pch.has(String(g.id)) ? 'checked' : ''}><span>${esc(trTeam(g.home))} - ${esc(trTeam(g.away))}</span><small>${esc(shortDate(g.date))} ${esc(g.time || '')}</small></label>`).join('') : '<div class="noev">Aucun match à venir chargé. Ouvre la liste des matchs d\'aujourd\'hui ou de demain, puis reviens.</div>'}</div><div class="pn-f" style="margin:0 10px 12px"><button class="btn small" id="pnChGo">Lancer le défi</button><button class="btn small" id="pnChNo">Annuler</button></div>`;
+  }
+  const c = b.challenge;
+  const head = `<h3 class="ftitle">Défi du groupe</h3>`;
+  if (!c) return head + `<div class="card2 set"><div class="row col"><div class="rl"><b>Un mini-concours sur 3 matchs</b><small>Choisissez ensemble 3 matchs : un classement à part est tenu rien que pour eux.</small></div><button class="btn small" id="pnCh">Lancer un défi</button></div></div>`;
+  return head + `<div class="card2">${c.matches.map(m => `<div class="pn-li"><span class="pn-lm">${esc(trTeam(m.home))} - ${esc(trTeam(m.away))}</span><span class="pn-lr">${m.res ? m.res.hs + ' - ' + m.res.as : esc(shortDate(m.date))}</span></div>`).join('')}
+    ${c.rows.map((r, i) => `<div class="pn-rk ${r.name === PROFILE.name.trim() ? 'me' : ''}"><i>${i + 1}</i><span>${esc(r.name)}</span><small>${r.n}/${c.matches.length} joué${r.n > 1 ? 's' : ''}</small><b>${r.pts}</b></div>`).join('')}</div>
+    <button class="cmpbtn" id="pnCh">Nouveau défi</button>`;
+}
 function bindPron(box){
+  const chb = $('pnCh'); if (chb) chb.onclick = () => { PANEL.pch = new Set(); renderPanel(); };
+  box.querySelectorAll('[data-chm]').forEach(c => c.onchange = () => { if (c.checked && PANEL.pch.size >= 3){ c.checked = false; toastMsg('3 matchs maximum.'); return; } c.checked ? PANEL.pch.add(c.dataset.chm) : PANEL.pch.delete(c.dataset.chm); });
+  const chn = $('pnChNo'); if (chn) chn.onclick = () => { PANEL.pch = null; renderPanel(); };
+  const chg = $('pnChGo'); if (chg) chg.onclick = async () => {
+    const ms = [...PANEL.pch].map(id => GAME_INDEX[id]).filter(Boolean).map(g => ({ id:String(g.id), home:g.home, away:g.away, ts:g.ts, date:g.pdate || g.date }));
+    if (!ms.length){ toastMsg('Choisis au moins un match.'); return; }
+    try { const c = PANEL.pcode || (PRON.groups[0] || {}).code; await pronSync(); await pronPost('challenge', { code:c, matches:ms }); PANEL.pch = null; toastMsg('Défi lancé !'); renderPanel(); pronLoadBoard(c); } catch (e) { toastMsg(String(e.message || e)); }
+  };
   box.querySelectorAll('[data-ptab]').forEach(b => b.onclick = () => { PANEL.ptab = b.dataset.ptab; renderPanel(); if (PANEL.ptab === 'board'){ const c = PANEL.pcode || (PRON.groups[0] || {}).code; if (c) pronLoadBoard(c); } });
   box.querySelectorAll('[data-pcode]').forEach(b => b.onclick = () => { PANEL.pcode = b.dataset.pcode; renderPanel(); pronLoadBoard(PANEL.pcode); });
   box.querySelectorAll('.pn-li[data-mid]').forEach(b => b.onclick = () => { if (GAME_INDEX[b.dataset.mid]) openMatch(b.dataset.mid); });
@@ -2770,7 +2803,7 @@ function teamInfoHtml(){
       top += `<div class="card2 tmini"><div class="tk">Classement<span>${esc(trComp(L.name || ''))}</span></div>${standingsHtml(part, { favs:true, leagueId:L.id, ids:[t.id], names:[t.name] })}<button class="more" id="goTable">Voir le classement complet</button></div>`;
     }
   }
-  return top + (PANEL.team && !PANEL.sub ? `<button class="cmpbtn" id="goCmp">Comparer avec une autre équipe</button>` : '') + clubHtml();
+  return top + (PANEL.team && !PANEL.sub ? `<button class="cmpbtn" id="goCmp">Comparer avec une autre équipe</button>` + ((PANEL.tgames || []).some(g => g.status === 'scheduled' && typeof g.ts === 'number') ? `<button class="cmpbtn" id="tcal">📅 Ajouter ses prochains matchs à l'agenda</button>` : '') : '') + clubHtml();
 }
 function teamMatchesHtml(){
   const st = teamGamesState(); if (st) return st;
@@ -2785,7 +2818,13 @@ function teamSeasonCard(gs, t){
   if (!fin.length) return '';
   let w = 0, d = 0, l = 0, gf = 0, ga = 0;
   fin.forEach(g => { const home = String(g.homeId) === t.id || g.home === t.name; gf += +(home ? g.hs : g.as); ga += +(home ? g.as : g.hs); const r = teamResult(g, t); if (r === 'w') w++; else if (r === 'l') l++; else d++; });
-  return `<div class="card2 tseason"><div class="tk">Saison</div><div class="tsn"><div><b>${fin.length}</b><small>Matchs</small></div><div class="w"><b>${w}</b><small>V</small></div><div><b>${d}</b><small>N</small></div><div class="l"><b>${l}</b><small>D</small></div><div><b>${gf}-${ga}</b><small>Buts</small></div></div><div class="tbar">${fin.map(g => `<i class="${teamResult(g, t)}"></i>`).join('')}</div></div>`;
+  const srt = fin.slice().sort((a, b) => ((b.date || '') + (b.time || '')).localeCompare((a.date || '') + (a.time || '')));
+  let streak = 0, sk = ''; for (const g of srt){ const r = teamResult(g, t); if (!sk) sk = r; if (r === sk) streak++; else break; }
+  const ha = { h:[0,0,0,0,0], a:[0,0,0,0,0] };
+  fin.forEach(g => { const home = String(g.homeId) === t.id || g.home === t.name; const o = home ? ha.h : ha.a, r = teamResult(g, t); o[r === 'w' ? 0 : r === 'l' ? 2 : 1]++; o[3] += +(home ? g.hs : g.as); o[4] += +(home ? g.as : g.hs); });
+  const skTxt = sk === 'w' ? 'victoire' : sk === 'l' ? 'défaite' : 'nul';
+  const extra = `<div class="card2 tseason2"><div class="tk">Forme</div><div class="ts2"><span>Série en cours</span><b>${streak} ${skTxt}${streak > 1 && sk !== 'l' ? 's' : streak > 1 ? 's' : ''}</b></div><div class="ts2"><span>À domicile</span><b>${ha.h[0]}V ${ha.h[1]}N ${ha.h[2]}D · ${ha.h[3]}-${ha.h[4]}</b></div><div class="ts2"><span>À l'extérieur</span><b>${ha.a[0]}V ${ha.a[1]}N ${ha.a[2]}D · ${ha.a[3]}-${ha.a[4]}</b></div></div>`;
+  return extra + `<div class="card2 tseason"><div class="tk">Saison</div><div class="tsn"><div><b>${fin.length}</b><small>Matchs</small></div><div class="w"><b>${w}</b><small>V</small></div><div><b>${d}</b><small>N</small></div><div class="l"><b>${l}</b><small>D</small></div><div><b>${gf}-${ga}</b><small>Buts</small></div></div><div class="tbar">${fin.map(g => `<i class="${teamResult(g, t)}"></i>`).join('')}</div></div>`;
 }
 function teamTableHtml(){
   if (!PANEL.tgames) return teamGamesState();
@@ -3100,6 +3139,34 @@ function chatMount(){
   d.addEventListener('contextmenu', e => { const m = find(e.target); if (m){ e.preventDefault(); sheet(m); } });
 })();
 
+function applyTeamTheme(){
+  const root = document.documentElement, t = mainTeam();
+  const clear = () => { root.style.removeProperty('--accent'); root.style.removeProperty('--accent-ink'); };
+  if (!SETTINGS.teamTheme || !t || !t.logo){ clear(); return; }
+  const img = new Image(); img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    try {
+      const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'); x.drawImage(img, 0, 0, 32, 32);
+      const px = x.getImageData(0, 0, 32, 32).data; let best = null, bs = 0;
+      const bins = {};
+      for (let i = 0; i < px.length; i += 4){
+        if (px[i + 3] < 200) continue;
+        const r = px[i], g = px[i + 1], b = px[i + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0;
+        if (sat < .35 || mx < 70) continue;
+        const k = (r >> 5) + ',' + (g >> 5) + ',' + (b >> 5); const o = bins[k] || (bins[k] = { n:0, r:0, g:0, b:0 }); o.n++; o.r += r; o.g += g; o.b += b;
+      }
+      Object.values(bins).forEach(o => { if (o.n > bs){ bs = o.n; best = o; } });
+      if (!best){ clear(); return; }
+      let r = best.r / best.n, g = best.g / best.n, b = best.b / best.n;
+      const L = (.299 * r + .587 * g + .114 * b) / 255;
+      if (L < .45){ const f = .45 / Math.max(L, .05); r = Math.min(255, r * f); g = Math.min(255, g * f); b = Math.min(255, b * f); }
+      root.style.setProperty('--accent', `rgb(${r | 0},${g | 0},${b | 0})`);
+      root.style.setProperty('--accent-ink', `rgb(${(r * .65) | 0},${(g * .65) | 0},${(b * .65) | 0})`);
+    } catch (e) { clear(); }
+  };
+  img.onerror = clear; img.src = t.logo;
+}
+setTimeout(applyTeamTheme, 1200);
 const FOCUS = { on:false, lock:null };
 async function focusSet(on){
   FOCUS.on = !!on; document.body.classList.toggle('focusmode', FOCUS.on);
@@ -3136,7 +3203,7 @@ function renderDetail(){
       <div class="sbmid">${sbMid(g)}</div>
       <div class="sbteam"><div class="sbtap" data-side="away">${crestRc(g, 'away', 'big')}<span>${esc(trTeam(g.away))}</span></div>${followBtn(g, 'away')}</div>
     </div>
-    ${meta ? `<div class="meta">${meta}</div>` : ''}${g.status === 'live' ? `<button class="dfocus ${FOCUS.on ? 'on' : ''}" id="dfocus">${FOCUS.on ? '📺 Mode match activé' : '📺 Mode match'}</button>` : ''}</div>`;
+    ${meta ? `<div class="meta">${meta}</div>` : ''}${g.status === 'scheduled' && typeof g.ts === 'number' ? `<button class="dfocus" id="dcal">📅 Ajouter à l'agenda</button>` : ''}${g.status === 'live' ? `<button class="dfocus ${FOCUS.on ? 'on' : ''}" id="dfocus">${FOCUS.on ? '📺 Mode match activé' : '📺 Mode match'}</button>` : ''}</div>`;
   const bodyHtml = `
     <div class="dtabs${hasFeed(d) ? ' t5' : ''}">${[['resume', g.status === 'scheduled' ? 'Avant-match' : 'Résumé'],['compos','Compos'],['stats','Stats'],...(hasFeed(d) ? [['feed','En direct']] : []),['table','Classement']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}`;
@@ -3154,6 +3221,7 @@ function renderDetail(){
   if (DETAIL.tab === 'chat') chatMount();
 
   $('dback').onclick = backFromDetail;
+  const dcl = $('dcal'); if (dcl) dcl.onclick = () => icsDownload([g], 'match');
   const dfo = $('dfocus'); if (dfo) dfo.onclick = () => { focusSet(!FOCUS.on); DETAIL.headSig = null; renderDetail(); toastMsg(FOCUS.on ? "L'écran reste allumé pendant ce match." : 'Mode match désactivé.'); };
   $('dchat').classList.toggle('on', DETAIL.tab === 'chat');
   $('dchat').onclick = () => { DETAIL.userTab = true; DETAIL.tab = DETAIL.tab === 'chat' ? 'resume' : 'chat'; renderDetail(); };
@@ -3332,6 +3400,7 @@ function renderPanel(){
         <div class="row"><div class="rl"><b>Liste des matchs</b><small>Compacte : plus de matchs à l'écran</small></div><div class="seg" id="segDens">${[['normal','Normale'],['compact','Compacte']].map(([v,l]) => `<button data-v="${v}" class="${(SETTINGS.dens||'normal')===v?'on':''}">${l}</button>`).join('')}</div></div>
         <div class="row"><div class="rl"><b>Masquer les scores</b><small>Évite les spoilers : touche un score pour l'afficher</small></div><label class="sw"><input type="checkbox" id="setSpoil" ${SETTINGS.spoil ? 'checked' : ''}><i></i></label></div>
         ${pushRow()}
+        <div class="row"><div class="rl"><b>Couleurs de mon équipe</b><small>L'app prend les couleurs de ton équipe principale</small></div><label class="sw"><input type="checkbox" id="setTeamTheme" ${SETTINGS.teamTheme ? 'checked' : ''}><i></i></label></div>
         <div class="row"><div class="rl"><b>Ouvrir sur Favoris</b><small>Au lancement, affiche d'abord ton équipe et tes favoris</small></div><label class="sw"><input type="checkbox" id="setStartFav" ${SETTINGS.startFav ? 'checked' : ''}><i></i></label></div>
         <div class="row"><div class="rl"><b>Actualisation automatique</b><small>Met à jour les matchs en direct toutes les 90 secondes</small></div><label class="sw"><input type="checkbox" id="setAuto" ${SETTINGS.auto ? 'checked' : ''}><i></i></label></div>
       </div>
@@ -3441,6 +3510,7 @@ function renderPanel(){
       }
       renderPanel();
     };
+    box.querySelectorAll('#segRem button').forEach(b => b.onclick = () => { SETTINGS.remindMin = +b.dataset.v; saveSettings(); pushSync(); renderPanel(); });
     box.querySelectorAll('[data-mt]').forEach(el => el.onchange = () => { SETTINGS.mute = SETTINGS.mute || {}; SETTINGS.mute[el.dataset.mt] = !el.checked; saveSettings(); pushSync(); });
     box.querySelectorAll('[data-pt]').forEach(el => el.onchange = () => { SETTINGS.pt = SETTINGS.pt || {}; SETTINGS.pt[el.dataset.pt] = el.checked; saveSettings(); pushSync(); });
     if ($('pushTest')) $('pushTest').onclick = async () => { try { await pushTest(); } catch(e) { alert(I18N.tr('Impossible d\'envoyer la notification test.')); } };
@@ -3448,6 +3518,7 @@ function renderPanel(){
     $('setFr').onchange = e => { SETTINGS.fr = e.target.checked; saveSettings(); refreshAfterSetting(); };
     box.querySelectorAll('#segDens button').forEach(b => b.onclick = () => { SETTINGS.dens = b.dataset.v; saveSettings(); applyDens(); renderPanel(); });
     $('setSpoil').onchange = e => { SETTINGS.spoil = e.target.checked; saveSettings(); REVEAL.clear(); refreshAfterSetting(); };
+    $('setTeamTheme').onchange = e => { SETTINGS.teamTheme = e.target.checked; saveSettings(); applyTeamTheme(); };
     $('setStartFav').onchange = e => { SETTINGS.startFav = e.target.checked; saveSettings(); };
     $('setAuto').onchange = e => { SETTINGS.auto = e.target.checked; saveSettings(); };
     $('setLogos').onchange = e => { SETTINGS.logos = e.target.checked; saveSettings(); refreshAfterSetting(); };
@@ -3959,6 +4030,7 @@ $('panel').addEventListener('click', e => {
     if (toggleFavPlayer(PANEL.team, PANEL.player) === false){ toastMsg('Tu as atteint la limite de joueurs suivis.'); return; }
     const on = isFavPlayer(PANEL.team, PANEL.player); pf.classList.toggle('on', on); pf.textContent = I18N.tr(on ? '★ Suivi' : '☆ Suivre'); return;
   }
+  const tcl = e.target.closest('#tcal'); if (tcl && PANEL.kind === 'team'){ icsDownload((PANEL.tgames || []).filter(g => g.status === 'scheduled' && g.ts > Date.now()).slice(0, 15), 'matchs'); return; }
   const gc = e.target.closest('#goCmp'); if (gc && PANEL.kind === 'team'){ startCompare('team'); return; }
   const pcm = e.target.closest('#pcmp'); if (pcm && PANEL.kind === 'team' && PANEL.player){ startCompare('player'); return; }
   const pc = e.target.closest('#pclub');
@@ -4086,6 +4158,16 @@ function updateLiveBar(){
   if (bar.dataset.h !== html){ bar.innerHTML = html; bar.dataset.h = html; }
 }
 setInterval(updateLiveBar, 5000);
+function icsDownload(games, name){
+  const pad = n => String(n).padStart(2, '0'), fmt = t => { const d = new Date(t); return d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()) + 'T' + pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + '00Z'; };
+  const esc2 = t => String(t || '').replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, ' ');
+  const ev = games.filter(g => typeof g.ts === 'number').map(g => ['BEGIN:VEVENT', `UID:${g.id}@coup-denvoi`, `DTSTAMP:${fmt(Date.now())}`, `DTSTART:${fmt(g.ts)}`, `DTEND:${fmt(g.ts + 2 * 3600000)}`, `SUMMARY:${esc2(g.home + ' - ' + g.away)}`, `DESCRIPTION:${esc2(g.comp || '')}`, 'END:VEVENT'].join('\r\n'));
+  if (!ev.length){ toastMsg('Aucun match à ajouter.'); return; }
+  const txt = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Coup Denvoi//FR', ...ev, 'END:VCALENDAR'].join('\r\n');
+  const url = URL.createObjectURL(new Blob([txt], { type:'text/calendar' }));
+  const a = document.createElement('a'); a.href = url; a.download = (name || 'match') + '.ics'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
 function favTodayHtml(){
   const seen = new Set(), list = (FAVSTATE.games || []).filter(g => g.date === TODAY && !seen.has(g.id) && seen.add(g.id)).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
   if (list.length < 1) return '';
@@ -4152,7 +4234,7 @@ $('main').addEventListener('click', e => {
   const fm = e.target.closest('.fh-mid, .fh-last');
   if (fm){ openMatch(fm.dataset.mid); return; }
   const mn = e.target.closest('[data-main]');
-  if (mn){ FAV.main = mn.dataset.main; saveFav(); FAVSTATE.dirty = false; renderFavoris(); return; }
+  if (mn){ FAV.main = mn.dataset.main; saveFav(); FAVSTATE.dirty = false; renderFavoris(); applyTeamTheme(); return; }
   const nx = e.target.closest('.fnx');
   if (nx){ openMatch(nx.dataset.mid); return; }
   const pk = e.target.closest('[data-pk]');
