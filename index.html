@@ -524,6 +524,22 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .pprofile{ text-align:center; padding:24px 18px 6px; }
 .pprofile h3{ margin:12px 0 2px; font-family:'Barlow Condensed',sans-serif; font-size:1.5rem; font-weight:600; }
 .pprofile .ppos{ color:var(--accent-ink); font-size:.95rem; }
+.pclub{ display:inline-flex; align-items:center; gap:7px; margin-top:8px; padding:4px 12px 4px 6px; border-radius:999px; background:var(--card); box-shadow:0 1px 2px rgba(20,30,50,.08); font-size:.95rem; cursor:pointer; }
+.pprofile .follow.pfv{ display:block; margin:10px auto 0; padding:6px 18px; }
+.ptiles{ display:flex; gap:8px; padding:16px 12px 0; }
+.ptiles .pt{ flex:1; background:var(--card); border-radius:14px; padding:10px 2px 8px; text-align:center; box-shadow:0 1px 2px rgba(20,30,50,.08); }
+.ptiles .pt b{ display:block; font-family:'Barlow Condensed',sans-serif; font-size:1.7rem; line-height:1.05; color:var(--accent-ink); }
+.ptiles .pt.y b{ color:#c79a00; } .ptiles .pt.r b{ color:#d64545; }
+.ptiles .pt small{ color:var(--muted); font-size:.7rem; letter-spacing:.03em; text-transform:uppercase; }
+.fnx-row{ display:flex; gap:10px; overflow-x:auto; padding:0 2px 8px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.fnx-row::-webkit-scrollbar{ display:none; }
+.fnx{ flex:0 0 168px; background:var(--card); border-radius:16px; padding:12px; box-shadow:0 1px 2px rgba(20,30,50,.08); cursor:pointer; display:flex; flex-direction:column; gap:6px; }
+.fnx .tt{ display:flex; align-items:center; gap:7px; font-weight:600; }
+.fnx .tt span{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fnx .tg{ font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.fnx .tg.lv{ color:#d64545; font-weight:700; }
+.fnx .op{ display:flex; align-items:center; gap:7px; color:var(--muted); font-size:.9rem; }
+.fnx .op b{ font-family:'Barlow Condensed',sans-serif; font-size:1.4rem; color:var(--text); margin-left:auto; }
 .pmeta{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px 18px; padding:14px 18px 0; color:var(--muted); font-size:.92rem; }
 .fchip-tap{ display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
 
@@ -624,7 +640,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v145';
+const VERSION = 'v146';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -667,10 +683,11 @@ applyTheme();
 if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener('change', () => { if (SETTINGS.theme === 'auto') applyTheme(); });
 
 /* ---------- favoris (enregistrés sur l'appareil) ---------- */
-const FAV = { teams:[], matches:[] };
+const FAV = { teams:[], matches:[], players:[] };
 try { Object.assign(FAV, JSON.parse(localStorage.getItem('ce_favs') || '{}')); } catch(e) {}
 if (!Array.isArray(FAV.teams)) FAV.teams = [];
 if (!Array.isArray(FAV.matches)) FAV.matches = [];
+if (!Array.isArray(FAV.players)) FAV.players = [];
 FAV.matches.forEach(m => { if (typeof m.ts === 'number'){ const d = new Date(m.ts); m.pdate = m.pdate || m.date; m.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; m.time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; } });
 const FAVSTATE = { games:null, loading:false, err:null, dirty:true, ts:0, failed:0 };
 const saveFav = () => { FAVSTATE.dirty = true; if (window.pushSyncSoon) pushSyncSoon(); try { localStorage.setItem('ce_favs', JSON.stringify(FAV)); } catch(e) {} };
@@ -692,7 +709,7 @@ async function pushSync(){
     if (!SETTINGS.push || !PUSH.supported || Notification.permission !== 'granted') return;
     const sub = await pushGetSub(); if (!sub) return;
     await fetch(`${BACKEND}/api/push/sync`, { method:'POST', headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ subscription: sub.toJSON(), teams: FAV.teams.map(t => t.id), matches: FAV.matches.map(m => m.id), lang: I18N.lang }) });
+      body: JSON.stringify({ subscription: sub.toJSON(), teams: FAV.teams.map(t => t.id), matches: FAV.matches.map(m => m.id), lang: I18N.lang, types: { goal: ptOn('goal'), kickoff: ptOn('kickoff'), final: ptOn('final') } }) });
   } catch(e) {}
 }
 window.pushSyncSoon = () => { clearTimeout(PUSH.timer); PUSH.timer = setTimeout(pushSync, 1500); };
@@ -706,10 +723,11 @@ async function pushEnable(){
   if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: b64ToU8(key) });
   SETTINGS.push = true; saveSettings();
   await pushSync();
+}
 // l'app ouverte re-synchronise régulièrement : si le serveur a redémarré, il retrouve tout de suite tes favoris
 setInterval(() => { if (!document.hidden) pushSync(); }, 4 * 60 * 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) pushSync(); });
-}
+const ptOn = k => !(SETTINGS.pt && SETTINGS.pt[k] === false);
 async function pushDisable(){
   SETTINGS.push = false; saveSettings();
   try { const sub = await pushGetSub(); if (sub){ fetch(`${BACKEND}/api/push/unsubscribe`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {}); await sub.unsubscribe(); } } catch(e) {}
@@ -726,6 +744,7 @@ function pushRow(){
   else if (Notification.permission === 'denied'){ hint = 'Bloquées : autorise-les dans les Réglages de ton téléphone.'; dis = 'disabled'; }
   const on = SETTINGS.push && PUSH.supported && Notification.permission === 'granted';
   return `<div class="row"><div class="rl"><b>Notifications</b><small>${hint}</small></div><label class="sw"><input type="checkbox" id="setPush" ${on ? 'checked' : ''} ${dis}><i></i></label></div>`
+    + (on ? [['goal','Buts'],['kickoff',"Coups d'envoi"],['final','Fins de match']].map(([k,l]) => `<div class="row"><div class="rl"><b>${l}</b></div><label class="sw"><input type="checkbox" data-pt="${k}" ${ptOn(k) ? 'checked' : ''}><i></i></label></div>`).join('') : '')
     + (on ? `<div class="row"><div class="rl"><b>Envoyer une notification test</b><small>Pour vérifier que tout fonctionne</small></div><button class="btn small" id="pushTest">Envoyer</button></div>` : '');
 }
 pushSync();
@@ -742,6 +761,14 @@ function toggleFavMatch(g){
   if (i >= 0) FAV.matches.splice(i, 1);
   else { FAV.matches.unshift(snap(g)); if (FAV.matches.length > 60) FAV.matches.length = 60; }
   saveFav();
+}
+const favPlayerKey = (t, p) => String((t && t.id) || '') + '|' + pkey(p.name);
+const isFavPlayer = (t, p) => !!t && !!p && FAV.players.some(x => x.key === favPlayerKey(t, p));
+function toggleFavPlayer(t, p){
+  const k = favPlayerKey(t, p), i = FAV.players.findIndex(x => x.key === k);
+  if (i >= 0) FAV.players.splice(i, 1);
+  else { if (FAV.players.length >= 30) return false; FAV.players.push({ key:k, name:p.name, fullName:p.fullName || p.name, teamId:String(t.id || ''), team:t.name || '', leagueId:String(t.leagueId || ''), logo:t.logo || null, photo:p.photo || null, number:p.number ?? null, position:p.position || null }); }
+  saveFav(); return true;
 }
 function toggleFavTeam(id, name, logo, leagueId){
   id = String(id);
@@ -937,7 +964,8 @@ function clearCache(){
 async function apiGet(url){
   let data = {};
   try {
-    const res = await fetch(url);
+    let res;
+    try { res = await fetch(url); } catch (e0) { if (navigator.onLine === false) throw e0; await new Promise(r => setTimeout(r, 1500)); res = await fetch(url); }
     try { data = await res.json(); } catch(e) {}
     if (!res.ok || data.error) throw new Error((data.detail || data.error || ('Erreur ' + res.status)).toString());
   } catch (e) {
@@ -2517,13 +2545,18 @@ function careerHtml(p){
 }
 const STAT_LABELS = [['apps','Matchs joués'],['goals','Buts'],['assists','Passes décisives'],['yellow','Cartons jaunes'],['red','Cartons rouges'],['rating','Note moyenne']];
 function playerProfileHtml(p){
-  const rows = STAT_LABELS.filter(([k]) => p.stats[k] != null && p.stats[k] !== '').map(([k,l]) =>
+  const TILE = [['apps','Matchs'],['goals','Buts'],['assists','Passes D.'],['yellow','Jaunes'],['red','Rouges']];
+  const tl = TILE.filter(([k]) => p.stats[k] != null && p.stats[k] !== '');
+  const tiles = tl.length ? `<div class="ptiles">${tl.map(([k, l]) => `<div class="pt ${k === 'yellow' ? 'y' : k === 'red' ? 'r' : ''}"><b>${esc(p.stats[k])}</b><small>${l}</small></div>`).join('')}</div>` : '';
+  const rows = STAT_LABELS.filter(([k]) => !TILE.some(t => t[0] === k) && p.stats[k] != null && p.stats[k] !== '').map(([k,l]) =>
     `<div class="st"><div class="str" style="grid-template-columns:1fr auto"><span>${esc(l)}</span><span class="stv r">${esc(p.stats[k])}</span></div></div>`).join('');
   return `
     <div class="pprofile">
       ${pfacePlayer(p, 'big')}
       <h3>${esc(trTeam(p.fullName || p.name))}${p.captain ? '<span class="tag-cap">C</span>' : ''}</h3>
       <div class="ppos">${esc(POS_FR[p.position] ? POS_FR[p.position].one : (p.position || ''))}${p.number != null ? ' · N° ' + p.number : ''}</div>
+      ${PANEL.team && PANEL.team.name ? `<div class="pclub" id="pclub">${crest(trTeam(PANEL.team.name) || '', PANEL.team.logo, 'sm')}<span>${esc(trTeam(PANEL.team.name))}</span></div>` : ''}
+      ${PANEL.team && PANEL.team.id ? `<button class="follow pfv ${isFavPlayer(PANEL.team, p) ? 'on' : ''}" id="pfav">${isFavPlayer(PANEL.team, p) ? '★ Suivi' : '☆ Suivre'}</button>` : ''}
     </div>
     <div class="pmeta">
       ${p.age != null ? `<span>${p.age} ans</span>` : ''}
@@ -2531,7 +2564,8 @@ function playerProfileHtml(p){
       ${p.country ? `<span>${esc(natLabel(p.country))}</span>` : ''}
       ${isInj(p) ? `<span class="tag-inj">Actuellement blessé</span>` : ''}
     </div>
-    <div class="card2" style="margin-top:16px">${rows || `<div class="noev">Aucune statistique disponible cette saison.</div>`}</div>
+    ${tiles}
+    <div class="card2" style="margin-top:16px">${rows || (tiles ? '' : `<div class="noev">Aucune statistique disponible cette saison.</div>`)}</div>
     ${careerHtml(p)}`;
 }
 
@@ -2940,6 +2974,7 @@ function renderPanel(){
       }
       renderPanel();
     };
+    box.querySelectorAll('[data-pt]').forEach(el => el.onchange = () => { SETTINGS.pt = SETTINGS.pt || {}; SETTINGS.pt[el.dataset.pt] = el.checked; saveSettings(); pushSync(); });
     if ($('pushTest')) $('pushTest').onclick = async () => { try { await pushTest(); } catch(e) { alert(I18N.tr('Impossible d\'envoyer la notification test.')); } };
     $('setLang').onchange = e => { SETTINGS.lang = e.target.value; saveSettings(); location.reload(); };
     $('setFr').onchange = e => { SETTINGS.fr = e.target.checked; saveSettings(); refreshAfterSetting(); };
@@ -3286,7 +3321,16 @@ async function loadCompetitionGames(id){
   renderPanel();
 }
 $('main').addEventListener('click', e => { const c = e.target.closest('.crow'); if (c) openCompetition(c.dataset.id); });
-$('panel').addEventListener('click', e => { const m = e.target.closest('.match'); if (m) openMatch(m.dataset.id); });
+$('panel').addEventListener('click', e => {
+  const m = e.target.closest('.match'); if (m){ openMatch(m.dataset.id); return; }
+  const pf = e.target.closest('#pfav');
+  if (pf && PANEL.kind === 'team' && PANEL.player){
+    if (toggleFavPlayer(PANEL.team, PANEL.player) === false){ toastMsg('Tu as atteint la limite de joueurs suivis.'); return; }
+    const on = isFavPlayer(PANEL.team, PANEL.player); pf.classList.toggle('on', on); pf.textContent = I18N.tr(on ? '★ Suivi' : '☆ Suivre'); return;
+  }
+  const pc = e.target.closest('#pclub');
+  if (pc && PANEL.kind === 'team' && PANEL.team && PANEL.team.id) navPanel('team', { sub:null, player:null });
+});
 $('panel').addEventListener('click', e => {
   if (PANEL.kind !== 'competition' || !PANEL.comp) return;
   const more = e.target.closest('[data-csub]');
@@ -3353,10 +3397,26 @@ function showFavoris(){
   if (FAVSTATE.dirty || !FAVSTATE.games || Date.now() - FAVSTATE.ts > 60000) loadFavGames(); else renderFavoris();
 }
 
+function favNextHtml(){
+  const key = g => (g.date || '') + ' ' + (g.time || '');
+  const cards = FAV.teams.map(t => {
+    const mine = FAVSTATE.games.filter(g => String(g.homeId) === t.id || String(g.awayId) === t.id);
+    const live = mine.find(g => g.status === 'live');
+    const next = mine.filter(g => g.status !== 'final' && g.status !== 'live').sort((a, b) => key(a).localeCompare(key(b)))[0];
+    const last = mine.filter(g => g.status === 'final').sort((a, b) => key(b).localeCompare(key(a)))[0];
+    const g = live || next || last; if (!g) return '';
+    const home = String(g.homeId) === t.id, opp = home ? g.away : g.home, oppLogo = home ? g.awayLogo : g.homeLogo;
+    const hasScore = live || g.status === 'final';
+    const sc = hasScore ? (home ? `${g.hs ?? 0} - ${g.as ?? 0}` : `${g.as ?? 0} - ${g.hs ?? 0}`) : '';
+    const tag = live ? 'En direct' : next ? dayLabel(g.date) + (g.time ? ' · ' + g.time : '') : 'Terminé';
+    return `<div class="fnx" data-mid="${esc(g.id)}"><div class="tt">${crest(trTeam(t.name) || '', t.logo, 'sm')}<span>${esc(trTeam(t.name))}</span></div><div class="tg ${live ? 'lv' : ''}">${tag}</div><div class="op">${crest(trTeam(opp) || '', oppLogo, 'xs')}<span>${home ? 'vs' : '@'} ${esc(trTeam(opp))}</span>${sc ? `<b>${sc}</b>` : ''}</div></div>`;
+  }).join('');
+  return cards ? `<div class="fnx-row">${cards}</div>` : '';
+}
 function renderFavoris(){
   if (state.page !== 'favoris') return;
   const main = $('main');
-  if (!FAV.teams.length && !FAV.matches.length){
+  if (!FAV.teams.length && !FAV.matches.length && !FAV.players.length){
     main.innerHTML = `<div class="empty">Tu n'as pas encore de favoris.<small>Ouvre un match, puis touche ☆ pour le suivre, ou « ☆ Suivre » sous une équipe pour voir ici ses prochains matchs et ses résultats.</small></div>`;
     return;
   }
@@ -3365,6 +3425,11 @@ function renderFavoris(){
     html += `<h3 class="ftitle">Mes équipes</h3><div class="chips">` + FAV.teams.map(t =>
       `<span class="fchip"><span class="fchip-tap" data-id="${esc(t.id)}" data-lid="${esc(t.leagueId||'')}" data-name="${esc(t.name)}" data-logo="${esc(t.logo||'')}">${crest(trTeam(t.name) || '', t.logo, 'sm')}<b>${esc(trTeam(t.name))}</b></span><i class="fx" data-rm="${esc(t.id)}" aria-label="Retirer">✕</i></span>`).join('') + `</div>`;
   }
+  if (FAV.players.length){
+    html += `<h3 class="ftitle">Mes joueurs</h3><div class="chips">` + FAV.players.map(p =>
+      `<span class="fchip"><span class="fchip-tap" data-pk="${esc(p.key)}">${pfacePlayer({ name:p.name, photo:p.photo }, 'sm')}<b>${esc(trTeam(p.name))}</b></span><i class="fx" data-rmp="${esc(p.key)}">✕</i></span>`).join('') + `</div>`;
+  }
+  if (FAV.teams.length && FAVSTATE.games && !FAVSTATE.err) html += favNextHtml();
   if (FAVSTATE.loading || !FAVSTATE.games){
     html += `<div class="empty">Chargement de tes favoris…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
   } else if (FAVSTATE.err){
@@ -3391,6 +3456,21 @@ function renderFavoris(){
   if (r) r.onclick = () => { FAVSTATE.dirty = true; showFavoris(); };
 }
 $('main').addEventListener('click', e => {
+  const nx = e.target.closest('.fnx');
+  if (nx){ openMatch(nx.dataset.mid); return; }
+  const pk = e.target.closest('[data-pk]');
+  if (pk){
+    const p = FAV.players.find(x => x.key === pk.dataset.pk); if (!p) return;
+    prePanel();
+    const found = p.teamId && p.leagueId ? findSquadPlayer(p.leagueId, p.teamId, p.name) : null;
+    PANEL.team = { id:p.teamId, leagueId:p.leagueId, name:p.team, logo:p.logo };
+    PANEL.squad = null; PANEL.teamErr = null; PANEL.sub = 'player';
+    PANEL.player = found || { id:pkey(p.name), name:p.name, fullName:p.fullName, number:p.number, age:null, birthdate:null, country:null, position:p.position, photo:p.photo, captain:false, injured:false, stats:{} };
+    openPanel('team'); if (p.teamId && p.leagueId) loadSquad();
+    return;
+  }
+  const rp = e.target.closest('[data-rmp]');
+  if (rp){ FAV.players = FAV.players.filter(x => x.key !== rp.dataset.rmp); saveFav(); FAVSTATE.dirty = false; renderFavoris(); return; }
   const tap = e.target.closest('.fchip-tap');
   if (tap) { openTeam(tap.dataset.id, tap.dataset.lid, tap.dataset.name, tap.dataset.logo || null); return; }
   const x = e.target.closest('[data-rm]');
@@ -3403,7 +3483,12 @@ $('main').addEventListener('click', e => {
 
 
 /* ---------- démarrage : réveiller le serveur, suivre la connexion, hors-ligne ---------- */
-try { fetch(BACKEND + '/health').catch(() => {}); } catch(e) {}   // réveille le serveur pendant que tu regardes l'écran
+try { fetch(BACKEND + '/health').catch(() => {}); } catch(e) {}
+// garde le serveur gratuit éveillé tant que l'app est ouverte (il s'endort après 15 min d'inactivité)
+let LAST_PING = Date.now();
+const keepAwake = () => { if (document.hidden || navigator.onLine === false) return; LAST_PING = Date.now(); fetch(BACKEND + '/health').catch(() => {}); };
+setInterval(keepAwake, 9 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - LAST_PING > 5 * 60 * 1000) keepAwake(); });   // réveille le serveur pendant que tu regardes l'écran
 window.addEventListener('offline', () => netbar());
 window.addEventListener('online', () => {
   NET.stale = false; netbar();
