@@ -719,7 +719,7 @@ body.dens-compact .match{ padding:7px 10px; gap:6px; } body.dens-compact .match 
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v150';
+const VERSION = 'v151';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -3095,7 +3095,9 @@ function renderDetail(){
     hd = $('dhead'); bd = $('dbody'); DETAIL.headSig = null;
   }
   if (DETAIL.headSig !== sig){ hd.innerHTML = headHtml; DETAIL.headSig = sig; }
-  bd.innerHTML = bodyHtml;
+  // le contenu n'est redessiné que s'il a changé : les rafraîchissements automatiques ne font plus « partir et revenir » toute la page
+  const bsig = DETAIL.id + '§' + DETAIL.tab + '§' + I18N.lang + '§' + bodyHtml;
+  if (DETAIL.tab === 'chat' || DETAIL.bodySig !== bsig || !bd.firstChild){ bd.innerHTML = bodyHtml; DETAIL.bodySig = bsig; }
   if (DETAIL.tab === 'chat') chatMount();
 
   $('dback').onclick = backFromDetail;
@@ -4053,7 +4055,8 @@ function renderFavoris(){
     if (!up.length && !past.length) html += `<div class="empty">Aucun match trouvé pour tes favoris entre le ${esc(dayLabel(addDays(TODAY, -7)))} et le ${esc(dayLabel(addDays(TODAY, 14)))}.</div>`;
     if (FAVSTATE.failed) html += `<div class="avail">${FAVSTATE.failed} équipe${FAVSTATE.failed > 1 ? 's' : ''} n'${FAVSTATE.failed > 1 ? 'ont' : 'a'} pas pu être chargée${FAVSTATE.failed > 1 ? 's' : ''}. Rouvre la page pour réessayer.</div>`;
   }
-  main.innerHTML = html + `<div class="ver">Coup d'Envoi · ${VERSION}</div>`;
+  const fsig = html + I18N.lang;
+  if (main.dataset.fsig !== fsig || !main.querySelector('#goPron')){ main.innerHTML = html + `<div class="ver">Coup d'Envoi · ${VERSION}</div>`; main.dataset.fsig = fsig; }
   const r = $('fretry');
   if (r) r.onclick = () => { FAVSTATE.dirty = true; showFavoris(); };
 }
