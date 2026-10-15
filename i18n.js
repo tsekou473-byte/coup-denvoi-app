@@ -187,6 +187,15 @@ const ROWS = [
  ['Ton message est bien arrivé. On va vérifier et corriger.',"Your message arrived. We'll check and fix it.",'Tu mensaje llegó. Lo revisaremos y corregiremos.','A tua mensagem chegou. Vamos verificar e corrigir.','وصلت رسالتك. سنتحقق ونصلح.','Deine Nachricht ist angekommen. Wir prüfen und korrigieren.','Il tuo messaggio è arrivato. Verificheremo e correggeremo.','Mesajın ulaştı. Kontrol edip düzelteceğiz.'],
  ['Terminer','Done','Terminar','Concluir','تم','Fertig','Fine','Bitti'],
  ["La version de l'app et la langue sont jointes automatiquement. Aucune autre donnée personnelle n'est envoyée.",'The app version and language are attached automatically. No other personal data is sent.','La versión de la app y el idioma se adjuntan automáticamente. No se envía ningún otro dato personal.','A versão da app e o idioma são anexados automaticamente. Nenhum outro dado pessoal é enviado.','يتم إرفاق إصدار التطبيق واللغة تلقائياً. لا تُرسل أي بيانات شخصية أخرى.','App-Version und Sprache werden automatisch angehängt. Es werden keine weiteren persönlichen Daten gesendet.',"Versione dell'app e lingua sono allegate automaticamente. Nessun altro dato personale viene inviato.",'Uygulama sürümü ve dil otomatik eklenir. Başka kişisel veri gönderilmez.'],
+ ["Buteurs","Top scorers","Goleadores","Marcadores","الهدافون","Torjäger","Marcatori","Gol krallığı"],
+ ["Passeurs","Top assists","Asistentes","Assistentes","صانعو الأهداف","Vorlagengeber","Assistman","Asist krallığı"],
+ ["Meilleurs buteurs","Top scorers","Máximos goleadores","Melhores marcadores","أفضل الهدافين","Beste Torschützen","Migliori marcatori","En çok gol atanlar"],
+ ["Meilleurs passeurs","Top assists","Máximos asistentes","Melhores assistentes","أفضل صانعي الأهداف","Beste Vorlagengeber","Migliori assistman","En çok asist yapanlar"],
+ ["Chargement des statistiques…","Loading stats…","Cargando estadísticas…","A carregar estatísticas…","جارٍ تحميل الإحصائيات…","Statistiken werden geladen…","Caricamento statistiche…","İstatistikler yükleniyor…"],
+ ["Note","Rating","Nota","Nota","التقييم","Bewertung","Voto","Puan"],
+ ["Équipe nationale · ","National team · ","Selección · ","Seleção · ","منتخب · ","Nationalmannschaft · ","Nazionale · ","Milli takım · "],
+ ["Pas de statistiques de joueurs pour cette compétition.","No player stats for this competition.","Sin estadísticas de jugadores para esta competición.","Sem estatísticas de jogadores para esta competição.","لا توجد إحصائيات للاعبين في هذه المسابقة.","Keine Spielerstatistiken für diesen Wettbewerb.","Nessuna statistica dei giocatori per questa competizione.","Bu turnuva için oyuncu istatistiği yok."],
+ ["Aucune passe décisive enregistrée pour le moment.","No assists recorded yet.","Aún no hay asistencias registradas.","Ainda sem assistências registadas.","لا توجد تمريرات حاسمة مسجلة بعد.","Noch keine Vorlagen erfasst.","Nessun assist registrato per ora.","Henüz asist kaydedilmedi."],
  ['Chat','Chat','Chat','Chat','الدردشة','Chat','Chat','Sohbet'],
  ['Écris un message…','Write a message…','Escribe un mensaje…','Escreva uma mensagem…','اكتب رسالة…','Nachricht schreiben…','Scrivi un messaggio…','Mesaj yaz…'],
  ['Choisis un pseudo pour écrire','Choose a nickname to write','Elige un apodo para escribir','Escolha um apelido para escrever','اختر اسماً مستعاراً للكتابة','Wähle einen Nicknamen zum Schreiben','Scegli un nickname per scrivere','Yazmak için bir takma ad seç'],
@@ -342,6 +351,8 @@ ROWS.forEach(r => COLS.forEach((c, i) => { DICT[c][r[0]] = r[i + 1]; }));
 // Phrases construites avec des nombres ou des noms : { fr: regex, par langue: modèle avec {1} {2} {3} }
 // Les pluriels : modèle [singulier, pluriel]
 const PATS = [
+ { re:/^(\d+) buts?$/, en:'{1} goals', es:'{1} goles', pt:'{1} golos', ar:'{1} أهداف', de:'{1} Tore', it:'{1} gol', tr:'{1} gol' },
+ { re:/^(\d+) PD$/, en:'{1} A', es:'{1} AS', pt:'{1} AS', ar:'{1} تمريرة', de:'{1} Vorl.', it:'{1} assist', tr:'{1} asist' },
  { re:/^Classement avant ce match · (.+)$/, en:'Standings before this match · {1}', es:'Clasificación antes de este partido · {1}', pt:'Classificação antes deste jogo · {1}', ar:'الترتيب قبل هذه المباراة · {1}', de:'Tabelle vor diesem Spiel · {1}', it:'Classifica prima di questa partita · {1}', tr:'Bu maç öncesi puan durumu · {1}' },
  { re:/^(.+) : match du (.+) contre (.+)$/, en:'{1}: match on {2} against {3}', es:'{1}: partido del {2} contra {3}', pt:'{1}: jogo de {2} contra {3}', ar:'{1}: مباراة {2} ضد {3}', de:'{1}: Spiel vom {2} gegen {3}', it:'{1}: partita del {2} contro {3}', tr:'{1}: {2} tarihli {3} maçı' },
  { re:/^(.+) \((blessé|suspendu)\)$/, fn:(m, lang) => { const W = { 'blessé':{ en:'injured', es:'lesionado', pt:'lesionado', ar:'مصاب', de:'verletzt', it:'infortunato', tr:'sakat' }, 'suspendu':{ en:'suspended', es:'sancionado', pt:'suspenso', ar:'موقوف', de:'gesperrt', it:'squalificato', tr:'cezalı' } }; return m[1] + ' (' + W[m[2]][lang] + ')'; } },

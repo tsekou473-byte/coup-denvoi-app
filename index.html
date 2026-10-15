@@ -221,6 +221,14 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .cb small{ display:block; text-align:right; font-size:.66rem; opacity:.6; margin-top:1px; }
 .chatbar{ position:sticky; bottom:0; display:flex; gap:8px; align-items:center; padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px)); background:var(--card); border-top:1px solid var(--line); max-width:none; }
 .reptxt{ width:100%; box-sizing:border-box; border:1px solid var(--line); background:var(--bg,#f1f4f9); color:var(--text); border-radius:14px; padding:12px 14px; font:inherit; font-size:1rem; outline:none; resize:vertical; margin:6px 0 10px; }
+.scl .sc{ display:grid; grid-template-columns:28px 1fr auto 34px; align-items:center; gap:8px; padding:10px 6px 10px 0; border-top:1px solid var(--line); }
+.scl .sc:first-child{ border-top:none; }
+.scl .ps{ text-align:center; font-family:'Barlow Condensed',sans-serif; font-weight:600; font-size:1.05rem; }
+.scl .who{ min-width:0; display:flex; flex-direction:column; gap:2px; }
+.scl .who b{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.scl .who small{ color:var(--muted); display:flex; align-items:center; gap:5px; }
+.scl .sub2{ color:var(--muted); font-size:.82rem; white-space:nowrap; }
+.scl .big{ font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.35rem; text-align:right; }
 .chatbar input{ flex:1; min-width:0; border:1px solid var(--line); background:var(--bg,#f1f4f9); color:var(--text); border-radius:999px; padding:11px 16px; font-size:1rem; outline:none; }
 .chatbar button{ border:none; background:var(--accent); color:#1b1305; width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
 .chatbar button.ok{ width:auto; padding:0 18px; border-radius:999px; font-weight:700; }
@@ -479,6 +487,8 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .thero small{ display:block; color:rgba(255,255,255,.72); font-size:.9rem; margin-top:2px; }
 .thero .chips{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; }
 .thero .rk{ background:rgba(255,181,71,.18); color:#ffcf85; border:1px solid rgba(255,181,71,.45); border-radius:999px; padding:3px 11px; font-size:.85rem; }
+.thero .nt{ background:#35d08a; color:#0d2a1c; border-radius:999px; padding:3px 11px; font-size:.85rem; font-weight:600; }
+.thero .nt b{ display:inline; font-size:1.05rem; letter-spacing:0; color:inherit; }
 .thero .rk b{ display:inline; font-size:1.05rem; letter-spacing:0; }
 .fm{ display:inline-flex; gap:4px; }
 .fm i{ font-style:normal; width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:.74rem; font-weight:700; color:#10202f; }
@@ -567,7 +577,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v135';
+const VERSION = 'v136';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1309,7 +1319,7 @@ document.querySelectorAll('.nav-item').forEach(btn => btn.onclick = () => {
   function context(){
     if (!$('panel').hidden){
       if (PANEL.kind === 'competition' && !PANEL.sub){
-        const tabs = ['matches','table'], i = tabs.indexOf(PANEL.ctab);
+        const tabs = ['matches','table','scorers','assists'], i = tabs.indexOf(PANEL.ctab);
         return { els:() => after($('panel'), '.dtabs'), prev:i > 0, next:i >= 0 && i < tabs.length - 1,
           go:dir => { PANEL.ctab = tabs[i + dir]; $('panel').scrollTop = 0; renderPanel(); } };
       }
@@ -2324,6 +2334,16 @@ function teamTableHtml(){
   if (!S.rows.length) return `<div class="card2" style="margin:0 0 14px">${noTable(S.note)}</div>`;
   return (L.name ? `<div class="tcomp" style="padding:0 4px 8px">${esc(trComp(L.name))}</div>` : '') + `<div class="card2" style="margin:0 0 14px">${standingsHtml(withLiveForm(S.rows, L.id), { favs:true, form:true, leagueId:L.id, ids:[PANEL.team.id], names:[PANEL.team.name] })}</div>${zoneLegend(S.rows)}`;
 }
+/* note de l'équipe (0-100) calculée par l'app : points par match, différence de buts et forme récente */
+function teamRating(rk, fin, t){
+  const r = rk && rk.row; if (!r || !r.played) return null;
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const ppg = clamp((r.pts || 0) / r.played / 3, 0, 1);
+  const gd = (r.gf != null && r.ga != null) ? clamp((r.gf - r.ga) / r.played, -2, 2) / 4 + 0.5 : ppg;
+  let fp = ppg;
+  if (fin && fin.length){ fp = fin.reduce((a, g) => { const x = teamResult(g, t); return a + (x === 'w' ? 3 : x === 'd' ? 1 : 0); }, 0) / (3 * fin.length); }
+  return Math.round(40 + 60 * (0.55 * ppg + 0.25 * gd + 0.20 * fp));
+}
 function teamPanelHtml(head){
   const t = PANEL.team, tab = PANEL.tab || 'info';
   const tabs = [['info','Aperçu'],['matches','Matchs'],['squad','Équipe'],['table','Classement'],['news','Actus']];
@@ -2331,7 +2351,8 @@ function teamPanelHtml(head){
   const sub = (PANEL.stLeague && PANEL.stLeague.name) ? esc(trComp(PANEL.stLeague.name)) : '';
   const rk = teamRankRow();
   const fin = (PANEL.tgames || []).filter(g => g.status === 'final').slice(-5);
-  const chips = (rk ? `<span class="rk"><b>${rk.row.pos}</b>${I18N.lang === 'fr' ? (rk.row.pos === 1 ? 'er' : 'e') : ''} · ${rk.row.pts ?? ''} pts</span>` : '') +
+  const nt = teamRating(rk, fin, t);
+  const chips = (nt != null ? `<span class="nt" title="Note calculée par l'app d'après la saison en cours"><b>${nt}</b> Note</span>` : '') + (rk ? `<span class="rk"><b>${rk.row.pos}</b>${I18N.lang === 'fr' ? (rk.row.pos === 1 ? 'er' : 'e') : ''} · ${rk.row.pts ?? ''} pts</span>` : '') +
     (fin.length ? `<span class="fm">${fin.map(g => { const r = teamResult(g, t); return `<i class="${r}">${{w:'V',d:'N',l:'D'}[r]}</i>`; }).join('')}</span>` : '');
   return head('', '') + `<div class="hero thero"><div class="thl">${crest(t.name, t.logo, 'xl')}</div><div class="thr"><b>${esc(trTeam(t.name))}</b>${sub ? `<small>${sub}</small>` : ''}<div class="chips">${chips}</div></div></div>` +
     `<div class="ttabs">${tabs.map(([k, l]) => `<button class="${tab === k ? 'active' : ''}" data-tt="${k}">${l}</button>`).join('')}</div><div class="cplist">${body}</div>`;
@@ -2753,8 +2774,8 @@ function renderPanel(){
       PANEL.games.forEach(g => { (byDate[g.date] = byDate[g.date] || []).push(g); });
       mbody = Object.keys(byDate).sort().map(d => `<section class="group" data-d="${d}"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${byDate[d].sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('')}</section>`).join('');
     }
-    const ctabs = `<div class="dtabs">${[['matches','Matchs'],['table','Classement']].map(([k,l]) => `<button class="dtab ${PANEL.ctab===k?'active':''}" data-ct="${k}">${l}</button>`).join('')}</div>`;
-    const body = PANEL.ctab === 'table' ? panelTable(c) : mbody;
+    const ctabs = `<div class="dtabs">${[['matches','Matchs'],['table','Classement'],['scorers','Buteurs'],['assists','Passeurs']].map(([k,l]) => `<button class="dtab ${PANEL.ctab===k?'active':''}" data-ct="${k}">${l}</button>`).join('')}</div>`;
+    const body = PANEL.ctab === 'table' ? panelTable(c) : (PANEL.ctab === 'scorers' || PANEL.ctab === 'assists') ? panelTops(c, PANEL.ctab) : mbody;
     html = head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + ctabs + `<div class="cplist">${body}</div>`;
   } else if (PANEL.kind === 'team') {
     const t = PANEL.team;
@@ -2832,6 +2853,7 @@ function renderPanel(){
     on('cretry2', () => { PANEL.err = null; PANEL.games = null; renderPanel(); loadCompetitionGames(PANEL.comp.id); });
     on('sretry', () => { PANEL.standErr = null; renderPanel(); });
     box.querySelectorAll('.dtab').forEach(b => b.onclick = () => { PANEL.ctab = b.dataset.ct; box.scrollTop = 0; renderPanel(); });
+    on('tretry2', () => { delete TOPS[PANEL.comp.id]; renderPanel(); });
   } else if (PANEL.kind === 'report') {
     const st = PANEL.rep;
     $('pback').onclick = () => { PANEL.kind = 'settings'; PANEL.rep = null; renderPanel(); };
@@ -2946,7 +2968,7 @@ function renderSearchRes(){
   const img = (u, cls) => u ? `<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.outerHTML='<span class=sph></span>'">` : '<span class="sph"></span>';
   let h = '';
   if (r.teams.length) h += `<div class="shead">Clubs et équipes</div><section class="group">` + r.teams.map(t =>
-    `<div class="srow" data-k="t" data-tid="${esc(t.id)}" data-lid="${esc(t.leagueId)}" data-name="${esc(t.name)}" data-logo="${esc(t.badge || '')}">${img(SETTINGS.logos ? t.badge : null)}<div class="sn">${esc(trTeam(t.name))}<small>${esc(trComp(t.leagueName || ''))}</small></div><span class="chev">›</span></div>`).join('') + '</section>';
+    `<div class="srow" data-k="t" data-tid="${esc(t.id)}" data-lid="${esc(t.leagueId)}" data-name="${esc(t.name)}" data-logo="${esc(t.badge || '')}">${img(SETTINGS.logos ? t.badge : null)}<div class="sn">${esc(trTeam(t.name))}<small>${t.national ? 'Équipe nationale · ' : ''}${esc(trComp(t.leagueName || ''))}</small></div><span class="chev">›</span></div>`).join('') + '</section>';
   if (r.players.length) h += `<div class="shead">Joueurs</div><section class="group">` + r.players.map((x, i) =>
     `<div class="srow" data-k="p" data-i="${i}">${img(x.player.photo)}<div class="sn">${esc(x.player.fullName || x.player.name)}<small>${esc(trTeam(x.team.name))}${x.player.position ? ' · ' + esc(x.player.position) : ''}</small></div><span class="chev">›</span></div>`).join('') + '</section>';
   if (!h && r.building) h = `<div class="empty" style="padding:20px 24px">Le serveur prépare la recherche de joueurs et de clubs (${r.indexed}/${r.total}). Réessaie dans un instant.</div>`;
@@ -2985,6 +3007,28 @@ function renderExplorerList(){
   }).join('');
 }
 
+/* meilleurs buteurs / passeurs d'une compétition */
+const TOPS = {};
+function panelTops(c, kind){
+  const T = TOPS[c.id];
+  if (!T){
+    TOPS[c.id] = { loading:true };
+    apiGet(`${BACKEND}/api/topscorers?league_id=${encodeURIComponent(c.id)}`)
+      .then(r => { TOPS[c.id] = { rows:r.data.rows || [], note:r.data.note || '' }; })
+      .catch(e => { TOPS[c.id] = { err:e.message }; })
+      .finally(() => { if (!$('panel').hidden && PANEL.kind === 'competition' && PANEL.comp && PANEL.comp.id === c.id) renderPanel(); });
+    return `<div class="empty">Chargement des statistiques…<small>Le serveur gratuit peut mettre un moment à répondre.</small></div>`;
+  }
+  if (T.loading) return `<div class="empty">Chargement des statistiques…</div>`;
+  if (T.err) return `<div class="empty">Impossible de charger les statistiques.<small>${esc(T.err).slice(0,200)}</small><button class="retry" id="tretry2">Réessayer</button></div>`;
+  let rows = (T.rows || []).slice();
+  if (!rows.length) return `<div class="card2"><div class="noev">Pas de statistiques de joueurs pour cette compétition.<br><small style="opacity:.8">${esc(T.note || 'Le fournisseur de données ne les envoie pas pour toutes les compétitions.')}</small></div></div>`;
+  const goals = kind === 'scorers';
+  rows = goals ? rows.sort((a, b) => b.goals - a.goals || b.assists - a.assists) : rows.filter(r => r.assists > 0).sort((a, b) => b.assists - a.assists || b.goals - a.goals);
+  if (!rows.length) return `<div class="card2"><div class="noev">Aucune passe décisive enregistrée pour le moment.</div></div>`;
+  const body = rows.slice(0, 30).map((r, i) => `<div class="sc"><span class="ps">${i + 1}</span><span class="who"><b>${esc(r.name)}</b><small>${crest(trTeam(r.team) || '', null, 'sm')} ${esc(trTeam(r.team))}</small></span><span class="sub2">${goals ? `${r.assists} PD` : `${r.goals} but${r.goals > 1 ? 's' : ''}`}</span><span class="big">${goals ? r.goals : r.assists}</span></div>`).join('');
+  return `<div class="card2" style="margin:0 0 14px"><div class="tk">${goals ? 'Meilleurs buteurs' : 'Meilleurs passeurs'}</div><div class="scl">${body}</div></div>`;
+}
 function openCompetition(id){
   const c = (COMP.list || []).find(x => x.id === id);
   if (!c) return;
