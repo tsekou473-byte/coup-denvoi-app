@@ -545,6 +545,24 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .fh-last{ margin-top:10px; display:flex; align-items:center; gap:8px; font-size:.9rem; color:rgba(255,255,255,.8); cursor:pointer; } .fh-last b{ font-family:'Barlow Condensed',sans-serif; font-size:1.15rem; color:#fff; }
 .fh-last .rs{ font-style:normal; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:700; color:#fff; background:#7a8599; } .fh-last .rs.w{ background:#2f9e5f; } .fh-last .rs.l{ background:#d64545; }
 .fm{ font-style:normal; color:#e0a21c; padding:2px 4px; cursor:pointer; font-size:1rem; }
+
+.tline{ padding:14px 14px 8px; }
+.tline .tk{ font-family:'Barlow Condensed',sans-serif; text-transform:uppercase; letter-spacing:.06em; color:var(--accent-ink); font-size:.95rem; margin-bottom:6px; }
+.tl-box{ position:relative; margin:0 12px; }
+.tl-line{ position:absolute; left:0; right:0; height:4px; border-radius:2px; background:var(--line); }
+.tl-ht{ position:absolute; width:2px; background:var(--muted); opacity:.45; }
+.tl-ev{ position:absolute; transform:translateX(-50%); text-align:center; line-height:1; font-size:.62rem; color:var(--muted); width:30px; }
+.tl-ev i{ display:block; font-style:normal; font-size:1rem; line-height:1.15; }
+.tl-ev.og i{ filter:hue-rotate(160deg); }
+.tl-tk{ position:relative; margin:4px 12px 0; height:14px; font-size:.65rem; color:var(--muted); }
+.tl-tk span{ position:absolute; transform:translateX(-50%); }
+.tl-nm{ position:absolute; left:-2px; font-size:.68rem; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); max-width:46%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dtag{ display:block; width:max-content; margin:3px auto 0; padding:1px 7px; border-radius:999px; background:var(--accent); color:#1b1305; font-size:.62rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+.score.hid{ cursor:pointer; letter-spacing:.1em; }
+.lprob small{ display:block; margin-top:6px; color:var(--muted); font-size:.75rem; }
+body.dens-compact .match{ padding:7px 10px; gap:6px; } body.dens-compact .match .crest{ width:26px; height:26px; font-size:.7rem; } body.dens-compact .tn{ font-size:.98rem; } body.dens-compact .score{ font-size:1.05rem; }
+.nfilter{ display:flex; gap:8px; padding:12px 14px 2px; } .nfilter button{ border:none; background:var(--card); box-shadow:0 1px 2px rgba(20,30,50,.08); border-radius:999px; padding:7px 16px; font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; letter-spacing:.04em; text-transform:uppercase; color:var(--text); cursor:pointer; } .nfilter button.on{ background:var(--accent); color:#1b1305; }
+.news .mine{ display:inline-block; margin-left:6px; padding:0 7px; border-radius:999px; background:var(--accent); color:#1b1305; font-size:.62rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
 .fnx-row{ display:flex; gap:10px; overflow-x:auto; padding:0 2px 8px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
 .fnx-row::-webkit-scrollbar{ display:none; }
 .fnx{ flex:0 0 168px; background:var(--card); border-radius:16px; padding:12px; box-shadow:0 1px 2px rgba(20,30,50,.08); cursor:pointer; display:flex; flex-direction:column; gap:6px; }
@@ -654,7 +672,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v147';
+const VERSION = 'v148';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -686,6 +704,7 @@ try { Object.assign(PROFILE, JSON.parse(localStorage.getItem('ce_profile') || '{
 const saveSettings = () => { try { localStorage.setItem('ce_settings', JSON.stringify(SETTINGS)); } catch(e) {} };
 const saveProfile = () => { try { localStorage.setItem('ce_profile', JSON.stringify(PROFILE)); } catch(e) {} };
 const SIZES = { small:'12.5px', normal:'14px', large:'16px' };
+function applyDens(){ document.body.classList.toggle('dens-compact', SETTINGS.dens === 'compact'); }
 function applySize(){ document.documentElement.style.fontSize = SIZES[SETTINGS.size] || SIZES.normal; }
 applySize();
 const darkMQ = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
@@ -1125,13 +1144,13 @@ setInterval(() => {
 }, 5000);
 
 function middle(g){
-  const score = `${g.hs ?? 0} - ${g.as ?? 0}`;
-  if (g.status === 'final') return `<div class="mid"><div class="score">${score}</div><div class="sub">Terminé</div></div>`;
+  const score = scoreTxt(g), hid = scoreHidden(g) ? ' hid' : '';
+  if (g.status === 'final') return `<div class="mid"><div class="score${hid}">${score}</div><div class="sub">Terminé</div></div>`;
   if (g.status === 'live'){
-    return `<div class="mid"><div class="score live">${score}</div><div class="sub live">${minTag(g)}</div></div>`;
+    return `<div class="mid"><div class="score live${hid}">${score}</div><div class="sub live">${minTag(g)}</div></div>`;
   }
   if (g.status === 'postponed') return `<div class="mid"><div class="score muted strike">${esc(g.time||'')}</div><div class="sub">Reporté</div></div>`;
-  return `<div class="mid"><div class="score muted">${esc(g.time||'--:--')}</div></div>`;
+  return `<div class="mid"><div class="score muted">${esc(g.time||'--:--')}</div>${tagHtml(g)}</div>`;
 }
 
 function priority(g){
@@ -1149,6 +1168,79 @@ function priority(g){
 }
 
 
+
+/* ---------- étiquettes « Derby » / « Choc » ---------- */
+const CL = {
+  rma:/real madrid/, atm:/atletico|atlético/, bar:/barcelona|barça/, esp:/espanyol/, sev:/sevilla/, bet:/betis/, bay:/bayern/, bvb:/dortmund/, s04:/schalke/,
+  mci:/manchester city|man city/, mun:/manchester united|man utd/, liv:/liverpool/, eve:/everton/, ars:/arsenal/, tot:/tottenham|spurs/, che:/chelsea/, whu:/west ham/, mil:/\bmilan\b/, int:/\binter\b(?! miami)|internazionale/,
+  juv:/juventus/, tor:/torino/, rom:/\broma\b/, laz:/lazio/, nap:/napoli/, psg:/paris saint|paris sg|\bpsg\b/, om:/marseille/, ol:/lyon/, ase:/saint[- ]etienne/, ben:/benfica/, spo:/sporting/, por:/\bporto\b/,
+  aja:/ajax/, fey:/feyenoord/, gal:/galatasaray/, fen:/fenerbah/, bes:/besiktas|beşiktaş/, cel:/celtic/, ran:/rangers/, ahl:/al ahly/, zam:/zamalek/, wyd:/wydad/, rca:/raja/, bou:/boca/, riv:/river plate/
+};
+const DERBIES = [['rma','atm','Derby'],['bar','esp','Derby'],['sev','bet','Derby'],['rma','bar','Clásico'],['bay','bvb','Der Klassiker'],['bvb','s04','Derby'],['mci','mun','Derby'],['liv','eve','Derby'],['ars','tot','Derby'],['che','tot','Derby'],['ars','che','Derby'],['whu','tot','Derby'],['mil','int','Derby'],['juv','tor','Derby'],['rom','laz','Derby'],['psg','om','Classique'],['ol','ase','Derby'],['ben','spo','Derby'],['ben','por','Clássico'],['spo','por','Clássico'],['aja','fey','Klassieker'],['gal','fen','Derby'],['fen','bes','Derby'],['gal','bes','Derby'],['cel','ran','Old Firm'],['ahl','zam','Derby'],['wyd','rca','Derby'],['bou','riv','Superclásico'],['liv','mun','Choc'],['mun','ars','Choc']];
+const BIG = ['rma','atm','bar','bay','bvb','mci','mun','liv','ars','tot','che','mil','int','juv','nap','psg','om','ben','por','aja'];
+function matchTag(g){
+  const a = norm(g.home), b = norm(g.away);
+  const is = (k, n) => CL[k] && CL[k].test(n);
+  for (const [x, y, label] of DERBIES) if ((is(x, a) && is(y, b)) || (is(y, a) && is(x, b))) return label;
+  const big = n => BIG.some(k => is(k, n));
+  return big(a) && big(b) ? 'Choc' : '';
+}
+const tagHtml = g => { const t = matchTag(g); return t ? `<div class="dtag">${esc(t)}</div>` : ''; };
+
+/* ---------- masquer les scores (anti-spoiler) ---------- */
+const REVEAL = new Set();
+const scoreHidden = g => !!(SETTINGS.spoil && g && (g.status === 'final' || g.status === 'live') && !REVEAL.has(String(g.id)));
+const scoreTxt = g => scoreHidden(g) ? '• - •' : `${g.hs ?? 0} - ${g.as ?? 0}`;
+
+/* ---------- probabilités en direct (selon le score et la minute) ---------- */
+function liveProb(d){
+  if (!d || d.status !== 'live') return null;
+  const mn = /ht|half/i.test(d.minute || '') ? 45 : minOf(d.minute);
+  if (!mn) return null;
+  const p = PRED[d.id];
+  let lh = 1.45, la = 1.15;
+  if (p && p.h != null){ const r = (p.h + p.d / 2 + 1) / (p.a + p.d / 2 + 1); lh = 2.7 * r / (1 + r); la = 2.7 / (1 + r); }
+  const f = Math.max(0.02, (95 - Math.min(mn, 94)) / 95);
+  const pois = (l) => { const o = []; let t = Math.exp(-l); for (let k = 0; k < 12; k++){ o.push(t); t = t * l / (k + 1); } return o; };
+  const ph = pois(lh * f), pa = pois(la * f), diff = (Number(d.hs) || 0) - (Number(d.as) || 0);
+  let H = 0, D = 0, A = 0;
+  for (let i = 0; i < 12; i++) for (let j = 0; j < 12; j++){ const q = ph[i] * pa[j], r = diff + i - j; if (r > 0) H += q; else if (r < 0) A += q; else D += q; }
+  const t = H + D + A || 1;
+  return { h: H / t * 100, d: D / t * 100, a: A / t * 100 };
+}
+function liveProbCard(d){
+  const p = liveProb(d); if (!p) return '';
+  const r = n => Math.round(n);
+  return `<div class="card2 pcard lprob"><h4>Probabilité en direct</h4>
+    <div class="pbar"><i class="h" style="flex:${Math.max(p.h, 1)}"></i><i class="d" style="flex:${Math.max(p.d, 1)}"></i><i class="a" style="flex:${Math.max(p.a, 1)}"></i></div>
+    <div class="pnums"><div><b>${r(p.h)}%</b>${esc(trTeam(d.home))}</div><div><b>${r(p.d)}%</b>Nul</div><div><b>${r(p.a)}%</b>${esc(trTeam(d.away))}</div></div>
+    <small>Estimation Coup d'Envoi d'après le score et la minute.</small></div>`;
+}
+
+/* ---------- chronologie du match ---------- */
+function timelineHtml(d){
+  if (!d || d.status === 'scheduled') return '';
+  const evs = [];
+  (d.goals || []).forEach(x => { if (!/missed|saved/i.test(x.info || '')) evs.push({ team:x.team, t:minOf(x.time), ic:'⚽', og:/own/i.test(x.info || ''), tx:`${x.time}' ${x.player || ''}` }); });
+  (d.cards || []).forEach(x => evs.push({ team:x.team, t:minOf(x.time), ic:x.card === 'red' ? '🟥' : '🟨', tx:`${x.time}' ${x.player || ''}` }));
+  if (!evs.length) return '';
+  const mx = Math.max(...evs.map(e => e.t)), total = mx > 95 ? (mx > 115 ? 130 : 120) : 90;
+  const place = side => {
+    const list = evs.filter(e => e.team === side).sort((a, b) => a.t - b.t), last = [];
+    return list.map(e => { e.pct = Math.min(97, Math.max(3, e.t / total * 100)); let r = 0; while (last[r] !== undefined && e.pct - last[r] < 8) r++; last[r] = e.pct; e.row = r; return e; });
+  };
+  const H = place('home'), A = place('away');
+  const hr = Math.max(1, ...H.map(e => e.row + 1)), ar = Math.max(1, ...A.map(e => e.row + 1)), RH = 30;
+  const mid = hr * RH + 14, height = mid + ar * RH + 14;
+  const ev = (e, up) => `<div class="tl-ev ${e.og ? 'og' : ''}" style="left:${e.pct}%;${up ? `top:${mid - 6 - (e.row + 1) * RH + 4}px` : `top:${mid + 8 + e.row * RH}px`}" title="${esc(e.tx)}">${up ? `${Math.round(e.t)}'<i>${e.ic}</i>` : `<i>${e.ic}</i>${Math.round(e.t)}'`}</div>`;
+  const ticks = [0, 45, 90].concat(total > 90 ? [total] : []).filter((v, i, a) => a.indexOf(v) === i);
+  return `<div class="card2 tline"><div class="tk">Chronologie</div><div class="tl-box" style="height:${height}px">
+    <div class="tl-nm" style="top:0">${esc(trTeam(d.home))}</div><div class="tl-nm" style="bottom:0">${esc(trTeam(d.away))}</div>
+    <div class="tl-line" style="top:${mid}px"></div><div class="tl-ht" style="left:${45 / total * 100}%;top:${mid - 8}px;height:20px"></div>
+    ${H.map(e => ev(e, true)).join('')}${A.map(e => ev(e, false)).join('')}</div>
+    <div class="tl-tk">${ticks.map(v => `<span style="left:${v / total * 100}%">${v}'</span>`).join('')}</div></div>`;
+}
+
 /* probabilités de victoire (avant le match) */
 const PRED = {};            // id du match -> { h, d, a } en %
 const PRED_DAYS = {};       // jour (Paris) -> heure du dernier chargement
@@ -1160,6 +1252,7 @@ function predRow(g){
 }
 function loadWinProb(d){
   if (PRED[d.id] !== undefined) return;
+  if (d.status === 'live' && !d.hs && !d.as && false) return;
   PRED[d.id] = null;   // en cours
   const q = `match=${encodeURIComponent(d.id)}&date=${encodeURIComponent(d.pdate || d.date)}&league=${encodeURIComponent(d.leagueId || '')}&home=${encodeURIComponent(d.homeId || '')}&away=${encodeURIComponent(d.awayId || '')}`;
   apiGet(`${BACKEND}/api/winprob?${q}`).then(r => { PRED[d.id] = r.data && r.data.source ? r.data : false; })
@@ -1364,6 +1457,21 @@ function agoFr(ts){
   const h = Math.round(m / 60); if (h < 24) return 'il y a ' + h + ' h';
   const d = Math.round(h / 24); return 'il y a ' + d + ' j';
 }
+const NEWSF = { mine:false };
+const NEWS_ALIAS = { 'paris saint germain':['psg','paris sg'], 'marseille':['om'], 'olympique lyonnais':['ol'], 'lyon':['ol'], 'manchester city':['man city'], 'manchester united':['man utd','man united'], 'barcelona':['barca','barça'], 'atletico madrid':['atletico','atlético'], 'bayern munich':['bayern'], 'tottenham':['spurs'], 'inter':['inter milan','internazionale'], 'ac milan':['milan'] };
+const NEWS_STOP = new Set(['fc','cf','ac','as','sc','club','de','du','la','le','saint','st','real','city','united','sporting','athletic','olympique','united']);
+function favNewsKeys(){
+  const out = [];
+  const esc2 = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  FAV.teams.forEach(t => {
+    const names = new Set([norm(t.name), norm(trTeam(t.name))]);
+    (NEWS_ALIAS[norm(t.name)] || []).forEach(a => names.add(norm(a)));
+    norm(t.name).split(/\s+/).forEach(w => { if (w.length >= 5 && !NEWS_STOP.has(w)) names.add(w); });
+    names.forEach(n => { if (n && n.length >= 3) out.push(new RegExp('\\b' + esc2(n) + '\\b')); });
+  });
+  FAV.players.forEach(p => { const l = norm(String(p.fullName || p.name).split(/\s+/).pop()); if (l.length >= 4) out.push(new RegExp('\\b' + esc2(l) + '\\b')); });
+  return out;
+}
 async function renderNews(kind){
   const main = $('main'), my = ++reqId;
   main.innerHTML = '<div class="empty">Chargement…</div>';
@@ -1372,7 +1480,17 @@ async function renderNews(kind){
     if (my !== reqId || state.page !== kind) return;
     const items = data.items || [];
     if (!items.length){ main.innerHTML = `<div class="empty">${kind === 'transferts' ? 'Aucun transfert pour le moment.' : 'Aucune actu pour le moment.'}</div>`; return; }
-    main.innerHTML = '<div style="padding:12px 14px 0">' + items.map(i => `<a class="news" href="${esc(i.link)}" target="_blank" rel="noopener">${i.image ? `<img src="${esc(i.image)}" loading="lazy" alt="" onerror="this.remove()">` : ''}<div><div class="nt">${esc(i.title)}</div><div class="nm">${esc(i.source)} · ${agoFr(i.ts)}</div></div></a>`).join('') + '</div><div class="ver">Coup d\'Envoi · ' + VERSION + '</div>';
+    const keys = favNewsKeys();
+    const isMine = i => keys.length && keys.some(k => k.test(norm(i.title)));
+    let list = items.map(i => ({ i, mine: isMine(i) }));
+    if (keys.length){
+      if (NEWSF.mine) list = list.filter(x => x.mine);
+      else list = list.filter(x => x.mine).concat(list.filter(x => !x.mine));
+    }
+    const bar = keys.length ? `<div class="nfilter"><button data-nf="all" class="${NEWSF.mine ? '' : 'on'}">Pour toi</button><button data-nf="mine" class="${NEWSF.mine ? 'on' : ''}">Mes équipes</button></div>` : '';
+    const body = list.length ? list.map(({ i, mine }) => `<a class="news" href="${esc(i.link)}" target="_blank" rel="noopener">${i.image ? `<img src="${esc(i.image)}" loading="lazy" alt="" onerror="this.remove()">` : ''}<div><div class="nt">${esc(i.title)}</div><div class="nm">${esc(i.source)} · ${agoFr(i.ts)}${mine && !NEWSF.mine ? '<span class="mine">Tes équipes</span>' : ''}</div></div></a>`).join('') : `<div class="empty">Aucune actu sur tes équipes pour le moment.</div>`;
+    main.innerHTML = bar + '<div style="padding:12px 14px 0">' + body + '</div><div class="ver">Coup d\'Envoi · ' + VERSION + '</div>';
+    main.querySelectorAll('[data-nf]').forEach(b => b.onclick = () => { NEWSF.mine = b.dataset.nf === 'mine'; renderNews(kind); });
   } catch (e) {
     if (my === reqId) main.innerHTML = `<div class="empty">Impossible de charger les actus. Réessaie dans un instant.</div>`;
   }
@@ -1618,6 +1736,8 @@ window.addEventListener('popstate', () => {
 });
 $('main').addEventListener('click', e => {
   const m = e.target.closest('.match');
+  const hs = e.target.closest('.score.hid');
+  if (hs && m){ REVEAL.add(String(m.dataset.id)); if (state.page === 'matchs') refreshList(); else if (state.page === 'favoris') renderFavoris(); return; }
   if (m) openMatch(m.dataset.id);
 });
 
@@ -1681,14 +1801,14 @@ async function loadDetail(silent){
 }
 
 function sbMid(g){
-  const score = `${g.hs ?? 0} - ${g.as ?? 0}`;
-  if (g.status === 'final') return `<div class="score">${score}</div><div class="sub">Terminé</div>`;
+  const score = scoreTxt(g), hid = scoreHidden(g) ? ' hid' : '';
+  if (g.status === 'final') return `<div class="score${hid}">${score}</div><div class="sub">Terminé</div>`;
   if (g.status === 'live'){
-    return `<div class="score live">${score}</div><div class="sub live">${minTag(g)}</div>`;
+    return `<div class="score live${hid}">${score}</div><div class="sub live">${minTag(g)}</div>`;
   }
   if (g.status === 'postponed') return `<div class="score muted strike">${esc(g.time||'')}</div><div class="sub">Reporté</div>`;
   const cd = (typeof g.ts === 'number' && g.ts > Date.now()) ? `<div class="cdown" data-notr data-ts="${g.ts}">${fmtCountdown(g.ts)}</div>` : '';
-  return `<div class="score muted">${esc(g.time||'--:--')}</div><div class="sub">${esc(dayLabel(g.date))}</div>${cd}`;
+  return `<div class="score muted">${esc(g.time||'--:--')}</div><div class="sub">${esc(dayLabel(g.date))}</div>${tagHtml(g)}${cd}`;
 }
 function fmtCountdown(ts){
   let t = Math.max(0, Math.floor((ts - Date.now()) / 1000));
@@ -1784,6 +1904,7 @@ function varCard(d){
   return `<div class="card2 varcard"><div class="tk">Décisions VAR</div>${rows}</div>`;
 }
 function tabResume(d){
+  if (scoreHidden(d)) return `<div class="card2"><div class="noev">Score masqué.<small style="display:block;margin-top:6px">Touche le score en haut pour l'afficher.</small></div></div>`;
   preloadSquadPhotos(d);
   const mk = (k, arr) => arr.map(x => ({ k, ...x })).sort((a,b) => minOf(a.time) - minOf(b.time));
   const goals = mk('goal', d.goals), cards = mk('card', d.cards), subs = mk('sub', d.subs);
@@ -1804,7 +1925,8 @@ function tabResume(d){
   const hasLu = d.lineups.home.starters.length || d.lineups.away.starters.length;
   const avail = `Données reçues : ${nb(d.goals.length, 'but')} · ${nb(d.cards.length, 'carton')} · ${nb(d.subs.length, 'remplacement')} · compositions ${hasLu ? 'oui' : 'non'} · statistiques ${d.stats.length ? 'oui' : 'non'}`;
   if (d.status === 'scheduled') loadWinProb(d);
-  return `${predCard(d)}${html}${h2hHtml(d)}`;
+  if (d.status === 'live') loadWinProb(d);
+  return `${liveProbCard(d)}${predCard(d)}${timelineHtml(d)}${html}${h2hHtml(d)}`;
 }
 
 const PARTICLES = new Set(['de','da','do','dos','das','van','von','der','den','di','del','le','la','el','al','bin','ter','ten']);
@@ -2781,6 +2903,7 @@ function renderDetail(){
   };
   $('dfav').onclick = () => { toggleFavMatch(g); syncFollow(); refreshList(); };
   $('dshare').onclick = () => shareMatchImage(g, DETAIL.data);
+  const hsc = box.querySelector('.hero .score.hid'); if (hsc) hsc.onclick = () => { REVEAL.add(String(g.id)); DETAIL.headSig = null; renderDetail(); refreshList(); };
   box.querySelectorAll('.pp[data-name], .subtap[data-name]').forEach(el => el.onclick = () => {
     openPitchPlayer(el.dataset.side, el.dataset.name, el.dataset.n, g);
   });
@@ -2944,6 +3067,8 @@ function renderPanel(){
         <div class="row"><div class="rl"><b>Langue</b><small>Langue de l'application</small></div><select class="langsel" id="setLang" data-notr>${I18N.LANGS.map(l => `<option value="${l.code}" ${SETTINGS.lang===l.code?'selected':''}>${l.name}</option>`).join('')}</select></div>
         <div class="row"><div class="rl"><b>Noms en français</b><small>Pays, sélections et compétitions</small></div><label class="sw"><input type="checkbox" id="setFr" ${SETTINGS.fr ? 'checked' : ''}><i></i></label></div>
         <div class="row"><div class="rl"><b>Logos des équipes et des compétitions</b><small>Désactive-les pour n'afficher que les initiales</small></div><label class="sw"><input type="checkbox" id="setLogos" ${SETTINGS.logos ? 'checked' : ''}><i></i></label></div>
+        <div class="row"><div class="rl"><b>Liste des matchs</b><small>Compacte : plus de matchs à l'écran</small></div><div class="seg" id="segDens">${[['normal','Normale'],['compact','Compacte']].map(([v,l]) => `<button data-v="${v}" class="${(SETTINGS.dens||'normal')===v?'on':''}">${l}</button>`).join('')}</div></div>
+        <div class="row"><div class="rl"><b>Masquer les scores</b><small>Évite les spoilers : touche un score pour l'afficher</small></div><label class="sw"><input type="checkbox" id="setSpoil" ${SETTINGS.spoil ? 'checked' : ''}><i></i></label></div>
         ${pushRow()}
         <div class="row"><div class="rl"><b>Ouvrir sur Favoris</b><small>Au lancement, affiche d'abord ton équipe et tes favoris</small></div><label class="sw"><input type="checkbox" id="setStartFav" ${SETTINGS.startFav ? 'checked' : ''}><i></i></label></div>
         <div class="row"><div class="rl"><b>Actualisation automatique</b><small>Met à jour les matchs en direct toutes les 90 secondes</small></div><label class="sw"><input type="checkbox" id="setAuto" ${SETTINGS.auto ? 'checked' : ''}><i></i></label></div>
@@ -3049,6 +3174,8 @@ function renderPanel(){
     if ($('pushTest')) $('pushTest').onclick = async () => { try { await pushTest(); } catch(e) { alert(I18N.tr('Impossible d\'envoyer la notification test.')); } };
     $('setLang').onchange = e => { SETTINGS.lang = e.target.value; saveSettings(); location.reload(); };
     $('setFr').onchange = e => { SETTINGS.fr = e.target.checked; saveSettings(); refreshAfterSetting(); };
+    box.querySelectorAll('#segDens button').forEach(b => b.onclick = () => { SETTINGS.dens = b.dataset.v; saveSettings(); applyDens(); renderPanel(); });
+    $('setSpoil').onchange = e => { SETTINGS.spoil = e.target.checked; saveSettings(); REVEAL.clear(); refreshAfterSetting(); };
     $('setStartFav').onchange = e => { SETTINGS.startFav = e.target.checked; saveSettings(); };
     $('setAuto').onchange = e => { SETTINGS.auto = e.target.checked; saveSettings(); };
     $('setLogos').onchange = e => { SETTINGS.logos = e.target.checked; saveSettings(); refreshAfterSetting(); };
@@ -3483,7 +3610,7 @@ function favHeroHtml(){
   const next = mine.filter(g => g.status !== 'final' && g.status !== 'live').sort((a, b) => key(a).localeCompare(key(b)))[0];
   const last = mine.filter(g => g.status === 'final').sort((a, b) => key(b).localeCompare(key(a)))[0];
   const gm = live || next;
-  const line = g => { const home = String(g.homeId) === t.id; return { opp: home ? g.away : g.home, oppLogo: home ? g.awayLogo : g.homeLogo, home, sc: home ? `${g.hs ?? 0} - ${g.as ?? 0}` : `${g.as ?? 0} - ${g.hs ?? 0}` }; };
+  const line = g => { const home = String(g.homeId) === t.id; return { opp: home ? g.away : g.home, oppLogo: home ? g.awayLogo : g.homeLogo, home, sc: scoreHidden(g) ? '• - •' : home ? `${g.hs ?? 0} - ${g.as ?? 0}` : `${g.as ?? 0} - ${g.hs ?? 0}` }; };
   let mid = '';
   if (gm){
     const L = line(gm);
@@ -3492,8 +3619,8 @@ function favHeroHtml(){
       ${live ? '' : `<div class="fh-cd">${typeof gm.ts === 'number' ? countdownTxt(gm.ts) : esc(dayLabel(gm.date))}<small>${esc(dayLabel(gm.date))}${gm.time ? ' · ' + esc(gm.time) : ''}</small></div>`}</div>`;
   }
   let lastHtml = '';
-  if (last){ const L = line(last); const a = +(L.home ? last.hs : last.as), b = +(L.home ? last.as : last.hs); const r = a > b ? 'w' : a === b ? 'd' : 'l';
-    lastHtml = `<div class="fh-last" data-mid="${esc(last.id)}"><span>Dernier match</span><i class="rs ${r}">${r === 'w' ? 'V' : r === 'd' ? 'N' : 'D'}</i><b>${L.sc}</b><span>${L.home ? 'vs' : '@'} ${esc(trTeam(L.opp))}</span></div>`; }
+  if (last){ const L = line(last); const a = +(L.home ? last.hs : last.as), b = +(L.home ? last.as : last.hs); const r = scoreHidden(last) ? 'x' : a > b ? 'w' : a === b ? 'd' : 'l';
+    lastHtml = `<div class="fh-last" data-mid="${esc(last.id)}"><span>Dernier match</span><i class="rs ${r}">${r === 'w' ? 'V' : r === 'd' ? 'N' : r === 'x' ? '•' : 'D'}</i><b>${L.sc}</b><span>${L.home ? 'vs' : '@'} ${esc(trTeam(L.opp))}</span></div>`; }
   return `<div class="fhero"><div class="fh-top">${crest(trTeam(t.name) || '', t.logo, 'md')}<div><small>Mon équipe</small><b>${esc(trTeam(t.name))}</b></div><button class="fh-open" data-id="${esc(t.id)}" data-lid="${esc(t.leagueId || '')}" data-name="${esc(t.name)}" data-logo="${esc(t.logo || '')}">Voir la fiche</button></div>${mid}${lastHtml}</div>`;
 }
 function favNextHtml(){
@@ -3506,7 +3633,7 @@ function favNextHtml(){
     const g = live || next || last; if (!g) return '';
     const home = String(g.homeId) === t.id, opp = home ? g.away : g.home, oppLogo = home ? g.awayLogo : g.homeLogo;
     const hasScore = live || g.status === 'final';
-    const sc = hasScore ? (home ? `${g.hs ?? 0} - ${g.as ?? 0}` : `${g.as ?? 0} - ${g.hs ?? 0}`) : '';
+    const sc = hasScore ? (scoreHidden(g) ? '• - •' : home ? `${g.hs ?? 0} - ${g.as ?? 0}` : `${g.as ?? 0} - ${g.hs ?? 0}`) : '';
     const tag = live ? 'En direct' : next ? dayLabel(g.date) + (g.time ? ' · ' + g.time : '') : 'Terminé';
     return `<div class="fnx" data-mid="${esc(g.id)}"><div class="tt">${crest(trTeam(t.name) || '', t.logo, 'sm')}<span>${esc(trTeam(t.name))}</span></div><div class="tg ${live ? 'lv' : ''}">${tag}</div><div class="op">${crest(trTeam(opp) || '', oppLogo, 'xs')}<span>${home ? 'vs' : '@'} ${esc(trTeam(opp))}</span>${sc ? `<b>${sc}</b>` : ''}</div></div>`;
   }).join('');
@@ -3607,7 +3734,11 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator){
 netbar();
 renderLeagueList();
 renderDates();
+applyDens();
 show();
+{ const go = new URLSearchParams(location.search).get('go');
+  if (go === 'live'){ state.sel = 'live'; renderDates(); show(); }
+  else if (go === 'favoris' || go === 'next'){ const nb = [...document.querySelectorAll('.nav-item')].find(b => b.dataset.page === 'favoris'); if (nb) nb.click(); } }
 if (SETTINGS.startFav && FAV.teams.length){ const nb = [...document.querySelectorAll('.nav-item')].find(b => b.dataset.page === 'favoris'); if (nb) nb.click(); }
 </script>
 </body>
