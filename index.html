@@ -255,6 +255,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .ci-pl .tm{ display:flex; align-items:center; gap:5px; color:var(--muted); font-size:.82rem; }
 .ci-pl em{ font-style:normal; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.8rem; color:var(--accent-ink); }
 .ci-pl.y em{ color:#c79a00; } .ci-pl.r em{ color:#d64545; }
+.pface.ci{ width:76px; height:76px; font-size:1.4rem; margin-bottom:2px; }
 .crest.xs{ width:16px; height:16px; font-size:.45rem; box-shadow:none; } .crest.xs img{ padding:1px; }
 .ci .more{ display:block; width:100%; margin-top:10px; border:none; background:var(--line); color:var(--text); padding:11px 0; border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
 .ci .more::after{ content:' ›'; }
@@ -623,7 +624,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v144';
+const VERSION = 'v145';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
