@@ -246,17 +246,15 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 .ci-big span:nth-of-type(1){ text-align:right; } .ci-big span{ font-size:.95rem; line-height:1.1; }
 .ci-c{ margin-top:10px; color:var(--muted); font-size:.9rem; } .ci-c b{ color:var(--text); }
 .ci-pl.y em{ color:#c79a00; } .ci-pl.r em{ color:#d64545; }
-.ci-strip{ position:sticky; top:var(--dhh,64px); z-index:1; margin:0 -12px 12px; padding:8px 12px 8px; background:var(--bg,#eef1f6); box-shadow:0 6px 10px -8px rgba(20,30,50,.35); }
-.ci-hs{ display:flex; gap:8px; overflow-x:auto; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.ci-strip{ position:sticky; top:var(--dhh,64px); z-index:2; padding:8px 12px 10px; background:var(--bg,#eef1f6); box-shadow:0 6px 10px -8px rgba(20,30,50,.35); }
+.ci-hs{ display:flex; gap:10px; overflow-x:auto; padding:0 2px 2px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; scrollbar-width:none; max-width:640px; margin:0 auto; }
 .ci-hs::-webkit-scrollbar{ display:none; }
-.ci-pl{ flex:0 0 218px; scroll-snap-align:start; background:var(--card); border-radius:16px; padding:8px 12px 8px 8px; display:flex; align-items:center; gap:10px; box-shadow:0 1px 2px rgba(20,30,50,.1); }
-.ci-pt{ min-width:0; flex:1; display:flex; flex-direction:column; gap:1px; }
-.ci-pt small{ color:var(--muted); font-size:.68rem; letter-spacing:.05em; text-transform:uppercase; }
-.ci-pt b{ font-size:.95rem; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.ci-pt .tm{ display:flex; align-items:center; gap:5px; color:var(--muted); font-size:.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.ci-pl em{ font-style:normal; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.7rem; color:var(--accent-ink); }
+.ci-pl{ position:relative; flex:0 0 138px; scroll-snap-align:start; background:var(--card); border-radius:18px; padding:14px 10px 12px; text-align:center; box-shadow:0 1px 2px rgba(20,30,50,.08); display:flex; flex-direction:column; align-items:center; gap:4px; }
+.ci-pl small{ color:var(--muted); font-size:.74rem; letter-spacing:.05em; text-transform:uppercase; }
+.ci-pl b{ font-size:.98rem; line-height:1.1; }
+.ci-pl .tm{ display:flex; align-items:center; gap:5px; color:var(--muted); font-size:.82rem; }
+.ci-pl em{ font-style:normal; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.8rem; color:var(--accent-ink); }
 .ci-pl.y em{ color:#c79a00; } .ci-pl.r em{ color:#d64545; }
-.pface.ci{ width:46px; height:46px; font-size:.9rem; }
 .crest.xs{ width:16px; height:16px; font-size:.45rem; box-shadow:none; } .crest.xs img{ padding:1px; }
 .ci .more{ display:block; width:100%; margin-top:10px; border:none; background:var(--line); color:var(--text); padding:11px 0; border-radius:12px; font-family:'Barlow Condensed',sans-serif; font-size:1.05rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
 .ci .more::after{ content:' ›'; }
@@ -625,7 +623,7 @@ html{ -webkit-text-size-adjust:100%; } .detail{ overflow-x:hidden; }
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v142';
+const VERSION = 'v143';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -2873,9 +2871,10 @@ function renderPanel(){
       mbody = Object.keys(byDate).sort().map(d => `<section class="group" data-d="${d}"><div class="lg"><span class="lgn">${esc(dayLabel(d))}</span></div>${byDate[d].sort((a,b) => (a.time||'').localeCompare(b.time||'')).map(matchRow).join('')}</section>`).join('');
     }
     const ctabs = `<div class="dtabs">${[['info','Aperçu'],['matches','Matchs'],['table','Classement'],['teams','Équipes']].map(([k,l]) => `<button class="dtab ${PANEL.ctab===k?'active':''}" data-ct="${k}">${l}</button>`).join('')}</div>`;
+    COMP_STRIP = '';
     const body = PANEL.ctab === 'info' ? compInfoHtml(c) : PANEL.ctab === 'table' ? panelTable(c) : PANEL.ctab === 'teams' ? compTeamsHtml(c) : mbody;
     html = PANEL.csub ? head(PANEL.csub === 'scorers' ? 'Meilleurs buteurs' : 'Meilleurs passeurs', esc(trComp(c.name))) + `<div class="cplist">${panelTops(c, PANEL.csub)}</div>`
-      : head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + ctabs + `<div class="cplist">${body}</div>`;
+      : head(esc(trComp(c.name)), esc(trCountry(c.country)) + (c.season ? ' · ' + esc(c.season) : '')) + (PANEL.ctab === 'info' ? COMP_STRIP : '') + ctabs + `<div class="cplist">${body}</div>`;
   } else if (PANEL.kind === 'team') {
     const t = PANEL.team;
     if (PANEL.sub === 'player' && PANEL.player) {
@@ -3211,6 +3210,7 @@ function panelTops(c, kind){
 }
 /* ---------- aperçu d'une compétition : résumé de la saison ---------- */
 const CSTAT = {};
+let COMP_STRIP = '';
 function compInfoHtml(c){
   let S = CSTAT[c.id];
   if (!S){
@@ -3259,9 +3259,10 @@ function compInfoHtml(c){
   if (tiles.length){
     const prs = tiles.map(t => ({ name:t.r.name, team:t.r.team, teamId:t.r.teamId }));
     loadTopPhotos(c, prs);
-    strip = `<div class="ci-strip"><div class="ci-hs">${tiles.map(t => `<div class="ci-pl ${t.cls || ''}">${pfacePlayer({ name:t.r.name, photo:topPhoto(c, { name:t.r.name, team:t.r.team, teamId:t.r.teamId }) }, 'ci')}<div class="ci-pt"><small>${t.k}</small><b>${esc(t.r.name)}</b><span class="tm">${crest(trTeam(t.r.team) || '', t.r.badge || null, 'xs')}${esc(trTeam(t.r.team))}</span></div><em>${t.v}</em></div>`).join('')}</div></div>`;
+    strip = `<div class="ci-strip"><div class="ci-hs">${tiles.map(t => `<div class="ci-pl ${t.cls || ''}">${pfacePlayer({ name:t.r.name, photo:topPhoto(c, { name:t.r.name, team:t.r.team, teamId:t.r.teamId }) }, 'ci')}<small>${t.k}</small><b>${esc(t.r.name)}</b><span class="tm">${crest(trTeam(t.r.team) || '', t.r.badge || null, 'sm')}${esc(trTeam(t.r.team))}</span><em>${t.v}</em></div>`).join('')}</div></div>`;
   }
-  return strip + h + lists;
+  COMP_STRIP = strip;
+  return h + lists;
 }
 function openCompetition(id){
   const c = (COMP.list || []).find(x => x.id === id);
