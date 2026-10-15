@@ -322,6 +322,7 @@ const ROWS = [
  ['Pronostic enregistré ✓','Prediction saved ✓','Pronóstico guardado ✓','Palpite guardado ✓','تم حفظ التوقع ✓','Tipp gespeichert ✓','Pronostico salvato ✓','Tahmin kaydedildi ✓'],
  ['Le match a commencé : plus de pronostic possible.','The match has started: predictions are closed.','El partido ha empezado: ya no se puede pronosticar.','O jogo começou: já não é possível palpitar.','بدأت المباراة: لم يعد التوقع ممكنًا.','Das Spiel läuft: Tipps sind nicht mehr möglich.','La partita è iniziata: non si può più pronosticare.','Maç başladı: artık tahmin yapılamaz.'],
  ['Invitation copiée','Invitation copied','Invitación copiada','Convite copiado','تم نسخ الدعوة','Einladung kopiert','Invito copiato','Davet kopyalandı'],
+ ['Rappel de pronostic','Prediction reminder','Recordatorio de pronóstico','Lembrete de palpite','تذكير بالتوقع','Tipp-Erinnerung','Promemoria pronostico','Tahmin hatırlatması'],
  ['Chat','Chat','Chat','Chat','الدردشة','Chat','Chat','Sohbet'],
  ['Écris un message…','Write a message…','Escribe un mensaje…','Escreva uma mensagem…','اكتب رسالة…','Nachricht schreiben…','Scrivi un messaggio…','Mesaj yaz…'],
  ['Choisis un pseudo pour écrire','Choose a nickname to write','Elige un apodo para escribir','Escolha um apelido para escrever','اختر اسماً مستعاراً للكتابة','Wähle einen Nicknamen zum Schreiben','Scegli un nickname per scrivere','Yazmak için bir takma ad seç'],

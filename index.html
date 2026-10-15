@@ -719,7 +719,7 @@ body.dens-compact .match{ padding:7px 10px; gap:6px; } body.dens-compact .match 
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v152';
+const VERSION = 'v153';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -789,7 +789,7 @@ async function pushSync(){
     if (!SETTINGS.push || !PUSH.supported || Notification.permission !== 'granted') return;
     const sub = await pushGetSub(); if (!sub) return;
     await fetch(`${BACKEND}/api/push/sync`, { method:'POST', headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ subscription: sub.toJSON(), teams: FAV.teams.map(t => t.id), matches: FAV.matches.map(m => m.id), lang: I18N.lang, types: { goal: ptOn('goal'), kickoff: ptOn('kickoff'), final: ptOn('final') } }) });
+      body: JSON.stringify({ subscription: sub.toJSON(), teams: FAV.teams.map(t => t.id), matches: FAV.matches.map(m => m.id), lang: I18N.lang, types: { goal: ptOn('goal'), kickoff: ptOn('kickoff'), final: ptOn('final'), remind: ptOn('remind') }, preds: Object.keys(PRON.preds) }) });
   } catch(e) {}
 }
 window.pushSyncSoon = () => { clearTimeout(PUSH.timer); PUSH.timer = setTimeout(pushSync, 1500); };
@@ -824,7 +824,7 @@ function pushRow(){
   else if (Notification.permission === 'denied'){ hint = 'Bloquées : autorise-les dans les Réglages de ton téléphone.'; dis = 'disabled'; }
   const on = SETTINGS.push && PUSH.supported && Notification.permission === 'granted';
   return `<div class="row"><div class="rl"><b>Notifications</b><small>${hint}</small></div><label class="sw"><input type="checkbox" id="setPush" ${on ? 'checked' : ''} ${dis}><i></i></label></div>`
-    + (on ? [['goal','Buts'],['kickoff',"Coups d'envoi"],['final','Fins de match']].map(([k,l]) => `<div class="row"><div class="rl"><b>${l}</b></div><label class="sw"><input type="checkbox" data-pt="${k}" ${ptOn(k) ? 'checked' : ''}><i></i></label></div>`).join('') : '')
+    + (on ? [['goal','Buts'],['kickoff',"Coups d'envoi"],['final','Fins de match'],['remind','Rappel de pronostic']].map(([k,l]) => `<div class="row"><div class="rl"><b>${l}</b></div><label class="sw"><input type="checkbox" data-pt="${k}" ${ptOn(k) ? 'checked' : ''}><i></i></label></div>`).join('') : '')
     + (on ? `<div class="row"><div class="rl"><b>Envoyer une notification test</b><small>Pour vérifier que tout fonctionne</small></div><button class="btn small" id="pushTest">Envoyer</button></div>` : '');
 }
 pushSync();
@@ -1983,7 +1983,7 @@ function pronValidate(d){
   PRON.preds[id] = { h:dr.h, a:dr.a, at:Date.now(), ts, date:d.pdate || d.date || '', home:d.home || '', away:d.away || '', comp:d.comp || '' };
   const ids = Object.keys(PRON.preds);
   if (ids.length > 300){ ids.sort((a, b) => PRON.preds[a].ts - PRON.preds[b].ts).slice(0, ids.length - 300).forEach(k => { delete PRON.preds[k]; delete PRON.res[k]; }); }
-  savePron(); toastMsg('Pronostic enregistré ✓'); pronSync();
+  savePron(); toastMsg('Pronostic enregistré ✓'); pronSync(); if (window.pushSyncSoon) pushSyncSoon();
 }
 async function pronSync(){
   if (PRON.syncing) return; if (!Object.keys(PRON.preds).length && !PRON.groups.length) return;
@@ -3259,6 +3259,7 @@ function refreshAfterSetting(){
   renderLeagueList(); renderFilterBar();
 }
 
+let PANEL_SIG = null;
 function renderPanel(){
   const box = $('panel');
   if (box.hidden || !PANEL.kind) return;
@@ -3364,7 +3365,8 @@ function renderPanel(){
       patched = true;
     }
   }
-  if (!patched) box.innerHTML = html;
+  if (patched) PANEL_SIG = null;
+  else if (PANEL_SIG !== html + I18N.lang || !box.firstChild){ box.innerHTML = html; PANEL_SIG = html + I18N.lang; }   // rien n'a changé : on ne redessine pas (plus de clignotement)
   box.dataset.mode = teamMode;
   { const dh = box.querySelector('.dh'); if (dh) box.style.setProperty('--dhh', dh.offsetHeight + 'px'); }
   $('pback').onclick = backFromPanel;
