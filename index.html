@@ -719,7 +719,7 @@ body.dens-compact .match{ padding:7px 10px; gap:6px; } body.dens-compact .match 
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v151';
+const VERSION = 'v152';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -3088,7 +3088,7 @@ function renderDetail(){
     <div class="dtabs${hasFeed(d) ? ' t5' : ''}">${[['resume', g.status === 'scheduled' ? 'Avant-match' : 'Résumé'],['compos','Compos'],['stats','Stats'],...(hasFeed(d) ? [['feed','En direct']] : []),['table','Classement']].map(([k,l]) => `<button class="dtab ${DETAIL.tab===k?'active':''} ${dimTab(k)?'dim':''}" data-t="${k}">${l}</button>`).join('')}</div>
     ${body}`;
   // l'en-tête (écussons, score) n'est redessiné que s'il a changé : changer d'onglet ne fait plus clignoter les images
-  const sig = DETAIL.id + '§' + headHtml + '§' + I18N.lang;
+  const sig = DETAIL.id + '§' + headHtml.replace(/(<div class="cdown"[^>]*>)[^<]*/, '$1') + '§' + I18N.lang;   // le compte à rebours change chaque seconde : il ne doit pas redessiner les écussons
   let hd = $('dhead'), bd = $('dbody');
   if (!hd || !bd || hd.parentNode !== box){
     box.innerHTML = '<div id="dhead"></div><div id="dbody"></div>';
