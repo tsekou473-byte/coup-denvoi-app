@@ -729,7 +729,7 @@ body.focusmode #dbody{font-size:1.12em}body.focusmode .hero .sb .score{font-size
 <script src="i18n.js"></script>
 <script>
 const BACKEND = 'https://coup-denvoi-backend.onrender.com';
-const VERSION = 'v156';
+const VERSION = 'v157';
 (function(){
   // iOS standalone : la hauteur de fenêtre peut être plus courte que l'écran -> la barre du bas flotte
   const nav = document.getElementById('bottomNav');
@@ -1242,7 +1242,7 @@ function matchTag(g){
   const is = (k, n) => CL[k] && CL[k].test(n);
   for (const [x, y, label] of DERBIES) if ((is(x, a) && is(y, b)) || (is(y, a) && is(x, b))) return label;
   const big = n => BIG.some(k => is(k, n));
-  return big(a) && big(b) ? 'Choc' : '';
+  return '';
 }
 const tagHtml = g => { const t = matchTag(g); return t ? `<div class="dtag">${esc(t)}</div>` : ''; };
 
@@ -1253,6 +1253,7 @@ const scoreTxt = g => scoreHidden(g) ? '• - •' : `${g.hs ?? 0} - ${g.as ?? 0
 
 /* ---------- probabilités en direct (selon le score et la minute) ---------- */
 function liveProb(d){
+  return null;   // probabilité en direct calculée par l'app : retirée
   if (!d || d.status !== 'live') return null;
   const mn = /ht|half/i.test(d.minute || '') ? 45 : minOf(d.minute);
   if (!mn) return null;
@@ -2367,6 +2368,7 @@ function loadLineupPhotos(d){
 /* ---------- note du joueur après le match (calculée par l'app) ---------- */
 function rtMin(t){ const m = String(t == null ? '' : t).match(/\d+/); return m ? Number(m[0]) : null; }
 function computeRatings(d){
+  return null;   // données officielles uniquement : plus de notes calculées par l'app
   if (!d || d.status !== 'final' || !d.lineups) return null;
   const out = {};
   const sides = ['home', 'away'];
@@ -2837,6 +2839,7 @@ function teamTableHtml(){
 }
 /* note de l'équipe (0-100) calculée par l'app : points par match, différence de buts et forme récente */
 function teamRating(rk, fin, t, gamesArg){
+  return null;   // pas de note d'équipe inventée : seulement des données officielles
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   let played = 0, pts = 0, gf = null, ga = null;
   if (rk && rk.row && rk.row.played){ const r = rk.row; played = r.played; pts = r.pts || 0; gf = r.gf; ga = r.ga; }
@@ -3856,7 +3859,7 @@ function compareHtml(head){
     const A = cmpStats(DA), B = cmpStats(DB), gpm = S => (S.played && S.gf != null) ? S.gf / S.played : null;
     const frm = D => `<div class="cmp-frm">${D.fin.slice(-5).map(g => { const r = teamResult(g, D.t); return `<i class="${r}">${{ w:'V', d:'N', l:'D' }[r]}</i>`; }).join('')}</div>`;
     const rows = cmpRows([
-      ['Note', A.rating, B.rating], ['Classement', A.pos, B.pos, { low:true }], ['Points', A.pts, B.pts], ['Matchs joués', A.played, B.played, { neutral:true }],
+      ['Classement', A.pos, B.pos, { low:true }], ['Points', A.pts, B.pts], ['Matchs joués', A.played, B.played, { neutral:true }],
       ['Victoires', A.w, B.w], ['Nuls', A.d, B.d, { neutral:true }], ['Défaites', A.l, B.l, { low:true }], ['Buts marqués', A.gf, B.gf], ['Buts encaissés', A.ga, B.ga, { low:true }],
       ['Différence de buts', (A.gf != null && A.ga != null) ? A.gf - A.ga : null, (B.gf != null && B.ga != null) ? B.gf - B.ga : null, { nobar:true }], ['Buts par match', gpm(A), gpm(B), { dec:2 }]
     ], A, B);
